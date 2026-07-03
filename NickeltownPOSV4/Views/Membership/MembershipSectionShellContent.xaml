@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Views.Membership.MembershipSectionShellContent"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:NickeltownPOSV4.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="14,12,14,12" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <controls:PosPageHero
+            Grid.Row="0"
+            IconGlyph="&#xE716;"
+            Subtitle="{Binding Subtitle, Mode=OneWay}"
+            Title="{Binding Title, Mode=OneWay}" />
+
+        <Border Grid.Row="1" Style="{StaticResource SettingsCardStyle}">
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontSize="15"
+                Foreground="{StaticResource PosTextSecondaryBrush}"
+                Text="{Binding EmptyStateMessage, Mode=OneWay}"
+                TextAlignment="Center"
+                TextWrapping="WrapWholeWords" />
+        </Border>
+
+        <Button
+            Grid.Row="2"
+            HorizontalAlignment="Left"
+            Command="{Binding BackToMembershipHomeCommand}"
+            Content="Back to memberships"
+            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+    </Grid>
+</UserControl>

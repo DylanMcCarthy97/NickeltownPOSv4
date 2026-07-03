@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.WorkspacePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:NickeltownPOSV4.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="RootPage"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Padding="0" Background="{StaticResource PosCanvasBrush}">
+
+        <Border
+            x:Name="ClassicWorkspacePanel"
+            Margin="4"
+            Padding="14,12"
+            Background="{StaticResource PosCanvasBrush}"
+            BorderBrush="{StaticResource PosBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="12">
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Style="{StaticResource SettingsPageHeroStyle}">
+                    <Grid ColumnSpacing="14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border
+                            Grid.Column="0"
+                            Width="56"
+                            Height="56"
+                            VerticalAlignment="Center"
+                            Background="{StaticResource SettingsHeroAccentBrush}"
+                            CornerRadius="16">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="26"
+                                Foreground="#FFFFFFFF"
+                                Glyph="&#xE90F;" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock
+                                Style="{StaticResource SettingsHeroTitleStyle}"
+                                Text="{Binding PageTitle, ElementName=RootPage, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource SettingsHeroSubtitleStyle}"
+                                Text="{Binding Subtitle, ElementName=RootPage, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                            <Button
+                                MinHeight="48"
+                                MinWidth="132"
+                                Padding="12,8"
+                                HorizontalAlignment="Left"
+                                Command="{Binding OpenStockManagementCommand}"
+                                Content="Stock…"
+                                Foreground="#FFFFFFFF"
+                                Style="{StaticResource TabsHeaderActionButtonStyle}"
+                                Visibility="{Binding IsStockManagementEntryVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                            <Button
+                                MinHeight="48"
+                                MinWidth="120"
+                                Padding="12,8"
+                                HorizontalAlignment="Left"
+                                Command="{Binding OpenMigrationCommand}"
+                                Content="Import…"
+                                Foreground="#FFFFFFFF"
+                                Style="{StaticResource TabsHeaderActionButtonStyle}"
+                                Visibility="{Binding IsMigrationEntryVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border
+                    Grid.Row="1"
+                    Padding="12,10"
+                    Background="{StaticResource PosSurfaceBrush}"
+                    BorderBrush="{StaticResource PosBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                    <TextBlock
+                        x:Name="BodyText"
+                        FontSize="14"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="{Binding Body, ElementName=RootPage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <local:TabsWorkspaceView
+            x:Name="TabsWorkspaceHost"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Visibility="Collapsed" />
+
+        <local:PitstopRetailView
+            x:Name="PitstopRetailHost"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Visibility="Collapsed" />
+    </Grid>
+</Page>

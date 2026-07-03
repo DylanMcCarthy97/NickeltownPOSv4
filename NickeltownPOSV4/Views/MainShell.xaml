@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.MainShell"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:NickeltownPOSV4.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:ShellNavActiveBackgroundConverter x:Key="ShellNavBg" />
+        <conv:ShellNavActiveForegroundConverter x:Key="ShellNavFg" />
+    </Page.Resources>
+
+    <Grid x:Name="ShellRootGrid" Background="{StaticResource PosCanvasBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="64" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Frame
+                x:Name="ShellContentFrame"
+                Padding="0">
+                <Frame.ContentTransitions>
+                    <TransitionCollection>
+                        <NavigationThemeTransition />
+                    </TransitionCollection>
+                </Frame.ContentTransitions>
+            </Frame>
+
+            <controls:SlidePanelHost x:Name="SlidePanelHost" />
+        </Grid>
+
+        <Border
+            x:Name="BottomNavBarBorder"
+            Grid.Row="1"
+            Height="64"
+            MinHeight="64"
+            MaxHeight="64"
+            Padding="6,2,10,4"
+            VerticalAlignment="Stretch"
+            Background="{StaticResource PosFooterBackgroundBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button
+                        Grid.Column="0"
+                        MinHeight="56"
+                        Padding="2,4"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        AutomationProperties.Name="{Binding TabsRoute.Title, Mode=OneWay}"
+                        Background="{Binding SelectedRoute, Converter={StaticResource ShellNavBg}, ConverterParameter=tabs, Mode=OneWay}"
+                        BorderThickness="0"
+                        Click="RouteButton_Click"
+                        CornerRadius="10"
+                        Tag="0"
+                        ToolTipService.ToolTip="{Binding TabsRoute.Title, Mode=OneWay}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                FontSize="16"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=tabs, Mode=OneWay}"
+                                Glyph="{Binding TabsRoute.Glyph, Mode=OneWay}" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                MaxWidth="76"
+                                FontSize="10"
+                                FontWeight="SemiBold"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=tabs, Mode=OneWay}"
+                                Text="{Binding TabsRoute.Title, Mode=OneWay}"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Grid.Column="1"
+                        Margin="4,0,0,0"
+                        MinHeight="56"
+                        Padding="2,4"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        AutomationProperties.Name="{Binding PitstopRoute.Title, Mode=OneWay}"
+                        Background="{Binding SelectedRoute, Converter={StaticResource ShellNavBg}, ConverterParameter=pitstop, Mode=OneWay}"
+                        BorderThickness="0"
+                        Click="RouteButton_Click"
+                        CornerRadius="10"
+                        Tag="1"
+                        ToolTipService.ToolTip="{Binding PitstopRoute.Title, Mode=OneWay}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                FontSize="16"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=pitstop, Mode=OneWay}"
+                                Glyph="{Binding PitstopRoute.Glyph, Mode=OneWay}" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                MaxWidth="76"
+                                FontSize="10"
+                                FontWeight="SemiBold"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=pitstop, Mode=OneWay}"
+                                Text="{Binding PitstopRoute.Title, Mode=OneWay}"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Grid.Column="2"
+                        Margin="4,0,0,0"
+                        MinHeight="56"
+                        Padding="2,4"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        AutomationProperties.Name="{Binding ReportsRoute.Title, Mode=OneWay}"
+                        Background="{Binding SelectedRoute, Converter={StaticResource ShellNavBg}, ConverterParameter=reports, Mode=OneWay}"
+                        BorderThickness="0"
+                        Click="RouteButton_Click"
+                        CornerRadius="10"
+                        Tag="2"
+                        ToolTipService.ToolTip="{Binding ReportsRoute.Title, Mode=OneWay}"
+                        Visibility="{Binding CanOpenReportsRoute, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                FontSize="16"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=reports, Mode=OneWay}"
+                                Glyph="{Binding ReportsRoute.Glyph, Mode=OneWay}" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                MaxWidth="76"
+                                FontSize="10"
+                                FontWeight="SemiBold"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=reports, Mode=OneWay}"
+                                Text="{Binding ReportsRoute.Title, Mode=OneWay}"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Grid.Column="3"
+                        Margin="4,0,0,0"
+                        MinHeight="56"
+                        Padding="2,4"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        AutomationProperties.Name="{Binding AdminRoute.Title, Mode=OneWay}"
+                        Background="{Binding SelectedRoute, Converter={StaticResource ShellNavBg}, ConverterParameter=admin, Mode=OneWay}"
+                        BorderThickness="0"
+                        Click="RouteButton_Click"
+                        CornerRadius="10"
+                        Tag="3"
+                        ToolTipService.ToolTip="{Binding AdminRoute.Title, Mode=OneWay}"
+                        Visibility="{Binding CanOpenAdminRoute, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                FontSize="16"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=admin, Mode=OneWay}"
+                                Glyph="{Binding AdminRoute.Glyph, Mode=OneWay}" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                MaxWidth="76"
+                                FontSize="10"
+                                FontWeight="SemiBold"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=admin, Mode=OneWay}"
+                                Text="{Binding AdminRoute.Title, Mode=OneWay}"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        Grid.Column="4"
+                        Margin="4,0,0,0"
+                        MinHeight="56"
+                        Padding="2,4"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        AutomationProperties.Name="{Binding SettingsRoute.Title, Mode=OneWay}"
+                        Background="{Binding SelectedRoute, Converter={StaticResource ShellNavBg}, ConverterParameter=settings, Mode=OneWay}"
+                        BorderThickness="0"
+                        Click="RouteButton_Click"
+                        CornerRadius="10"
+                        Tag="4"
+                        ToolTipService.ToolTip="{Binding SettingsRoute.Title, Mode=OneWay}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                FontSize="16"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=settings, Mode=OneWay}"
+                                Glyph="{Binding SettingsRoute.Glyph, Mode=OneWay}" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                MaxWidth="76"
+                                FontSize="10"
+                                FontWeight="SemiBold"
+                                Foreground="{Binding SelectedRoute, Converter={StaticResource ShellNavFg}, ConverterParameter=settings, Mode=OneWay}"
+                                Text="{Binding SettingsRoute.Title, Mode=OneWay}"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="14">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            FontSize="12"
+                            Foreground="{StaticResource PosOnDarkSecondaryForegroundBrush}"
+                            Glyph="&#xE787;" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosOnDarkForegroundBrush}"
+                            Text="{Binding FooterDateText, Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            FontSize="12"
+                            Foreground="{StaticResource PosOnDarkSecondaryForegroundBrush}"
+                            Glyph="&#xE121;" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosOnDarkForegroundBrush}"
+                            Text="{Binding FooterTimeText, Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse
+                            Width="8"
+                            Height="8"
+                            VerticalAlignment="Center"
+                            Fill="{StaticResource PosSuccessBrush}"
+                            Visibility="{Binding SquareIsOnline, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        <Ellipse
+                            Width="8"
+                            Height="8"
+                            VerticalAlignment="Center"
+                            Fill="{StaticResource PosOnDarkSecondaryForegroundBrush}"
+                            Visibility="{Binding SquareIsOnline, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosOnDarkForegroundBrush}"
+                            Text="{Binding SquareStatusText, Mode=OneWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <controls:InputOverlayHost x:Name="InputOverlayHost" Grid.RowSpan="2" />
+    </Grid>
+</Page>

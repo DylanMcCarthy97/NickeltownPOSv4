@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Controls.PosPageHero"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Border Style="{StaticResource SettingsPageHeroStyle}">
+        <Grid ColumnSpacing="14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border
+                Grid.Column="0"
+                Width="56"
+                Height="56"
+                Background="{StaticResource SettingsHeroAccentBrush}"
+                CornerRadius="14">
+                <FontIcon
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="26"
+                    Foreground="{StaticResource PosOnAccentForegroundBrush}"
+                    Glyph="{x:Bind IconGlyph, Mode=OneWay}" />
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="{x:Bind Title, Mode=OneWay}" />
+                <TextBlock
+                    Margin="0,2,0,0"
+                    Style="{StaticResource SettingsHeroSubtitleStyle}"
+                    Text="{x:Bind Subtitle, Mode=OneWay}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

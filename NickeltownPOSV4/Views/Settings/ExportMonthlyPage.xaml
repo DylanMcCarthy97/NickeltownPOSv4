@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Settings.ExportMonthlyPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Page.Resources>
+        <Style x:Key="ReportTileButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PosSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SettingsCardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="16,14" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+    </Page.Resources>
+
+    <Grid Padding="14,12,14,12" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Modern hero header  -->
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Grid.Column="0"
+                    Width="52"
+                    Height="52"
+                    Background="{StaticResource SettingsHeroAccentBrush}"
+                    CornerRadius="14">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="24"
+                        Foreground="#FFFFFFFF"
+                        Glyph="&#xE74C;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Monthly &amp; stock reports" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        Style="{StaticResource SettingsHeroSubtitleStyle}"
+                        Text="PDFs and CSV save under Documents\POS Reports (Bar tally / Stock subfolders) and open automatically. You can still email PDFs to configured recipients." />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!--  Month picker card  -->
+        <Border Grid.Row="1" Style="{StaticResource SettingsCardStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="REPORTING MONTH" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Used only for the monthly bar tabs report."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+                <CalendarDatePicker
+                    Grid.Column="1"
+                    MinHeight="44"
+                    VerticalAlignment="Center"
+                    Date="{Binding SelectedMonth, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <!--  Action tiles  -->
+        <Grid
+            Grid.Row="2"
+            ColumnSpacing="12"
+            RowSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!--  Monthly bar tabs PDF (export)  -->
+            <Button
+                Grid.Row="0"
+                Grid.Column="0"
+                Command="{Binding ExportPdfToFolderCommand}"
+                Style="{StaticResource ReportTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xEA90;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Export monthly tabs PDF" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Saves to Documents\POS Reports\Bar tally reports and opens in your PDF viewer."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <!--  Monthly bar tabs PDF (email)  -->
+            <Button
+                Grid.Row="0"
+                Grid.Column="1"
+                Command="{Binding EmailMonthlyCommand}"
+                Style="{StaticResource ReportTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE715;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Email monthly tabs PDF" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Send the monthly bar tabs PDF to the configured email recipients."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <!--  Stock snapshot PDF (export)  -->
+            <Button
+                Grid.Row="1"
+                Grid.Column="0"
+                Command="{Binding ExportStockPdfToFolderCommand}"
+                Style="{StaticResource ReportTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8D1;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Export stock snapshot PDF" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Saves to Documents\POS Reports\Stock reports and opens automatically."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <!--  Stock snapshot PDF (email)  -->
+            <Button
+                Grid.Row="1"
+                Grid.Column="1"
+                Command="{Binding SendStockEmailCommand}"
+                Style="{StaticResource ReportTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE715;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Email stock snapshot PDF" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Send the stock snapshot PDF to the configured email recipients."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <!--  Monthly CSV fallback (export)  -->
+            <Button
+                Grid.Row="2"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Command="{Binding ExportToFolderCommand}"
+                Style="{StaticResource ReportTileButtonStyle}">
+                <Grid ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        FontSize="22"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Glyph="&#xE8B5;" />
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Export monthly activity CSV" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="Raw CSV of tab entries and money movements for the selected month. Saved to Documents\POS Reports\Bar tally reports and opened."
+                            TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </Grid>
+
+        <!--  Footer: Back + status  -->
+        <Grid Grid.Row="3" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                Command="{Binding GoBackCommand}"
+                Content="Back"
+                Style="{StaticResource SettingsSecondaryButtonStyle}" />
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{StaticResource PosTextSecondaryBrush}"
+                Text="{Binding StatusMessage, Mode=OneWay}"
+                TextTrimming="CharacterEllipsis"
+                TextWrapping="NoWrap" />
+        </Grid>
+    </Grid>
+</Page>

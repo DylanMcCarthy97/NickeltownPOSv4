@@ -1,0 +1,690 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Views.TabsWorkspaceView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:NickeltownPOSV4.Controls"
+    xmlns:converters="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:panels="using:NickeltownPOSV4.Views.Panels"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:BalanceTierToBrushConverter x:Key="BalanceTierToBrushConverter" />
+        <converters:TabCardStripBrushConverter x:Key="TabCardStripBrushConverter" />
+        <converters:TabSelectedBackgroundConverter x:Key="TabSelectedBackgroundConverter" />
+        <converters:TabSelectedBorderBrushConverter x:Key="TabSelectedBorderBrushConverter" />
+        <converters:TabSelectedBorderThicknessConverter x:Key="TabSelectedBorderThicknessConverter" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <converters:TabsModeSegmentBrushConverter x:Key="ModeSegmentBg" />
+        <converters:TabsModeSegmentForegroundConverter x:Key="ModeSegmentFg" />
+
+        <Style x:Key="TabsModeSegmentStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="50" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+            <Setter Property="Background" Value="{StaticResource PosModeSegmentIdleBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosBorderBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+        </Style>
+
+        <Style x:Key="TabsSideActionButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="64" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style x:Key="TabsSideActionWideStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionButtonStyle}">
+            <Setter Property="MinHeight" Value="48" />
+        </Style>
+
+        <Style x:Key="TabsActionPrimaryStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource PosButtonPrimaryBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+        </Style>
+
+        <Style x:Key="TabsActionSuccessStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource PosButtonSuccessBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+        </Style>
+
+        <Style x:Key="TabsActionDarkStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource PosButtonDarkBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+        </Style>
+
+        <Style x:Key="TabsActionSecondaryStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource PosButtonSecondaryBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+        </Style>
+
+        <Style x:Key="TabsActionDangerStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionWideStyle}">
+            <Setter Property="Background" Value="{StaticResource PosButtonDangerBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+        </Style>
+
+        <Style x:Key="TabsActionGuestStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource PosGuestBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+        </Style>
+
+        <Style x:Key="TabsConfirmOverlayButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style x:Key="TabsConfirmOverlayDangerButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsConfirmOverlayButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource PosButtonDangerBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosButtonDangerBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid x:Name="RootLayout" Background="{StaticResource PosCanvasBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="70" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <controls:PosWorkspaceHeader Grid.Row="0" Subtitle="Bar Tabs" />
+
+        <!-- Mode selector -->
+        <Grid Grid.Row="1" Height="70" Margin="10,2,10,0" VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                HorizontalAlignment="Stretch"
+                Background="{Binding BoardMode, Converter={StaticResource ModeSegmentBg}, ConverterParameter=Member, Mode=OneWay}"
+                Command="{Binding SelectOpenTabsModeCommand}"
+                Foreground="{Binding BoardMode, Converter={StaticResource ModeSegmentFg}, ConverterParameter=Member, Mode=OneWay}"
+                Style="{StaticResource TabsModeSegmentStyle}">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="8,0,0,0">
+                    <FontIcon Margin="0,0,6,0" FontFamily="Segoe MDL2 Assets" FontSize="16" Glyph="&#xE8FD;" />
+                    <TextBlock FontWeight="SemiBold" Text="Member Tabs" />
+                    <Border Margin="6,0,0,0" MinWidth="22" Padding="6,2" Background="{StaticResource PosAccentMutedBrush}" CornerRadius="10">
+                        <TextBlock FontSize="12" FontWeight="Bold" Text="{Binding OpenTabsCount, Mode=OneWay}" />
+                    </Border>
+                </StackPanel>
+            </Button>
+            <Button
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                Background="{Binding BoardMode, Converter={StaticResource ModeSegmentBg}, ConverterParameter=Guest, Mode=OneWay}"
+                Command="{Binding SelectGuestTabsModeCommand}"
+                Foreground="{Binding BoardMode, Converter={StaticResource ModeSegmentFg}, ConverterParameter=Guest, Mode=OneWay}"
+                Style="{StaticResource TabsModeSegmentStyle}">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <FontIcon Margin="0,0,6,0" FontFamily="Segoe MDL2 Assets" FontSize="16" Glyph="&#xE716;" />
+                    <TextBlock FontWeight="SemiBold" Text="Guest Tabs" />
+                    <Border Margin="6,0,0,0" MinWidth="22" Padding="6,2" Background="{StaticResource PosGuestMutedBrush}" CornerRadius="10">
+                        <TextBlock FontSize="12" FontWeight="Bold" Text="{Binding GuestTabsCount, Mode=OneWay}" />
+                    </Border>
+                </StackPanel>
+            </Button>
+            <Button
+                Grid.Column="2"
+                HorizontalAlignment="Stretch"
+                Background="{Binding BoardMode, Converter={StaticResource ModeSegmentBg}, ConverterParameter=Archived, Mode=OneWay}"
+                Command="{Binding SelectArchivedTabsModeCommand}"
+                Foreground="{Binding BoardMode, Converter={StaticResource ModeSegmentFg}, ConverterParameter=Archived, Mode=OneWay}"
+                Style="{StaticResource TabsModeSegmentStyle}"
+                Visibility="{Binding CanViewArchivedTabs, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0">
+                    <FontIcon Margin="0,0,6,0" FontFamily="Segoe MDL2 Assets" FontSize="16" Glyph="&#xE7B8;" />
+                    <TextBlock FontWeight="SemiBold" Text="Archived Tabs" />
+                    <Border Margin="6,0,0,0" MinWidth="22" Padding="6,2" Background="{StaticResource PosAccentMutedBrush}" CornerRadius="10">
+                        <TextBlock FontSize="12" FontWeight="Bold" Text="{Binding ArchivedTabsCount, Mode=OneWay}" />
+                    </Border>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Main content: left 3x3 board + right selected tab panel -->
+        <Grid Grid.Row="2" Margin="10,4,10,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="7*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left tab board -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="40" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Margin="0,0,0,4" Background="{StaticResource PosCanvasBrush}">
+            <ItemsControl
+                IsTabStop="False"
+                ItemsSource="{Binding PageSlots, Mode=OneWay}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <controls:Uniform3x3Panel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="3" Tapped="BoardCell_Tapped">
+                            <Border
+                                Background="{StaticResource PosSurfaceAltBrush}"
+                                BorderBrush="{StaticResource PosBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+
+                            <Grid Visibility="{Binding IsAddCell, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <Grid Visibility="{Binding IsNewMemberCell, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                    <Rectangle
+                                        RadiusX="12"
+                                        RadiusY="12"
+                                        Fill="{StaticResource PosSurfaceAltBrush}"
+                                        Stroke="{StaticResource PosAddCardBorderBrush}"
+                                        StrokeDashArray="6,4"
+                                        StrokeThickness="2" />
+                                    <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <Border
+                                                Width="48"
+                                                Height="48"
+                                                HorizontalAlignment="Center"
+                                                Background="{StaticResource PosAccentMutedBrush}"
+                                                CornerRadius="24">
+                                                <FontIcon
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="Segoe MDL2 Assets"
+                                                    FontSize="22"
+                                                    Foreground="{StaticResource PosAccentBrush}"
+                                                    Glyph="&#xE710;" />
+                                            </Border>
+                                            <TextBlock
+                                                Margin="0,8,0,0"
+                                                HorizontalAlignment="Center"
+                                                FontSize="15"
+                                                FontWeight="Bold"
+                                                Foreground="{StaticResource PosAccentBrush}"
+                                                Text="{Binding AddCardTitle, Mode=OneWay}" />
+                                            <TextBlock
+                                                Margin="0,4,0,0"
+                                                MaxWidth="200"
+                                                HorizontalAlignment="Center"
+                                                FontSize="11"
+                                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                                Text="{Binding AddCardSubtitle, Mode=OneWay}"
+                                                TextAlignment="Center"
+                                                TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                                <Grid Visibility="{Binding IsNewGuestCell, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                    <Rectangle
+                                        RadiusX="12"
+                                        RadiusY="12"
+                                        Fill="{StaticResource PosSurfaceAltBrush}"
+                                        Stroke="{StaticResource PosAddGuestCardBorderBrush}"
+                                        StrokeDashArray="6,4"
+                                        StrokeThickness="2" />
+                                    <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <Border
+                                                Width="48"
+                                                Height="48"
+                                                HorizontalAlignment="Center"
+                                                Background="{StaticResource PosGuestMutedBrush}"
+                                                CornerRadius="24">
+                                                <FontIcon
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="Segoe MDL2 Assets"
+                                                    FontSize="22"
+                                                    Foreground="{StaticResource PosGuestBrush}"
+                                                    Glyph="&#xE710;" />
+                                            </Border>
+                                            <TextBlock
+                                                Margin="0,8,0,0"
+                                                HorizontalAlignment="Center"
+                                                FontSize="15"
+                                                FontWeight="Bold"
+                                                Foreground="{StaticResource PosGuestBrush}"
+                                                Text="{Binding AddCardTitle, Mode=OneWay}" />
+                                            <TextBlock
+                                                Margin="0,4,0,0"
+                                                MaxWidth="200"
+                                                HorizontalAlignment="Center"
+                                                FontSize="11"
+                                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                                Text="{Binding AddCardSubtitle, Mode=OneWay}"
+                                                TextAlignment="Center"
+                                                TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+
+                            <Border
+                                Background="{Binding TabIsSelected, Converter={StaticResource TabSelectedBackgroundConverter}}"
+                                BorderBrush="{Binding Converter={StaticResource TabSelectedBorderBrushConverter}, Mode=OneWay}"
+                                BorderThickness="{Binding TabIsSelected, Converter={StaticResource TabSelectedBorderThicknessConverter}}"
+                                CornerRadius="12"
+                                Visibility="{Binding IsTabCell, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="4" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Border
+                                        Grid.Row="0"
+                                        Background="{Binding TabStripBrushSource, Converter={StaticResource TabCardStripBrushConverter}, Mode=OneWay}"
+                                        CornerRadius="12,12,0,0" />
+                                    <Grid Grid.Row="1" Padding="8,6,8,6">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock
+                                            Grid.Row="0"
+                                            MaxLines="2"
+                                            LineHeight="16"
+                                            HorizontalAlignment="Center"
+                                            FontSize="14"
+                                            FontWeight="Bold"
+                                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                                            Text="{Binding TabDisplayName, Mode=OneWay}"
+                                            TextAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="WrapWholeWords" />
+                                        <StackPanel
+                                            Grid.Row="1"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"
+                                            Spacing="2">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                FontSize="29"
+                                                FontWeight="Bold"
+                                                Foreground="{Binding DisplayBalanceTier, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
+                                                Text="{Binding TabBalanceText, Mode=OneWay}"
+                                                TextAlignment="Center" />
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                FontSize="10"
+                                                FontWeight="SemiBold"
+                                                Foreground="{Binding DisplayBalanceTier, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
+                                                Text="{Binding TabStatusLabel, Mode=OneWay}"
+                                                TextAlignment="Center" />
+                                        </StackPanel>
+                                        <TextBlock
+                                            Grid.Row="2"
+                                            MaxLines="1"
+                                            HorizontalAlignment="Center"
+                                            FontSize="10"
+                                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                                            Text="{Binding TabFooterLine, Mode=OneWay}"
+                                            TextAlignment="Center"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+                </Border>
+
+                <!-- Board footer: undo (PIN required) + pagination -->
+                <Grid Grid.Row="1" Height="40" VerticalAlignment="Top">
+                    <Button
+                        MinWidth="108"
+                        Padding="10,4"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Command="{Binding UndoLastCommand}"
+                        Style="{StaticResource TabsPagerButtonDenseStyle}"
+                        ToolTipService.ToolTip="{Binding UndoToolTip, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE7A7;" />
+                            <TextBlock FontWeight="SemiBold" Text="Undo last" />
+                        </StackPanel>
+                    </Button>
+                    <controls:CatalogPagePager
+                        VerticalAlignment="Top"
+                        NextCommand="{Binding NextPageCommand}"
+                        PageLabel="{Binding PageInfo, Mode=OneWay}"
+                        PreviousCommand="{Binding PreviousPageCommand}" />
+                </Grid>
+            </Grid>
+
+            <!-- Right selected tab panel -->
+            <Border
+                Grid.Column="2"
+                Padding="10,8"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Spacing="4">
+                        <TextBlock
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosAccentBrush}"
+                            Text="SELECTED TAB" />
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding SelectedTabName, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis"
+                            Visibility="{Binding HasSelectedTab, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        <TextBlock
+                            FontSize="14"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="{Binding ActionBarPlaceholder, Mode=OneWay}"
+                            TextWrapping="WrapWholeWords"
+                            Visibility="{Binding HasSelectedTab, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Margin="0,8,0,8"
+                        Spacing="6"
+                        Visibility="{Binding HasSelectedTab, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <TextBlock
+                            FontSize="10"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="CURRENT BALANCE" />
+                        <TextBlock
+                            FontSize="28"
+                            FontWeight="Bold"
+                            Foreground="{Binding SelectedBalanceTier, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
+                            Text="{Binding SelectedBalanceText, Mode=OneWay}" />
+                        <TextBlock
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="{Binding SelectedBalanceTier, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
+                            Text="{Binding SelectedStatusLabel, Mode=OneWay}" />
+                        <StackPanel Margin="0,4,0,0" Spacing="2">
+                            <TextBlock FontSize="9" Foreground="{StaticResource PosTextSecondaryBrush}" Text="LAST UPDATED" />
+                            <TextBlock
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding SelectedLastUpdated, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <StackPanel Spacing="2">
+                            <TextBlock FontSize="9" Foreground="{StaticResource PosTextSecondaryBrush}" Text="LAST ACTIVITY" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding SelectedDrinksLine, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="WrapWholeWords"
+                                MaxLines="3" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid
+                            Grid.Row="0"
+                            ColumnSpacing="6"
+                            RowSpacing="6"
+                            Visibility="{Binding ShowMemberTabActions, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Command="{Binding OpenDrinksPanelCommand}"
+                                Style="{StaticResource TabsActionPrimaryStyle}">
+                                <StackPanel HorizontalAlignment="Center" Spacing="3">
+                                    <Image Width="22" Height="22">
+                                        <Image.Source>
+                                            <SvgImageSource UriSource="ms-appx:///Assets/BeerMugIcon.svg" />
+                                        </Image.Source>
+                                    </Image>
+                                    <TextBlock Text="Add Drinks" TextAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Command="{Binding OpenFundsPanelCommand}"
+                                Style="{StaticResource TabsActionSuccessStyle}">
+                                <StackPanel HorizontalAlignment="Center" Spacing="3">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE8C7;" />
+                                    <TextBlock Text="Add Funds" TextAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Command="{Binding OpenTabHistoryPanelCommand}"
+                                Style="{StaticResource TabsActionDarkStyle}">
+                                <StackPanel HorizontalAlignment="Center" Spacing="3">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE8A1;" />
+                                    <TextBlock Text="History" TextAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Command="{Binding EditTabCommand}"
+                                Style="{StaticResource TabsActionSecondaryStyle}">
+                                <StackPanel HorizontalAlignment="Center" Spacing="3">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE70F;" />
+                                    <TextBlock Text="Edit Tab" TextAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="2"
+                                Margin="0,0,0,0"
+                                Command="{Binding ArchiveSelectedCommand}"
+                                Style="{StaticResource TabsActionDangerStyle}"
+                                Visibility="{Binding CanAdminArchiveTab, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="16" Glyph="&#xE7B8;" />
+                                    <TextBlock Text="Archive Tab" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <Grid
+                            Grid.Row="0"
+                            ColumnSpacing="6"
+                            RowSpacing="6"
+                            Visibility="{Binding ShowGuestTabActions, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Command="{Binding OpenDrinksPanelCommand}"
+                                Style="{StaticResource TabsActionPrimaryStyle}">
+                                <StackPanel HorizontalAlignment="Center" Spacing="3">
+                                    <Image Width="22" Height="22">
+                                        <Image.Source>
+                                            <SvgImageSource UriSource="ms-appx:///Assets/BeerMugIcon.svg" />
+                                        </Image.Source>
+                                    </Image>
+                                    <TextBlock Text="Add Drinks" TextAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Command="{Binding CloseOutGuestTabCommand}"
+                                Style="{StaticResource TabsActionGuestStyle}">
+                                <StackPanel HorizontalAlignment="Center" Spacing="3">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE8C8;" />
+                                    <TextBlock Text="Close Out" TextAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="2"
+                                Command="{Binding EditTabCommand}"
+                                Style="{StaticResource TabsActionSecondaryStyle}">
+                                <StackPanel HorizontalAlignment="Center" Spacing="3">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE70F;" />
+                                    <TextBlock Text="Edit Tab" TextAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <Button
+                            Grid.Row="1"
+                            Margin="0,6,0,0"
+                            Command="{Binding RestoreSelectedCommand}"
+                            IsEnabled="{Binding HasSelectedTab, Mode=OneWay}"
+                            Style="{StaticResource TabsActionSuccessStyle}"
+                            Visibility="{Binding IsArchivedMode, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="16" Glyph="&#xE777;" />
+                                <TextBlock Text="Restore Tab" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="3"
+            Background="{StaticResource PosScrimBrush}"
+            Visibility="{Binding ArchiveOverlayVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border
+                Width="380"
+                Padding="14"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10">
+                <StackPanel>
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Archive tab?"
+                        TextWrapping="WrapWholeWords" />
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        FontSize="13"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="{Binding ArchiveOverlayText, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Grid Margin="0,14,0,0" ColumnDefinitions="*,10,*">
+                        <Button
+                            Grid.Column="0"
+                            Command="{Binding CancelArchiveCommand}"
+                            Content="Cancel"
+                            Style="{StaticResource TabsConfirmOverlayButtonStyle}" />
+                        <Button
+                            Grid.Column="2"
+                            Command="{Binding ConfirmArchiveCommand}"
+                            Content="Archive"
+                            Style="{StaticResource TabsConfirmOverlayButtonStyle}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="3"
+            Background="{StaticResource PosScrimBrush}"
+            Visibility="{Binding DeleteOverlayVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border
+                Width="400"
+                Padding="14"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10">
+                <StackPanel>
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Delete tab permanently?"
+                        TextWrapping="WrapWholeWords" />
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        FontSize="13"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="{Binding DeleteOverlayText, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Grid Margin="0,14,0,0" ColumnDefinitions="*,10,*">
+                        <Button
+                            Grid.Column="0"
+                            Command="{Binding CancelDeleteCommand}"
+                            Content="Cancel"
+                            Style="{StaticResource TabsConfirmOverlayButtonStyle}" />
+                        <Button
+                            Grid.Column="2"
+                            Command="{Binding ConfirmPermanentDeleteCommand}"
+                            Content="Delete"
+                            Style="{StaticResource TabsConfirmOverlayDangerButtonStyle}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="3"
+            Background="{StaticResource PosCanvasBrush}"
+            Visibility="{Binding IsAddDrinksWorkspaceOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}"
+            Canvas.ZIndex="25">
+            <panels:AddDrinksPanel DataContext="{Binding CurrentAddDrinksViewModel, Mode=OneWay}" />
+        </Grid>
+    </Grid>
+</UserControl>

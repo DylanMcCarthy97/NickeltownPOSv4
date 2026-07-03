@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Controls.TouchNumpadOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <SolidColorBrush x:Key="NumpadDigitBgBrush" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="NumpadDigitBorderBrush" Color="#FFD6E1F5" />
+        <SolidColorBrush x:Key="NumpadActionBgBrush" Color="#FFEFF5FF" />
+        <SolidColorBrush x:Key="NumpadClearBgBrush" Color="#FFFFF1F2" />
+        <SolidColorBrush x:Key="NumpadClearBorderBrush" Color="#55F87171" />
+        <SolidColorBrush x:Key="NumpadClearFgBrush" Color="#FFB91C1C" />
+
+        <Style x:Key="NumpadDigitButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="56" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="Background" Value="{StaticResource NumpadDigitBgBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource NumpadDigitBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="NumpadSecondaryButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="Background" Value="{StaticResource NumpadActionBgBrush}" />
+            <Setter Property="BorderBrush" Value="#FFBDD3FF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="NumpadClearButtonStyle" TargetType="Button" BasedOn="{StaticResource NumpadSecondaryButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource NumpadClearBgBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource NumpadClearBorderBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource NumpadClearFgBrush}" />
+        </Style>
+
+        <Style x:Key="NumpadDoneButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{StaticResource PosAccentBrush}" />
+            <Setter Property="BorderBrush" Value="#FF1E4FD6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="NumpadCloseIconStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderIconButtonStyle}" />
+    </UserControl.Resources>
+
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#B30F172A">
+        <Border
+            Width="440"
+            Padding="18"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="#FFFAFCFF"
+            BorderBrush="#FFCCDAF4"
+            BorderThickness="1"
+            CornerRadius="18">
+            <Border.Shadow>
+                <ThemeShadow />
+            </Border.Shadow>
+
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding Title, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis" />
+                    <Button
+                        Grid.Column="1"
+                        Width="40"
+                        Height="40"
+                        AutomationProperties.Name="Close"
+                        Command="{Binding CancelCommand, Mode=OneWay}"
+                        Style="{StaticResource NumpadCloseIconStyle}">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE711;" />
+                    </Button>
+                </Grid>
+
+                <Border
+                    Grid.Row="1"
+                    Padding="14,12"
+                    Background="#FFF0F6FF"
+                    BorderBrush="#FFC7DBFF"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                    <TextBlock
+                        FontSize="32"
+                        FontWeight="Bold"
+                        Foreground="#FF123A7A"
+                        Text="{Binding AmountDisplay, Mode=OneWay}"
+                        TextAlignment="Center"
+                        TextTrimming="CharacterEllipsis" />
+                </Border>
+
+                <Button
+                    Grid.Row="2"
+                    MinHeight="42"
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding ToggleSignCommand, Mode=OneWay}"
+                    Content="+/−"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Style="{StaticResource NumpadSecondaryButtonStyle}"
+                    Visibility="{Binding AllowsSignedAmount, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+
+                <Grid
+                    Grid.Row="3"
+                    ColumnSpacing="8"
+                    RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="7"
+                        Content="7"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="8"
+                        Content="8"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+                    <Button
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="9"
+                        Content="9"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+
+                    <Button
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="4"
+                        Content="4"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+                    <Button
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="5"
+                        Content="5"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+                    <Button
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="6"
+                        Content="6"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+
+                    <Button
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="1"
+                        Content="1"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+                    <Button
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="2"
+                        Content="2"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+                    <Button
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="3"
+                        Content="3"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+
+                    <Button
+                        Grid.Row="3"
+                        Grid.Column="0"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="00"
+                        Content="00"
+                        FontSize="18"
+                        Style="{StaticResource NumpadDigitButtonStyle}"
+                        Visibility="{Binding ShowDecimalKeys, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        Grid.Row="3"
+                        Grid.Column="1"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="0"
+                        Content="0"
+                        Style="{StaticResource NumpadDigitButtonStyle}" />
+                    <Button
+                        Grid.Row="3"
+                        Grid.Column="2"
+                        Command="{Binding DigitCommand}"
+                        CommandParameter="."
+                        Content="."
+                        Style="{StaticResource NumpadDigitButtonStyle}"
+                        Visibility="{Binding ShowDecimalKeys, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                </Grid>
+
+                <Grid Grid.Row="4" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button
+                        Grid.Column="0"
+                        Content="Backspace"
+                        Command="{Binding BackspaceCommand, Mode=OneWay}"
+                        Style="{StaticResource NumpadSecondaryButtonStyle}" />
+                    <Button
+                        Grid.Column="1"
+                        Content="Clear"
+                        Command="{Binding ClearCommand, Mode=OneWay}"
+                        Style="{StaticResource NumpadClearButtonStyle}" />
+                    <Button
+                        Grid.Column="2"
+                        Content="Done"
+                        Command="{Binding DoneCommand, Mode=OneWay}"
+                        Style="{StaticResource NumpadDoneButtonStyle}" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,1017 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Views.PitstopRetailView"
+    x:Name="RootPitstop"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:NickeltownPOSV4.Controls"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:NickeltownPOSV4.ViewModels"
+    d:DesignHeight="768"
+    d:DesignWidth="1024"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:BoolNegateConverter x:Key="BoolNeg" />
+        <conv:BoolToBrushConverter x:Key="BoolToAccentBorder" />
+        <conv:BoolToThicknessConverter x:Key="ChipSelectThickness" SelectedThickness="2" UnselectedThickness="1" />
+        <conv:AddDrinksChipBackgroundConverter x:Key="ChipBg" />
+        <conv:AddDrinksChipForegroundConverter x:Key="ChipFg" />
+
+        <Style x:Key="PitstopReceiptGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{StaticResource PosSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosPanelBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="PitstopPaymentCashButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="MinHeight" Value="52" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource PosButtonSuccessBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="PitstopPaymentCardButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="MinHeight" Value="52" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource PosButtonPrimaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="PitstopSecondaryOutlineButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="MinHeight" Value="40" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosPanelBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="PitstopCancelSaleButtonStyle" TargetType="Button" BasedOn="{StaticResource PitstopSecondaryOutlineButtonStyle}">
+            <Setter Property="Foreground" Value="{StaticResource PosBalanceNegativeBrush}" />
+        </Style>
+
+        <Style x:Key="PitstopCartRemoveButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="MinWidth" Value="36" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{StaticResource PosSurfaceAltBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosPanelBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource PosBalanceNegativeBrush}" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style
+            x:Key="PitstopPrimaryButtonStyle"
+            BasedOn="{StaticResource TabsHeaderActionButtonStyle}"
+            TargetType="Button">
+            <Setter Property="MinHeight" Value="56" />
+            <Setter Property="Padding" Value="18,12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource PosButtonPrimaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <Style
+            x:Key="PitstopOverlayActionButtonStyle"
+            BasedOn="{StaticResource PitstopPrimaryButtonStyle}"
+            TargetType="Button">
+            <Setter Property="MinHeight" Value="64" />
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid
+        x:Name="PitstopLayoutRoot"
+        MaxWidth="1024"
+        MaxHeight="712"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        Background="{StaticResource PosCanvasBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <controls:PosWorkspaceHeader Grid.Row="0" Subtitle="Pitstop Retail">
+            <controls:PosWorkspaceHeader.RightContent>
+                <TextBox
+                    x:Name="BarcodeEntry"
+                    Width="1"
+                    Height="1"
+                    Opacity="0"
+                    IsTabStop="True"
+                    KeyDown="BarcodeEntry_KeyDown"
+                    Text="{Binding BarcodeBuffer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </controls:PosWorkspaceHeader.RightContent>
+        </controls:PosWorkspaceHeader>
+
+        <!-- Main workspace -->
+        <Grid
+            Grid.Row="1"
+            Margin="8,10,8,4"
+            ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="31*" />
+                <ColumnDefinition Width="19*" MinWidth="280" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: categories + product grid + pager -->
+            <Grid Grid.Column="0" RowSpacing="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ItemsControl ItemsSource="{Binding CategoryChips, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:UniformRowPanel Spacing="8" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PitstopCategoryChipViewModel">
+                            <Button
+                                Background="{x:Bind IsSelected, Mode=OneWay, Converter={StaticResource ChipBg}}"
+                                BorderBrush="{x:Bind IsSelected, Mode=OneWay, Converter={StaticResource BoolToAccentBorder}}"
+                                BorderThickness="{x:Bind IsSelected, Mode=OneWay, Converter={StaticResource ChipSelectThickness}}"
+                                Command="{Binding DataContext.SelectChipCommand, ElementName=RootPitstop}"
+                                CommandParameter="{x:Bind}"
+                                Foreground="{x:Bind IsSelected, Mode=OneWay, Converter={StaticResource ChipFg}}"
+                                Style="{StaticResource PitstopCategoryChipButtonStyle}">
+                                <StackPanel
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="3">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        FontFamily="Segoe UI Emoji"
+                                        FontSize="20"
+                                        LineHeight="22"
+                                        Text="{x:Bind Glyph, Mode=OneWay}"
+                                        TextAlignment="Center"
+                                        TextLineBounds="TrimToCapHeight" />
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        LineHeight="14"
+                                        MaxLines="1"
+                                        Text="{x:Bind Label, Mode=OneWay}"
+                                        TextAlignment="Center"
+                                        TextLineBounds="TrimToCapHeight"
+                                        TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ItemsControl
+                    Grid.Row="1"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    IsTabStop="False"
+                    ItemsSource="{Binding ProductTiles, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:Uniform4x2Panel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PitstopProductTileViewModel">
+                            <Grid
+                                Margin="4"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Opacity="{x:Bind CardOpacity, Mode=OneWay}">
+                                <Border
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Background="{StaticResource PosSurfaceBrush}"
+                                    BorderBrush="{StaticResource PosPanelBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+                                    <Border.Shadow>
+                                        <ThemeShadow />
+                                    </Border.Shadow>
+                                    <Grid>
+                                        <Button
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            Command="{x:Bind TapCommand, Mode=OneWay}"
+                                            IsEnabled="{x:Bind CanTap, Mode=OneWay}"
+                                            Style="{StaticResource PitstopCatalogProductButtonStyle}"
+                                            UseSystemFocusVisuals="False">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="5" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+
+                                            <Border
+                                                Background="{x:Bind AccentStripBrush, Mode=OneWay}"
+                                                CornerRadius="12,12,0,0" />
+
+                                            <Grid Grid.Row="1" Margin="6,4,6,6" RowSpacing="3">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="120" />
+                                                    <RowDefinition Height="34" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <Border
+                                                    Grid.Row="0"
+                                                    HorizontalAlignment="Center"
+                                                    Width="112"
+                                                    Height="112"
+                                                    VerticalAlignment="Center"
+                                                    Background="{StaticResource PosProductThumbFillBrush}"
+                                                    BorderBrush="{StaticResource PosProductThumbBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="12">
+                                                    <controls:CatalogProductImage
+                                                        HorizontalAlignment="Stretch"
+                                                        VerticalAlignment="Stretch"
+                                                        ImagePath="{x:Bind Source.ImagePath, Mode=OneWay}" />
+                                                </Border>
+
+                                                <Border
+                                                    Grid.Row="0"
+                                                    Margin="0,2,0,0"
+                                                    Padding="5,2"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Top"
+                                                    Background="{StaticResource PosGuestBadgeFillBrush}"
+                                                    BorderBrush="{StaticResource PosGuestBadgeBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4"
+                                                    Visibility="{x:Bind ShowSpecialBadge, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                                    <TextBlock
+                                                        FontSize="9"
+                                                        FontWeight="Bold"
+                                                        Foreground="{StaticResource PosGuestBrush}"
+                                                        Text="SPEC" />
+                                                </Border>
+
+                                                <Border
+                                                    Grid.Row="0"
+                                                    Margin="0,2,0,0"
+                                                    Padding="5,2"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Top"
+                                                    Background="{StaticResource PosSurfaceAltBrush}"
+                                                    BorderBrush="{StaticResource PosBalanceLowBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4"
+                                                    Visibility="{x:Bind IsLowStock, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                                    <TextBlock
+                                                        FontSize="9"
+                                                        FontWeight="Bold"
+                                                        Foreground="{StaticResource PosBalanceLowBrush}"
+                                                        Text="LOW" />
+                                                </Border>
+
+                                                <TextBlock
+                                                    Grid.Row="1"
+                                                    MaxHeight="34"
+                                                    FontSize="12.5"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                                                    LineHeight="16"
+                                                    MaxLines="2"
+                                                    Text="{x:Bind Name, Mode=OneWay}"
+                                                    TextAlignment="Center"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="WrapWholeWords" />
+
+                                                <StackPanel
+                                                    Grid.Row="2"
+                                                    VerticalAlignment="Top"
+                                                    Spacing="2"
+                                                    Visibility="{x:Bind ShowOutOfStockOverlay, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}">
+                                                    <StackPanel
+                                                        HorizontalAlignment="Center"
+                                                        Spacing="2"
+                                                        Visibility="{x:Bind ShowSpecialPricing, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                                        <TextBlock
+                                                            HorizontalAlignment="Center"
+                                                            FontSize="10"
+                                                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                                                            Text="{x:Bind RegularPriceText, Mode=OneWay}"
+                                                            TextDecorations="Strikethrough" />
+                                                        <TextBlock
+                                                            HorizontalAlignment="Center"
+                                                            FontSize="15"
+                                                            FontWeight="Bold"
+                                                            Foreground="{StaticResource PosSpecialPriceBrush}"
+                                                            Text="{x:Bind SpecialPriceText, Mode=OneWay}" />
+                                                    </StackPanel>
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        FontSize="15"
+                                                        FontWeight="Bold"
+                                                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                                                        Text="{x:Bind PriceLine, Mode=OneWay}"
+                                                        Visibility="{x:Bind ShowSpecialPricing, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        FontSize="11"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{x:Bind StockForegroundBrush, Mode=OneWay}"
+                                                        Text="{x:Bind StockLabel, Mode=OneWay}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        Visibility="{x:Bind ShowStockLabel, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+                                        </Button>
+                                        <Border
+                                            Margin="0,0,0,8"
+                                            Padding="8,3"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Bottom"
+                                            Background="{StaticResource PosSurfaceAltBrush}"
+                                            BorderBrush="{StaticResource PosBalanceNegativeBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Visibility="{x:Bind ShowOutOfStockOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                            <TextBlock
+                                                FontSize="10.5"
+                                                FontWeight="SemiBold"
+                                                Foreground="{StaticResource PosBalanceNegativeBrush}"
+                                                Text="Out of stock" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <controls:CatalogPagePager
+                    Grid.Row="2"
+                    Margin="0,2,0,0"
+                    NextCommand="{Binding NextProductPageCommand}"
+                    PageLabel="{Binding ProductPageCaption, Mode=OneWay}"
+                    PreviousCommand="{Binding PrevProductPageCommand}" />
+            </Grid>
+
+            <!-- Right: receipt-style current sale -->
+            <Border
+                Grid.Column="1"
+                Padding="10,8,10,10"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosPanelBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <Border.Shadow>
+                    <ThemeShadow />
+                </Border.Shadow>
+                <Grid RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <FontIcon
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="18"
+                                Foreground="{StaticResource PosAccentBrush}"
+                                Glyph="&#xE7BF;" />
+                            <TextBlock
+                                FontSize="17"
+                                FontWeight="Bold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="Current Sale" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            Command="{Binding ClearCartCommand}"
+                            Style="{StaticResource PitstopReceiptGhostButtonStyle}"
+                            UseSystemFocusVisuals="False">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="12"
+                                    Foreground="{StaticResource PosBalanceNegativeBrush}"
+                                    Glyph="&#xE74D;" />
+                                <TextBlock
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource PosBalanceNegativeBrush}"
+                                    Text="Clear" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <Border
+                        Grid.Row="1"
+                        Background="{StaticResource PosPanelMutedSurfaceBrush}"
+                        BorderBrush="{StaticResource PosPanelHeaderBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                        <Grid>
+                            <ScrollViewer
+                                Padding="6,6,6,4"
+                                HorizontalScrollBarVisibility="Disabled"
+                                VerticalScrollBarVisibility="Auto"
+                                Visibility="{Binding IsCartEmpty, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}">
+                                <ListView
+                                    HorizontalContentAlignment="Stretch"
+                                    IsItemClickEnabled="False"
+                                    ItemsSource="{Binding CartLines, Mode=OneWay}"
+                                    SelectedItem="{Binding SelectedCartLine, Mode=TwoWay}"
+                                    SelectionMode="Single">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="MinHeight" Value="0" />
+                                            <Setter Property="Padding" Value="0,0,0,6" />
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:PitstopCartLineViewModel">
+                                            <Grid ColumnSpacing="8" Padding="2,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border
+                                                    MinWidth="32"
+                                                    MinHeight="44"
+                                                    Padding="8,4"
+                                                    VerticalAlignment="Center"
+                                                    Background="{StaticResource PosSurfaceAltBrush}"
+                                                    BorderBrush="{StaticResource PosPanelBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="14">
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="13"
+                                                        FontWeight="Bold"
+                                                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                                                        Text="{x:Bind Quantity, Mode=OneWay}" />
+                                                </Border>
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="13"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                                                    MaxLines="2"
+                                                    Text="{x:Bind DisplayName, Mode=OneWay}"
+                                                    TextWrapping="WrapWholeWords" />
+                                                <TextBlock
+                                                    Grid.Column="2"
+                                                    MinWidth="52"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="14"
+                                                    FontWeight="Bold"
+                                                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                                                    Text="{x:Bind LineTotalDisplay, Mode=OneWay}"
+                                                    TextAlignment="Right" />
+                                                <Button
+                                                    Grid.Column="3"
+                                                    VerticalAlignment="Center"
+                                                    Command="{x:Bind RemoveCommand, Mode=OneWay}"
+                                                    Style="{StaticResource PitstopCartRemoveButtonStyle}">
+                                                    <FontIcon
+                                                        FontFamily="Segoe MDL2 Assets"
+                                                        FontSize="12"
+                                                        Glyph="&#xE74D;" />
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </ScrollViewer>
+                            <StackPanel
+                                Padding="12,20"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="8"
+                                Visibility="{Binding IsCartEmpty, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <FontIcon
+                                    HorizontalAlignment="Center"
+                                    FontSize="24"
+                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                    Glyph="&#xE7BF;" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                    Text="Tap a product or scan a barcode."
+                                    TextAlignment="Center"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Row="2" Spacing="4">
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosBalanceNegativeBrush}"
+                            MaxLines="2"
+                            Text="{Binding StatusMessage, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="WrapWholeWords"
+                            Visibility="{Binding StatusMessage, Converter={StaticResource BoolToVis}, ConverterParameter=NotEmpty, Mode=OneWay}" />
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                FontSize="13"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Subtotal" />
+                            <TextBlock
+                                Grid.Column="1"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding ReceiptSubtotalText, Mode=OneWay}" />
+                        </Grid>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock
+                                    FontSize="13"
+                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                    Text="{Binding ReceiptCardFeeCaption, Mode=OneWay}" />
+                                <FontIcon
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="11"
+                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                    Glyph="&#xE946;" />
+                            </StackPanel>
+                            <TextBlock
+                                Grid.Column="1"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding ReceiptCardFeeText, Mode=OneWay}" />
+                        </Grid>
+                        <Grid Margin="0,2,0,0" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="Total (Cash)" />
+                            <TextBlock
+                                Grid.Column="1"
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding ReceiptCashTotalText, Mode=OneWay}" />
+                        </Grid>
+                        <Grid Margin="0,2,0,0" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="Total (Card)" />
+                            <TextBlock
+                                Grid.Column="1"
+                                FontSize="22"
+                                FontWeight="Bold"
+                                Foreground="{StaticResource PosAccentBrush}"
+                                Text="{Binding ReceiptCardTotalText, Mode=OneWay}" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Spacing="8">
+                        <Button
+                            MinHeight="56"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding OpenPaySheetCommand}"
+                            Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                            UseSystemFocusVisuals="False">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <FontIcon
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="20"
+                                    Foreground="{StaticResource PosAccentBrush}"
+                                    Glyph="&#xE8C7;" />
+                                <TextBlock FontSize="18" FontWeight="Bold" Text="Pay" />
+                            </StackPanel>
+                        </Button>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button
+                                Command="{Binding HoldSaleCommand}"
+                                Style="{StaticResource PitstopSecondaryOutlineButtonStyle}"
+                                ToolTipService.ToolTip="{Binding HoldSaleButtonTooltip, Mode=OneWay}"
+                                UseSystemFocusVisuals="False">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE769;" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding HoldSaleButtonText, Mode=OneWay}" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                Grid.Column="1"
+                                Command="{Binding CancelSaleCommand}"
+                                Style="{StaticResource PitstopCancelSaleButtonStyle}"
+                                UseSystemFocusVisuals="False">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE711;" />
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" Text="Cancel Sale" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Checkout overlays (payment pipeline unchanged) -->
+        <Grid
+            Grid.RowSpan="2"
+            Background="{StaticResource PosScrimBrush}"
+            Canvas.ZIndex="50"
+            Visibility="{Binding ShowCheckoutOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border
+                MinWidth="360"
+                MaxWidth="440"
+                Margin="16,8"
+                Padding="16,12,16,14"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16">
+                <Border.Shadow>
+                    <ThemeShadow />
+                </Border.Shadow>
+                <Grid>
+                    <StackPanel
+                        HorizontalAlignment="Stretch"
+                        Spacing="14"
+                        Visibility="{Binding IsPaySheetOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="22"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Payment"
+                            TextAlignment="Center" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="28"
+                            FontWeight="Bold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding CartSubtotalLabel, Mode=OneWay}"
+                            TextAlignment="Center" />
+                        <Button
+                            Command="{Binding ChooseCashPaymentCommand}"
+                            Content="Cash"
+                            Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                            UseSystemFocusVisuals="False" />
+                        <Button
+                            Command="{Binding ChooseCardPaymentCommand}"
+                            Content="Card"
+                            Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                            UseSystemFocusVisuals="False" />
+                        <Button
+                            MinHeight="48"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding CancelCheckoutCommand}"
+                            Content="Cancel"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Style="{StaticResource TabsHeaderActionButtonStyle}"
+                            UseSystemFocusVisuals="False" />
+                    </StackPanel>
+
+                    <StackPanel
+                        HorizontalAlignment="Stretch"
+                        Spacing="8"
+                        Visibility="{Binding IsCashSheetOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="20"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Cash"
+                            TextAlignment="Center" />
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                    Text="{Binding CashSaleTotalCaption, Mode=OneWay}" />
+                                <Border
+                                    Padding="10,8"
+                                    Background="#FFF0F6FF"
+                                    BorderBrush="#FFC7DBFF"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                                            Text="Tendered" />
+                                        <TextBlock
+                                            FontSize="28"
+                                            FontWeight="Bold"
+                                            Foreground="#FF123A7A"
+                                            Text="{Binding CashReceivedDisplay, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Spacing="4">
+                                <TextBlock
+                                    FontSize="11"
+                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                    Text="Change" />
+                                <TextBlock
+                                    FontSize="28"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource PosAccentBrush}"
+                                    Text="{Binding CashChangeText, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosBalanceNegativeBrush}"
+                            Text="Tendered is less than total."
+                            TextWrapping="WrapWholeWords"
+                            Visibility="{Binding CashShortWarning, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        <controls:TouchNumpad
+                            HorizontalAlignment="Stretch"
+                            DataContext="{Binding CashNumpad, Mode=OneWay}" />
+                        <Button
+                            MinHeight="48"
+                            Padding="12,10"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding ConfirmCashSaleCommand}"
+                            Content="Complete sale"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding CashConfirmEnabled, Mode=OneWay}"
+                            Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                            UseSystemFocusVisuals="False" />
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button
+                                MinHeight="44"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding CancelCashSheetCommand}"
+                                Content="Back"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Style="{StaticResource TabsHeaderActionButtonStyle}"
+                                UseSystemFocusVisuals="False" />
+                            <Button
+                                Grid.Column="1"
+                                MinHeight="44"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding CancelCheckoutCommand}"
+                                Content="Cancel"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Style="{StaticResource TabsHeaderActionButtonStyle}"
+                                UseSystemFocusVisuals="False" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel
+                        HorizontalAlignment="Stretch"
+                        Spacing="14"
+                        Visibility="{Binding IsCardFeeSheetOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="22"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Card"
+                            TextAlignment="Center" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="13"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="{Binding CardFeeWarning, Mode=OneWay}"
+                            TextAlignment="Center"
+                            TextWrapping="WrapWholeWords" />
+                        <Border
+                            Padding="12"
+                            Background="{StaticResource PosCanvasBrush}"
+                            BorderBrush="{StaticResource PosBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock FontSize="15" Text="Base sale total" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="15"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding CardFeeSubtotalText, Mode=OneWay}" />
+                                </Grid>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock FontSize="15" Text="{Binding CardFeePercentCaption, Mode=OneWay}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="15"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding CardFeeAmountText, Mode=OneWay}" />
+                                </Grid>
+                                <Border Height="1" Background="{StaticResource PosBorderBrush}" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        FontSize="17"
+                                        FontWeight="Bold"
+                                        Text="Charge on terminal" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="22"
+                                        FontWeight="Bold"
+                                        Foreground="{StaticResource PosAccentBrush}"
+                                        Text="{Binding CardFeeChargeTotalText, Mode=OneWay}" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <Button
+                            MinHeight="56"
+                            Margin="0,4,0,0"
+                            Padding="16,14"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding CardFeeConfirmCommand}"
+                            Content="Charge card"
+                            Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                            UseSystemFocusVisuals="False" />
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button
+                                MinHeight="48"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding CardFeeGoBackCommand}"
+                                Content="Back"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Style="{StaticResource TabsHeaderActionButtonStyle}"
+                                UseSystemFocusVisuals="False" />
+                            <Button
+                                Grid.Column="1"
+                                MinHeight="48"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding CancelCheckoutCommand}"
+                                Content="Cancel"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Style="{StaticResource TabsHeaderActionButtonStyle}"
+                                UseSystemFocusVisuals="False" />
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="2"
+            Background="{StaticResource PosScrimBrush}"
+            Canvas.ZIndex="60"
+            Visibility="{Binding ShowSendingSquareOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16">
+                <Border.Shadow>
+                    <ThemeShadow />
+                </Border.Shadow>
+                <StackPanel MinWidth="340" Spacing="14">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Processing card payment…"
+                        TextAlignment="Center" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="14"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="{Binding SquareWaitingMessage, Mode=OneWay}"
+                        TextAlignment="Center"
+                        TextWrapping="WrapWholeWords" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Command="{Binding CancelCardPaymentCommand}"
+                        Content="Cancel card payment"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Style="{StaticResource TabsHeaderActionButtonStyle}"
+                        UseSystemFocusVisuals="False" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

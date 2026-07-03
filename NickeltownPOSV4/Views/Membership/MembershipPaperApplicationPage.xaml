@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Membership.MembershipPaperApplicationPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Page.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Padding="14,12,14,12" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="{Binding PageTitle, Mode=OneWay}" />
+                <TextBlock
+                    Style="{StaticResource SettingsHeroSubtitleStyle}"
+                    Text="{Binding ApplicationNumber, Mode=OneWay}" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="10">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding SectionApplicantDetails, Mode=OneWay}" />
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SURNAME *" />
+                            <Button Command="{Binding EditSurnameCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding SurnameSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="GIVEN NAMES *" />
+                            <Button Command="{Binding EditGivenNamesCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding GivenNamesSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CHILDREN UNDER 18" />
+                            <Button Command="{Binding EditChildrenUnder18Command}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding ChildrenUnder18Summary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ADDRESS *" />
+                            <Button Command="{Binding EditAddressCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding AddressSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="POST CODE" />
+                            <Button Command="{Binding EditPostCodeCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding PostCodeSummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="DATE OF BIRTH" />
+                            <Button Command="{Binding EditDateOfBirthCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding DateOfBirthSummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="EMAIL ADDRESS" />
+                            <Button Command="{Binding EditEmailCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding EmailSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="PHONE NUMBER *" />
+                            <Button Command="{Binding EditPhoneCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding PhoneSummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MOBILE *" />
+                            <Button Command="{Binding EditMobileCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding MobileSummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                Grid.Column="0"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding SectionVehicleDetails, Mode=OneWay}" />
+                            <Button
+                                Grid.Column="1"
+                                Command="{Binding AddVehicleCommand}"
+                                Content="Add vehicle"
+                                Style="{StaticResource SettingsSecondaryButtonStyle}"
+                                Visibility="{Binding VehicleSectionVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        </Grid>
+
+                        <CheckBox
+                            Content="No vehicle"
+                            IsChecked="{Binding HasNoVehicle, Mode=TwoWay}" />
+
+                        <StackPanel
+                            Spacing="10"
+                            Visibility="{Binding VehicleSectionVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <ItemsRepeater ItemsSource="{Binding Vehicles, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="10" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="12,10"
+                                        Background="{StaticResource SettingsCardElevatedBgBrush}"
+                                        BorderBrush="{StaticResource SettingsCardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                        <StackPanel Spacing="8">
+                                            <Grid ColumnSpacing="10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock
+                                                    Grid.Column="0"
+                                                    FontSize="14"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                                                    Text="{Binding Title, Mode=OneWay}" />
+                                                <Button
+                                                    Grid.Column="1"
+                                                    Command="{Binding RemoveCommand}"
+                                                    Content="Remove"
+                                                    Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                            </Grid>
+
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MAKE/MODEL" />
+                                                <Button Command="{Binding EditMakeModelCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding MakeModelSummary, Mode=OneWay}" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="YEAR" />
+                                                <Button Command="{Binding EditYearCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding YearSummary, Mode=OneWay}" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="BODY TYPE" />
+                                                <Button Command="{Binding EditBodyTypeCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding BodyTypeSummary, Mode=OneWay}" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ENGINE" />
+                                                <Button Command="{Binding EditEngineCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding EngineSummary, Mode=OneWay}" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="REGISTRATION NUMBER" />
+                                                <Button Command="{Binding EditRegistrationNumberCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding RegistrationNumberSummary, Mode=OneWay}" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CLUB REGO" />
+                                                <Button Command="{Binding ToggleClubRegoCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding ClubRegoSummary, Mode=OneWay}" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="COLOUR" />
+                                                <Button Command="{Binding EditColourCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding ColourSummary, Mode=OneWay}" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MODIFICATIONS" />
+                                                <Button Command="{Binding EditModificationsCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                                    <TextBlock Text="{Binding ModificationsSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="10">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Declaration" />
+                        <TextBlock
+                            FontSize="13"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="{Binding DeclarationText, Mode=OneWay}"
+                            TextWrapping="WrapWholeWords" />
+                        <CheckBox
+                            Content="Applicant signed paper declaration"
+                            IsChecked="{Binding PaperDeclarationSigned, Mode=TwoWay}" />
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SIGNATURE DATE" />
+                            <Button Command="{Binding EditSignatureDateCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding SignatureDateSummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="10">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding FeeStructureIntro, Mode=OneWay}" />
+                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding FullYearFeeLine, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding HalfYearFeeLine, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding ApplicableFeeLine, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding SelectedFeeText, Mode=OneWay}" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Command="{Binding SelectFullYearFeeCommand}" Content="Full year" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                            <Button Command="{Binding SelectHalfYearFeeCommand}" Content="Half year" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                            <Button Command="{Binding OverrideFeeCommand}" Content="Override fee" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="10">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding FieldAdditionalCommentsLabel, Mode=OneWay}" />
+                        <Button Command="{Binding EditAdditionalCommentsCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding AdditionalCommentsSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Original paper form" />
+                        <Border
+                            Padding="14,12"
+                            Background="{StaticResource SettingsCardElevatedBgBrush}"
+                            BorderBrush="{StaticResource SettingsCardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                            <TextBlock
+                                FontSize="13"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Attach scanned paper form - coming soon"
+                                TextAlignment="Center"
+                                TextWrapping="WrapWholeWords" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                Command="{Binding SaveDraftCommand}"
+                Content="Save draft"
+                Style="{StaticResource SettingsSecondaryButtonStyle}" />
+            <Button
+                Grid.Column="1"
+                Command="{Binding SubmitCommand}"
+                Content="Submit for review"
+                Style="{StaticResource SettingsPrimaryButtonStyle}" />
+            <Button
+                Grid.Column="2"
+                MinWidth="100"
+                Command="{Binding CancelCommand}"
+                Content="Cancel"
+                Style="{StaticResource SettingsSecondaryButtonStyle}" />
+        </Grid>
+
+        <TextBlock
+            Grid.Row="3"
+            FontSize="12"
+            Foreground="{StaticResource PosTextSecondaryBrush}"
+            Text="{Binding StatusMessage, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+    </Grid>
+</Page>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Controls.TouchQwertyKeyboard"
+    x:Name="QwertyRoot"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Border
+        Padding="10"
+        Background="#FFF4F8FF"
+        BorderBrush="#FFCCDAF4"
+        BorderThickness="1"
+        CornerRadius="18">
+        <Border.Shadow>
+            <ThemeShadow />
+        </Border.Shadow>
+        <TextBlock
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            FontSize="13"
+            Foreground="#99172A4D"
+            Text="Qwerty keyboard (reserved)"
+            TextAlignment="Center" />
+    </Border>
+</UserControl>

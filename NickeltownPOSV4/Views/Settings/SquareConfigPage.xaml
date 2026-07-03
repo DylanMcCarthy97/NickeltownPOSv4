@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Settings.SquareConfigPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Page.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Padding="14,12,14,12" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Modern hero header  -->
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Grid.Column="0"
+                    Width="52"
+                    Height="52"
+                    Background="{StaticResource SettingsHeroAccentBrush}"
+                    CornerRadius="14">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="24"
+                        Foreground="#FFFFFFFF"
+                        Glyph="&#xE8C5;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Square settings" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        Style="{StaticResource SettingsHeroSubtitleStyle}"
+                        Text="Square Terminal credentials, location, device, and catalog variations." />
+                </StackPanel>
+                <Button
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Command="{Binding ImportFromV2Command}"
+                    Style="{StaticResource SettingsPrimaryButtonStyle}"
+                    ToolTipService.ToolTip="Choose a legacy square_config.json file and import it into the POS settings store.">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="16" Foreground="#FFFFFFFF" Glyph="&#xE8B5;" />
+                        <TextBlock Text="Import config file…" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!--  Two paired cards: credentials left, catalog + surcharge right (fits without clipping)  -->
+        <Grid Grid.Row="1" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!--  Connection card  -->
+            <Border
+                Grid.Column="0"
+                VerticalAlignment="Top"
+                Style="{StaticResource SettingsCardStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Connection" />
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ACCESS TOKEN" />
+                        <Button Command="{Binding EditAccessTokenCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding AccessTokenSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="LOCATION ID" />
+                        <Button Command="{Binding EditLocationIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding LocationIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="DEVICE ID" />
+                        <Button Command="{Binding EditDeviceIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding DeviceIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6" Orientation="Vertical">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ENVIRONMENT" />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ToggleSwitch
+                                IsOn="{Binding IsSandbox, Mode=TwoWay}"
+                                OffContent="Production"
+                                OnContent="Sandbox" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding Environment, Mode=OneWay}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Catalog + card fee card  -->
+            <Border
+                Grid.Column="1"
+                VerticalAlignment="Top"
+                Style="{StaticResource SettingsCardStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Catalog &amp; card fees" />
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="BAR TAB CARD VARIATION ID" />
+                        <Button Command="{Binding EditBarTabVariationIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding BarTabVariationIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="GUEST TAB CARD VARIATION ID" />
+                        <Button Command="{Binding EditGuestTabVariationIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding GuestTabVariationIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <Grid Margin="0,2,0,0" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CARD SURCHARGE %" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Square fee on card payments (default 1.7%)."
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            MinWidth="120"
+                            VerticalAlignment="Center"
+                            Command="{Binding EditCardSurchargePercentCommand}"
+                            Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding CardSurchargePercentText, Mode=OneWay}" />
+                        </Button>
+                    </Grid>
+
+                    <Border
+                        Margin="0,6,0,0"
+                        Padding="12,10"
+                        Background="{StaticResource SettingsCardElevatedBgBrush}"
+                        CornerRadius="10">
+                        <StackPanel Spacing="4">
+                            <TextBlock
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="V2 MIGRATION" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding LegacyConfigSummary, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Button
+            Grid.Row="2"
+            MinHeight="48"
+            HorizontalAlignment="Stretch"
+            Command="{Binding SaveCommand}"
+            Content="Save Square configuration"
+            Style="{StaticResource SettingsPrimaryButtonStyle}" />
+
+        <TextBlock
+            Grid.Row="3"
+            FontSize="12"
+            Foreground="{StaticResource PosTextSecondaryBrush}"
+            Text="{Binding StatusMessage, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+
+        <Button
+            Grid.Row="4"
+            HorizontalAlignment="Left"
+            Command="{Binding BackToSettingsCommand}"
+            Content="Back to settings"
+            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+    </Grid>
+</Page>

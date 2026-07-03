@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Views.Panels.GuestTabCloseoutPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:NickeltownPOSV4.Controls"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <Style x:Key="GuestCloseoutCashStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="MinHeight" Value="56" />
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource PosButtonSuccessBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+        <Style x:Key="GuestCloseoutCardStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
+            <Setter Property="MinHeight" Value="56" />
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource PosButtonPrimaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+        <Style x:Key="GuestCloseoutPrimaryActionStyle" TargetType="Button" BasedOn="{StaticResource GuestCloseoutCashStyle}">
+            <Setter Property="Background" Value="{StaticResource PosAccentBrush}" />
+        </Style>
+        <Style x:Key="GuestCloseoutFeeRowLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+        </Style>
+        <Style x:Key="GuestCloseoutFeeRowValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+        </Style>
+    </UserControl.Resources>
+    <Grid Padding="14,12,14,16" Background="{StaticResource PosCanvasBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="14">
+                <TextBlock
+                    FontSize="24"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                    Text="Close out" />
+
+                <!-- Summary -->
+                <StackPanel Spacing="14" Visibility="{Binding IsSummaryStep, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                    <Border
+                        Padding="16,14"
+                        Background="{StaticResource PosSurfaceBrush}"
+                        BorderBrush="{StaticResource PosBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14">
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                FontSize="10"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding AmountDueLabel, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding TargetTabTitle, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                FontSize="36"
+                                FontWeight="Bold"
+                                Foreground="{StaticResource PosGuestBrush}"
+                                Text="{Binding AmountDueText, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding CloseoutHint, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        Padding="12"
+                        Background="{StaticResource PosCanvasBrush}"
+                        BorderBrush="{StaticResource PosBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Visibility="{Binding ShowCardFeeBreakdown, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="CARD PAYMENT BREAKDOWN" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource GuestCloseoutFeeRowLabelStyle}" Text="Tab balance" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Style="{StaticResource GuestCloseoutFeeRowValueStyle}"
+                                    Text="{Binding AmountDueText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource GuestCloseoutFeeRowLabelStyle}" Text="{Binding CardFeePercentCaption, Mode=OneWay}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Style="{StaticResource GuestCloseoutFeeRowValueStyle}"
+                                    Text="{Binding CardFeeAmountText, Mode=OneWay}" />
+                            </Grid>
+                            <Border Height="1" Background="{StaticResource PosBorderBrush}" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    FontSize="15"
+                                    FontWeight="Bold"
+                                    Text="Charge on terminal" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource PosAccentBrush}"
+                                    Text="{Binding CardFeeChargeTotalText, Mode=OneWay}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{StaticResource PosBalanceNegativeBrush}"
+                        Text="{Binding StatusMessage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords"
+                        Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+
+                    <StackPanel
+                        Spacing="10"
+                        Visibility="{Binding ShowPaymentButtons, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <Button Command="{Binding PayCashCommand}" Style="{StaticResource GuestCloseoutCashStyle}">
+                            <StackPanel Spacing="2">
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="Cash"
+                                    TextAlignment="Center" />
+                                <TextBlock
+                                    FontSize="11"
+                                    Opacity="0.9"
+                                    Text="Enter tendered amount and change"
+                                    TextAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button
+                            Command="{Binding PayCardCommand}"
+                            Style="{StaticResource GuestCloseoutCardStyle}"
+                            Visibility="{Binding ShowCardPayment, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <TextBlock
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Text="{Binding CardButtonCaption, Mode=OneWay}"
+                                TextAlignment="Center" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Cash tender -->
+                <StackPanel Spacing="10" Visibility="{Binding IsCashStep, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                    <TextBlock
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Cash payment" />
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="{Binding TargetTabTitle, Mode=OneWay}" />
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="6">
+                            <TextBlock
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding CashTotalCaption, Mode=OneWay}" />
+                            <Border
+                                Padding="10,8"
+                                Background="#FFF0F6FF"
+                                BorderBrush="#FFC7DBFF"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                                <StackPanel Spacing="2">
+                                    <TextBlock
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                        Text="Tendered" />
+                                    <TextBlock
+                                        FontSize="28"
+                                        FontWeight="Bold"
+                                        Foreground="#FF123A7A"
+                                        Text="{Binding CashReceivedDisplay, Mode=OneWay}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Spacing="4">
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Change due" />
+                            <TextBlock
+                                FontSize="28"
+                                FontWeight="Bold"
+                                Foreground="{StaticResource PosAccentBrush}"
+                                Text="{Binding CashChangeText, Mode=OneWay}" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosBalanceNegativeBrush}"
+                        Text="Tendered is less than the amount due."
+                        TextWrapping="WrapWholeWords"
+                        Visibility="{Binding CashShortWarning, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <controls:TouchNumpad HorizontalAlignment="Stretch" DataContext="{Binding CashNumpad, Mode=OneWay}" />
+                    <Button
+                        Command="{Binding ConfirmCashCommand}"
+                        Content="Record cash payment"
+                        Style="{StaticResource GuestCloseoutPrimaryActionStyle}" />
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{StaticResource PosBalanceNegativeBrush}"
+                        Text="{Binding StatusMessage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords"
+                        Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                </StackPanel>
+
+                <!-- Card confirm -->
+                <StackPanel Spacing="12" Visibility="{Binding IsCardConfirmStep, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                    <TextBlock
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Card payment" />
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="{Binding CardFeeWarning, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Border
+                        Padding="12"
+                        Background="{StaticResource PosSurfaceBrush}"
+                        BorderBrush="{StaticResource PosBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource GuestCloseoutFeeRowLabelStyle}" Text="Tab balance" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Style="{StaticResource GuestCloseoutFeeRowValueStyle}"
+                                    Text="{Binding AmountDueText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource GuestCloseoutFeeRowLabelStyle}" Text="{Binding CardFeePercentCaption, Mode=OneWay}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Style="{StaticResource GuestCloseoutFeeRowValueStyle}"
+                                    Text="{Binding CardFeeAmountText, Mode=OneWay}" />
+                            </Grid>
+                            <Border Height="1" Background="{StaticResource PosBorderBrush}" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Text="Charge on terminal" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    FontSize="22"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource PosAccentBrush}"
+                                    Text="{Binding CardFeeChargeTotalText, Mode=OneWay}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Button
+                        Command="{Binding ConfirmCardCommand}"
+                        Content="Charge card on Square"
+                        Style="{StaticResource GuestCloseoutCardStyle}" />
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{StaticResource PosBalanceNegativeBrush}"
+                        Text="{Binding StatusMessage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords"
+                        Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Button
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            Command="{Binding CancelCommand}"
+            Content="Cancel"
+            Style="{StaticResource TabsSlideFooterButtonStyle}"
+            Visibility="{Binding IsSummaryStep, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+        <Grid
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            ColumnSpacing="8"
+            Visibility="{Binding ShowFooterBack, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Command="{Binding BackCommand}"
+                Content="Back"
+                Style="{StaticResource TabsSlideFooterButtonStyle}" />
+            <Button
+                Grid.Column="1"
+                Command="{Binding CancelCommand}"
+                Content="Cancel"
+                Style="{StaticResource TabsSlideFooterButtonStyle}" />
+        </Grid>
+
+        <Border
+            Grid.RowSpan="2"
+            Background="#CC0F172A"
+            Visibility="{Binding ShowSendingSquareOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <StackPanel
+                Padding="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="12">
+                <ProgressRing
+                    Width="40"
+                    Height="40"
+                    Foreground="White"
+                    IsActive="True" />
+                <TextBlock
+                    MaxWidth="280"
+                    FontSize="14"
+                    Foreground="White"
+                    Text="{Binding SquareWaitingMessage, Mode=OneWay}"
+                    TextAlignment="Center"
+                    TextWrapping="WrapWholeWords" />
+                <Button
+                    Command="{Binding CancelSquarePaymentCommand}"
+                    Content="Cancel card payment"
+                    Style="{StaticResource TabsSlideFooterButtonStyle}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

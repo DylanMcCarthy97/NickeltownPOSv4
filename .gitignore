@@ -1,0 +1,54 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM64/
+publish/
+
+## Visual Studio / Rider
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+.idea/
+
+## WinUI / MSIX
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+AppPackages/
+BundleArtifacts/
+*.pfx
+
+## Logs and diagnostics
+logs/
+*.log
+builddiag*.txt
+build_diag.txt
+msb.log
+*.diag
+TcxLayoutDiagnostics*.txt
+
+## OS / tooling
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~
+
+## NuGet
+packages/
+*.nupkg
+
+## Secrets (never commit)
+.env
+.env.*
+secrets.json
+appsettings.*.local.json
+*credentials*

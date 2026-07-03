@@ -1,0 +1,13 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using NickeltownPOSV4.Models.Membership;
+
+namespace NickeltownPOSV4.Data.Sqlite;
+
+public interface IMembershipFormContentRepository
+{
+    Task<IReadOnlyList<MembershipFormContentSection>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    Task<MembershipFormContentSection?> GetByKeyAsync(string sectionKey, CancellationToken cancellationToken = default);
+}

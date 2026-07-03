@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.SystemCheckPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Page.Resources>
+        <conv:SystemCheckSeverityToBrushConverter x:Key="SeverityBrush" />
+    </Page.Resources>
+
+    <Grid Padding="14,12,14,12" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Grid.Column="0"
+                    Width="52"
+                    Height="52"
+                    Background="{StaticResource SettingsHeroAccentBrush}"
+                    CornerRadius="14">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="24"
+                        Foreground="#FFFFFFFF"
+                        Glyph="&#xE9F5;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="System Check" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        Style="{StaticResource SettingsHeroSubtitleStyle}"
+                        Text="Database, backups, Square and reconciliation diagnostics for clubroom deployment."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+                <Button
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Command="{Binding RunBackupCommand}"
+                    Content="Run backup"
+                    Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                <Button
+                    Grid.Column="3"
+                    Margin="6,0,0,0"
+                    VerticalAlignment="Center"
+                    Command="{Binding RefreshCommand}"
+                    Content="Refresh"
+                    Style="{StaticResource SettingsPrimaryButtonStyle}" />
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsRepeater ItemsSource="{Binding Rows, Mode=OneWay}">
+                <ItemsRepeater.Layout>
+                    <StackLayout Spacing="6" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate>
+                        <Border
+                            Padding="12,10"
+                            Background="{StaticResource SettingsCardElevatedBgBrush}"
+                            BorderBrush="{StaticResource SettingsCardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="20"
+                                    Foreground="{Binding Severity, Converter={StaticResource SeverityBrush}}"
+                                    Glyph="{Binding SeverityGlyph, Mode=OneWay}" />
+                                <StackPanel Grid.Column="1" Spacing="3">
+                                    <TextBlock
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                                        Text="{Binding Label, Mode=OneWay}" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                        Text="{Binding Value, Mode=OneWay}"
+                                        TextWrapping="WrapWholeWords" />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                        Text="{Binding Hint, Mode=OneWay}"
+                                        TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                                <TextBlock
+                                    Grid.Column="2"
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Foreground="{Binding Severity, Converter={StaticResource SeverityBrush}}"
+                                    Text="{Binding SeverityText, Mode=OneWay}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </ScrollViewer>
+
+        <TextBlock
+            Grid.Row="2"
+            FontSize="12"
+            Foreground="{StaticResource PosTextSecondaryBrush}"
+            Text="{Binding StatusMessage, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+
+        <Button
+            Grid.Row="3"
+            HorizontalAlignment="Left"
+            Command="{Binding BackCommand}"
+            Content="Back"
+            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+    </Grid>
+</Page>

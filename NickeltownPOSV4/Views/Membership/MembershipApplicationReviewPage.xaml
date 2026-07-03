@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Membership.MembershipApplicationReviewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Grid Padding="14,12,14,12" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="{Binding PageTitle, Mode=OneWay}" />
+                <TextBlock Style="{StaticResource SettingsHeroSubtitleStyle}" Text="{Binding ApplicationNumber, Mode=OneWay}" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="8">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Applicant summary" />
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding ApplicantSummary, Mode=OneWay}" />
+                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding ContactSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding VehicleSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding FeeSummary, Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Membership processing" />
+
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Receipt / payment" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="PAYMENT STATUS" />
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <RadioButton Content="Awaiting payment" GroupName="PaymentStatus" IsChecked="{Binding PaymentStatusAwaiting, Mode=TwoWay}" />
+                            <RadioButton Content="Paid" GroupName="PaymentStatus" IsChecked="{Binding PaymentStatusPaid, Mode=TwoWay}" />
+                            <RadioButton Content="Complimentary" GroupName="PaymentStatus" IsChecked="{Binding PaymentStatusComplimentary, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="RECEIPT NUMBER" />
+                            <Border
+                                MinHeight="46"
+                                Padding="14,10"
+                                Background="{StaticResource SettingsTapFieldBgBrush}"
+                                BorderBrush="{StaticResource SettingsTapFieldBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                                    Text="{Binding ReceiptNumberSummary, Mode=OneWay}" />
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="RECEIPT DATE" />
+                            <Button Command="{Binding EditReceiptDateCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding ReceiptDateSummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="PAYMENT METHOD" />
+                            <Button Command="{Binding CyclePaymentMethodCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding PaymentMethodText, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ENTERED BY" />
+                            <Button Command="{Binding EditPaymentEnteredByCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding PaymentEnteredBySummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="PAYMENT NOTES" />
+                            <Button Command="{Binding EditPaymentNotesCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding PaymentNotesSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            </Button>
+                        </StackPanel>
+
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Distribution lists" />
+                        <CheckBox Content="Added to member register" IsChecked="{Binding AddedToMemberRegister, Mode=TwoWay}" />
+                        <CheckBox Content="Added to email distribution list" IsChecked="{Binding AddedToEmailDistributionList, Mode=TwoWay}" />
+                        <CheckBox Content="Added to SMS distribution list" IsChecked="{Binding AddedToSmsDistributionList, Mode=TwoWay}" />
+
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Welcome pack" />
+                        <CheckBox Content="Membership card issued" IsChecked="{Binding MembershipCardIssued, Mode=TwoWay}" />
+                        <CheckBox Content="Welcome bag issued" IsChecked="{Binding WelcomeBagIssued, Mode=TwoWay}" />
+
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Membership acceptance" />
+                        <CheckBox Content="Approved" IsChecked="{Binding Approved, Mode=TwoWay}" />
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="APPROVED BY" />
+                            <Button Command="{Binding EditApprovedByCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding ApprovedBySummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="APPROVAL DATE" />
+                            <Button Command="{Binding EditApprovalDateCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                <TextBlock Text="{Binding ApprovalDateSummary, Mode=OneWay}" />
+                            </Button>
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Spacing="3">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MEMBERSHIP START" />
+                                <Button Command="{Binding EditMembershipStartCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                    <TextBlock Text="{Binding MembershipStartSummary, Mode=OneWay}" />
+                                </Button>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MEMBERSHIP EXPIRY" />
+                                <Button Command="{Binding EditMembershipExpiryCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                                    <TextBlock Text="{Binding MembershipExpirySummary, Mode=OneWay}" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Processing summary" />
+                        <Grid ColumnSpacing="12" RowSpacing="6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="RECEIPT ISSUED" />
+                                <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding DisplayReceiptIssued, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="RECEIPT DATE" />
+                                <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding DisplayReceiptDate, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MEMBERSHIP ACCEPTED" />
+                                <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding DisplayMembershipAcceptedDate, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MEMBERSHIP NUMBER" />
+                                <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding DisplayMembershipNumber, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="MEMBERSHIP STATUS" />
+                                <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding DisplayMembershipStatus, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="PAYMENT STATUS" />
+                                <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding DisplayPaymentStatus, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="10">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Committee notes" />
+                        <Button Command="{Binding EditNewNoteCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding NewNoteSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        </Button>
+                        <Button Command="{Binding AddNoteCommand}" Content="Add note" Style="{StaticResource SettingsSecondaryButtonStyle}" HorizontalAlignment="Left" />
+
+                        <ItemsRepeater ItemsSource="{Binding Notes, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="8" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="12,10"
+                                        Background="{StaticResource SettingsCardElevatedBgBrush}"
+                                        BorderBrush="{StaticResource SettingsCardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding Author, Mode=OneWay}" />
+                                            <TextBlock FontSize="12" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding DateTimeText, Mode=OneWay}" />
+                                            <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding Text, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="10">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Timeline" />
+                        <ItemsRepeater ItemsSource="{Binding Timeline, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="8" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="12,10"
+                                        Background="{StaticResource SettingsCardElevatedBgBrush}"
+                                        BorderBrush="{StaticResource SettingsCardBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding EventTitle, Mode=OneWay}" />
+                                            <TextBlock FontSize="12" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding DateTimeText, Mode=OneWay}" />
+                                            <TextBlock FontSize="12" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding User, Mode=OneWay}" />
+                                            <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                Command="{Binding SaveProcessingCommand}"
+                Content="Save processing"
+                Style="{StaticResource SettingsPrimaryButtonStyle}" />
+            <Button
+                Grid.Column="1"
+                MinWidth="100"
+                Command="{Binding BackCommand}"
+                Content="Back"
+                Style="{StaticResource SettingsSecondaryButtonStyle}" />
+        </Grid>
+
+        <TextBlock
+            Grid.Row="3"
+            FontSize="12"
+            Foreground="{StaticResource PosTextSecondaryBrush}"
+            Text="{Binding StatusMessage, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+    </Grid>
+</Page>

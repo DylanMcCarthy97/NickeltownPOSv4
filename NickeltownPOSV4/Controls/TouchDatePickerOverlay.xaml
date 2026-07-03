@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Controls.TouchDatePickerOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="DateStepBgBrush" Color="#FFEFF5FF" />
+        <SolidColorBrush x:Key="DateStepBorderBrush" Color="#FFBDD3FF" />
+
+        <Style x:Key="DateStepButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="Background" Value="{StaticResource DateStepBgBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource DateStepBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="DatePickerSecondaryButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="Background" Value="#FFF1F5F9" />
+            <Setter Property="BorderBrush" Value="#FFD6E1F5" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+
+        <Style x:Key="DatePickerDoneButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{StaticResource PosAccentBrush}" />
+            <Setter Property="BorderBrush" Value="#FF1E4FD6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#B30F172A">
+        <Border
+            MaxWidth="420"
+            Margin="24,24"
+            Padding="18"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="#FFFAFCFF"
+            BorderBrush="#FFCCDAF4"
+            BorderThickness="1"
+            CornerRadius="18">
+            <Border.Shadow>
+                <ThemeShadow />
+            </Border.Shadow>
+
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding Title, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis" />
+                    <Button
+                        Grid.Column="1"
+                        Width="40"
+                        Height="40"
+                        AutomationProperties.Name="Close"
+                        Command="{Binding CancelCommand, Mode=OneWay}"
+                        Style="{StaticResource TabsHeaderIconButtonStyle}">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE711;" />
+                    </Button>
+                </Grid>
+
+                <Border
+                    Grid.Row="1"
+                    Padding="12,10"
+                    Background="#FFF8FAFF"
+                    BorderBrush="#FFD6E3F5"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding PreviewText, Mode=OneWay}" />
+                </Border>
+
+                <Grid Grid.Row="2" ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Spacing="6">
+                        <Button Command="{Binding IncrementDayCommand, Mode=OneWay}" Content="▲" Style="{StaticResource DateStepButtonStyle}" />
+                        <Border
+                            MinHeight="52"
+                            Padding="8,6"
+                            Background="White"
+                            BorderBrush="#FFD6E1F5"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="24"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding Day, Mode=OneWay}" />
+                        </Border>
+                        <Button Command="{Binding DecrementDayCommand, Mode=OneWay}" Content="▼" Style="{StaticResource DateStepButtonStyle}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="DAY" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Spacing="6">
+                        <Button Command="{Binding IncrementMonthCommand, Mode=OneWay}" Content="▲" Style="{StaticResource DateStepButtonStyle}" />
+                        <Border
+                            MinHeight="52"
+                            Padding="8,6"
+                            Background="White"
+                            BorderBrush="#FFD6E1F5"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="20"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding MonthLabel, Mode=OneWay}" />
+                        </Border>
+                        <Button Command="{Binding DecrementMonthCommand, Mode=OneWay}" Content="▼" Style="{StaticResource DateStepButtonStyle}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="MONTH" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Spacing="6">
+                        <Button Command="{Binding IncrementYearCommand, Mode=OneWay}" Content="▲" Style="{StaticResource DateStepButtonStyle}" />
+                        <Border
+                            MinHeight="52"
+                            Padding="8,6"
+                            Background="White"
+                            BorderBrush="#FFD6E1F5"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="24"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding Year, Mode=OneWay}" />
+                        </Border>
+                        <Button Command="{Binding DecrementYearCommand, Mode=OneWay}" Content="▼" Style="{StaticResource DateStepButtonStyle}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="YEAR" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="3" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="1.2*" />
+                    </Grid.ColumnDefinitions>
+                    <Button
+                        Grid.Column="0"
+                        Command="{Binding TodayCommand, Mode=OneWay}"
+                        Content="Today"
+                        Style="{StaticResource DatePickerSecondaryButtonStyle}" />
+                    <Button
+                        Grid.Column="1"
+                        Command="{Binding ClearCommand, Mode=OneWay}"
+                        Content="Clear"
+                        Style="{StaticResource DatePickerSecondaryButtonStyle}" />
+                    <Button
+                        Grid.Column="2"
+                        Command="{Binding DoneCommand, Mode=OneWay}"
+                        Content="Done"
+                        Style="{StaticResource DatePickerDoneButtonStyle}" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

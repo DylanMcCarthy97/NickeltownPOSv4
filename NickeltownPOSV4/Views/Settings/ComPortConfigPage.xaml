@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Settings.ComPortConfigPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Grid Padding="14,12,14,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Margin="0,0,0,14" Style="{StaticResource SettingsPageHeroStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Grid.Column="0"
+                    Width="56"
+                    Height="56"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource SettingsHeroAccentBrush}"
+                    CornerRadius="16">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="26"
+                        Foreground="#FFFFFFFF"
+                        Glyph="&#xE839;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="COM port config" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        Style="{StaticResource SettingsHeroSubtitleStyle}"
+                        Text="Serial port and baud rate used by the cash drawer kick service (ESC p 0 25 250 pulse)."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            Padding="14,12"
+            Background="{StaticResource PosSurfaceBrush}"
+            BorderBrush="{StaticResource PosBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="12">
+            <Grid ColumnSpacing="12" RowSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="COM port" />
+                <ComboBox
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    MinHeight="40"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding AvailablePorts, Mode=OneWay}"
+                    SelectedItem="{Binding SelectedPort, Mode=TwoWay}" />
+                <Button
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    MinHeight="40"
+                    Command="{Binding RefreshPortsCommand}"
+                    Content="Refresh"
+                    Style="{StaticResource TabsHeaderActionButtonStyle}" />
+
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="Baud rate" />
+                <ComboBox
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    MinHeight="40"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding BaudRates, Mode=OneWay}"
+                    SelectedItem="{Binding SelectedBaudRate, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="2" Margin="0,12,0,0" Spacing="10">
+            <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="0"
+                    MinHeight="48"
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding SaveCommand}"
+                    Content="Save"
+                    Style="{StaticResource TabsPagerButtonStyle}" />
+                <Button
+                    Grid.Column="1"
+                    MinHeight="48"
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding KickDrawerCommand}"
+                    Content="Test: kick drawer"
+                    Style="{StaticResource TabsHeaderActionButtonStyle}" />
+            </Grid>
+
+            <TextBlock
+                FontSize="12"
+                Foreground="{StaticResource PosTextSecondaryBrush}"
+                Text="{Binding StatusMessage, Mode=OneWay}"
+                TextWrapping="WrapWholeWords" />
+        </StackPanel>
+
+        <Button
+            Grid.Row="3"
+            MinHeight="44"
+            Margin="0,12,0,0"
+            HorizontalAlignment="Left"
+            Command="{Binding BackToSettingsCommand}"
+            Content="Back to settings"
+            Style="{StaticResource TabsHeaderActionButtonStyle}" />
+    </Grid>
+</Page>

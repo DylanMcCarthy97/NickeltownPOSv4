@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "NickeltownPOSV4 (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "NickeltownPOSV4 (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

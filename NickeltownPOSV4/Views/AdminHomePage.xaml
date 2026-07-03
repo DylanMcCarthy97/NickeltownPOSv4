@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.AdminHomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:controls="using:NickeltownPOSV4.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="AdminTileButtonStyle" TargetType="Button" BasedOn="{StaticResource PosHubTileButtonStyle}">
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="MinHeight" Value="118" />
+        </Style>
+    </Page.Resources>
+
+    <Grid Padding="{StaticResource PosPagePadding}" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <controls:PosPageHero
+            Grid.Row="0"
+            IconGlyph="&#xE90F;"
+            Subtitle="Backups, peripherals, users, and store configuration. PDF reports are under Reports."
+            Title="Admin" />
+
+        <Border
+            Grid.Row="1"
+            Margin="0,0,0,0"
+            Padding="14,12"
+            Background="#33C62828"
+            BorderBrush="#FFC62828"
+            BorderThickness="1"
+            CornerRadius="12"
+            Visibility="{Binding PaymentRecoveryRequired, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <StackPanel Spacing="10">
+                <TextBlock
+                    FontSize="17"
+                    FontWeight="Bold"
+                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                    Text="Payment Recovery Required" />
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Amount" />
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding PaymentRecoveryAmountText, Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Date / time" />
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding PaymentRecoveryWhenText, Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="2">
+                        <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Transaction id" />
+                        <TextBlock
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="{Binding PaymentRecoveryTransactionId, Mode=OneWay}"
+                            TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                </Grid>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button
+                        Grid.Column="0"
+                        Command="{Binding RecoverPaymentCommand}"
+                        Content="Recover Sale"
+                        Style="{StaticResource SettingsPrimaryButtonStyle}" />
+                    <Button
+                        Grid.Column="1"
+                        Command="{Binding IgnorePaymentRecoveryCommand}"
+                        Content="Ignore"
+                        Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                    <Button
+                        Grid.Column="2"
+                        Command="{Binding ViewPaymentRecoveryCommand}"
+                        Content="View Details"
+                        Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!--  Admin tile grid (4 columns x 3 rows)  -->
+        <Grid
+            Grid.Row="2"
+            Margin="0,4,0,0"
+            ColumnSpacing="10"
+            RowSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="0"
+                AutomationProperties.Name="Backup now"
+                Command="{Binding BackupNowCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE7B8;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Backup now" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Create system backup"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="1"
+                AutomationProperties.Name="View archived"
+                Command="{Binding ViewArchivedCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE7B8;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="View archived" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Browse archived data"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="2"
+                AutomationProperties.Name="Email configuration"
+                Command="{Binding EmailConfigCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE715;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Email configuration" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Configure email settings"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="3"
+                AutomationProperties.Name="COM port config"
+                Command="{Binding ComPortConfigCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8C5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="COM port config" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Serial port settings"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="0"
+                AutomationProperties.Name="Kick cash drawer"
+                Command="{Binding KickCashDrawerCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8A5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Kick cash drawer" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Open cash drawer"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="1"
+                AutomationProperties.Name="Stock management"
+                Command="{Binding StockManagementCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8D1;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Stock management" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Manage inventory"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="2"
+                AutomationProperties.Name="Square settings"
+                Command="{Binding SquareSettingsCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8C5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Square settings" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Configure Square &amp; diagnostics"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="3"
+                AutomationProperties.Name="Data import export"
+                Command="{Binding DataImportExportCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8B5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Data import/export" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Import or export data"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="2"
+                Grid.Column="0"
+                AutomationProperties.Name="Previous Pitstops"
+                Command="{Binding ViewPreviousPitstopsCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE81C;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Previous Pitstops" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Archived Pitstop EOD events"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="2"
+                Grid.Column="1"
+                AutomationProperties.Name="User management"
+                Command="{Binding UserManagementCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE716;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="User management" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Manage users"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="2"
+                Grid.Column="2"
+                AutomationProperties.Name="Square Recovery"
+                Command="{Binding SquareRecoveryCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE946;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Square Recovery" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Reconcile orphan Square payments"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="2"
+                Grid.Column="3"
+                AutomationProperties.Name="System Check"
+                Command="{Binding SystemCheckCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE9F5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="System Check" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="DB, backups, Square &amp; diagnostics"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <!-- MEMBERSHIP MODULE DISABLED - re-enable in ServiceCollection/App/AdminHome
+            <Button
+                Grid.Row="3"
+                Grid.Column="2"
+                AutomationProperties.Name="Memberships"
+                Command="{Binding MembershipCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE716;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Memberships" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Applications, members, renewals &amp; settings"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+            -->
+
+            <Button
+                Grid.Row="3"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                AutomationProperties.Name="Software updates"
+                Command="{Binding AppUpdatesCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE895;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Software updates" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Auto-update feed for kiosk MSIX installs"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+        </Grid>
+    </Grid>
+</Page>

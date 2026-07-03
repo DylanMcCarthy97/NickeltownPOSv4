@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.PreviousPitstopsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Page.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Padding="14,12,14,12" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Grid.Column="0"
+                    Width="52"
+                    Height="52"
+                    Background="{StaticResource SettingsHeroAccentBrush}"
+                    CornerRadius="14">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="24"
+                        Foreground="#FFFFFFFF"
+                        Glyph="&#xE8A5;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Previous Pitstops" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        Style="{StaticResource SettingsHeroSubtitleStyle}"
+                        Text="Archived Pitstop events (sales kept; stock not restored). Admin only." />
+                </StackPanel>
+                <Button
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Command="{Binding RefreshCommand}"
+                    Style="{StaticResource SettingsPrimaryButtonStyle}">
+                    <TextBlock Text="Refresh" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource SettingsCardStyle}">
+            <Grid>
+                <ItemsRepeater ItemsSource="{Binding Rows.CurrentPageItems, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="6" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate>
+                            <Border
+                                Padding="12,10"
+                                Background="{StaticResource SettingsCardElevatedBgBrush}"
+                                BorderBrush="{StaticResource SettingsCardBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                                <StackPanel Spacing="6">
+                                    <TextBlock
+                                        FontSize="15"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                                        Text="{Binding EventName, Mode=OneWay}" />
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                        <Run Text="{Binding ArchivedAtText, Mode=OneWay}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding SaleCountText, Mode=OneWay}" />
+                                        <Run Text=" sales · " />
+                                        <Run Text="{Binding OperatorText, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                        Text="{Binding TotalsSummaryText, Mode=OneWay}"
+                                        TextWrapping="WrapWholeWords" />
+                                    <Grid ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button
+                                            Grid.Column="0"
+                                            Command="{Binding ViewDetailsCommand}"
+                                            Content="Details"
+                                            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                        <Button
+                                            Grid.Column="1"
+                                            Command="{Binding ReprintCommand}"
+                                            Content="Reprint"
+                                            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                        <Button
+                                            Grid.Column="2"
+                                            Command="{Binding ViewItemsCommand}"
+                                            Content="Items"
+                                            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                        <Button
+                                            Grid.Column="3"
+                                            Command="{Binding ViewTransactionsCommand}"
+                                            Content="Txns"
+                                            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="14"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="No archived Pitstop events yet."
+                    Visibility="{Binding Rows.IsEmpty, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{StaticResource PosTextSecondaryBrush}"
+                Text="{Binding Rows.RangeIndicator, Mode=OneWay}" />
+            <Button
+                Grid.Column="1"
+                Command="{Binding Rows.PreviousPageCommand}"
+                Content="Prev"
+                Style="{StaticResource SettingsPagerButtonStyle}" />
+            <Button
+                Grid.Column="2"
+                Command="{Binding Rows.NextPageCommand}"
+                Content="Next"
+                Style="{StaticResource SettingsPagerButtonStyle}" />
+        </Grid>
+
+        <TextBlock
+            Grid.Row="3"
+            FontSize="12"
+            Foreground="{StaticResource PosTextSecondaryBrush}"
+            Text="{Binding StatusMessage, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+
+        <Button
+            Grid.Row="4"
+            HorizontalAlignment="Left"
+            Command="{Binding BackCommand}"
+            Content="Back"
+            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+    </Grid>
+</Page>

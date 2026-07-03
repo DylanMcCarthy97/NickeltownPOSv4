@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Settings.EmailConfigPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Grid Padding="14,12,14,12" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Modern hero header  -->
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Grid.Column="0"
+                    Width="52"
+                    Height="52"
+                    Background="{StaticResource SettingsHeroAccentBrush}"
+                    CornerRadius="14">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="24"
+                        Foreground="#FFFFFFFF"
+                        Glyph="&#xE715;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Email configuration" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        Style="{StaticResource SettingsHeroSubtitleStyle}"
+                        Text="SMTP credentials used by monthly and stock email actions. Use an app-specific password for Gmail." />
+                </StackPanel>
+                <Button
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Command="{Binding ImportFromV2Command}"
+                    Style="{StaticResource SettingsPrimaryButtonStyle}"
+                    ToolTipService.ToolTip="Choose a legacy email_config.json file and import it into the POS settings store.">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="16" Foreground="#FFFFFFFF" Glyph="&#xE8B5;" />
+                        <TextBlock Text="Import config file…" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!--  Two paired cards: Server / Sender  -->
+        <Grid Grid.Row="1" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource SettingsCardStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="SMTP server" />
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="HOST" />
+                        <Button Command="{Binding EditSmtpServerCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding SmtpServerSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="PORT" />
+                        <Button
+                            HorizontalAlignment="Left"
+                            MinWidth="180"
+                            Command="{Binding EditSmtpPortCommand}"
+                            Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding SmtpPortSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SSL / TLS" />
+                        <ToggleSwitch
+                            IsOn="{Binding EnableSsl, Mode=TwoWay}"
+                            OffContent="Off"
+                            OnContent="On" />
+                    </StackPanel>
+
+                    <Border
+                        Margin="0,6,0,0"
+                        Padding="12,10"
+                        Background="{StaticResource SettingsCardElevatedBgBrush}"
+                        CornerRadius="10">
+                        <StackPanel Spacing="4">
+                            <TextBlock
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="V2 MIGRATION" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding LegacyConfigSummary, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Style="{StaticResource SettingsCardStyle}">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Sender + recipients" />
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SENDER EMAIL" />
+                        <Button Command="{Binding EditSenderEmailCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding SenderEmailSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SENDER PASSWORD" />
+                        <Button Command="{Binding EditSenderPasswordCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding SenderPasswordSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SENDER NAME" />
+                        <Button Command="{Binding EditSenderNameCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock Text="{Binding SenderNameSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Spacing="3">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="RECIPIENTS (comma separated)" />
+                        <Button
+                            MinHeight="48"
+                            Command="{Binding EditRecipientsCommand}"
+                            Style="{StaticResource SettingsTapFieldStyle}">
+                            <TextBlock
+                                MaxLines="2"
+                                Text="{Binding RecipientSummary, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="WrapWholeWords" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                HorizontalAlignment="Stretch"
+                Command="{Binding SaveCommand}"
+                Content="Save"
+                Style="{StaticResource SettingsPrimaryButtonStyle}" />
+            <Button
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                Command="{Binding SendTestCommand}"
+                Content="Save and send test email"
+                Style="{StaticResource SettingsSecondaryButtonStyle}" />
+        </Grid>
+
+        <TextBlock
+            Grid.Row="3"
+            FontSize="12"
+            Foreground="{StaticResource PosTextSecondaryBrush}"
+            Text="{Binding StatusMessage, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+
+        <Button
+            Grid.Row="4"
+            HorizontalAlignment="Left"
+            Command="{Binding BackToSettingsCommand}"
+            Content="Back to settings"
+            Style="{StaticResource SettingsSecondaryButtonStyle}" />
+    </Grid>
+</Page>

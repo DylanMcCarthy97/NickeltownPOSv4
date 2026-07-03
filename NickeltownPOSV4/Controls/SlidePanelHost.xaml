@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Controls.SlidePanelHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    IsHitTestVisible="False"
+    mc:Ignorable="d">
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />
+    </UserControl.KeyboardAccelerators>
+
+    <Grid x:Name="LayerGrid" Background="Transparent">
+        <Border
+            x:Name="DimOverlay"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Background="#990F172A"
+            IsHitTestVisible="False"
+            Opacity="0"
+            Tapped="DimOverlay_Tapped" />
+
+        <Border
+            x:Name="PanelChrome"
+            Width="488"
+            Padding="0,0,0,12"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Stretch"
+            Background="{StaticResource PosSurfaceBrush}"
+            BorderBrush="{StaticResource PosBorderBrush}"
+            BorderThickness="2,0,0,0">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="PanelSlideTransform" X="488" />
+            </Border.RenderTransform>
+            <ContentPresenter
+                x:Name="Presenter"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch" />
+        </Border>
+    </Grid>
+</UserControl>

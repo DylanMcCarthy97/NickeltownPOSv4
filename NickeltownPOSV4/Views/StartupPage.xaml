@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.StartupPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Width="1024" Height="768" Background="{StaticResource PosCanvasBrush}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock
+                Margin="0,0,0,20"
+                FontSize="32"
+                FontWeight="SemiBold"
+                Foreground="{StaticResource PosTextPrimaryBrush}"
+                Text="Nickeltown POS"
+                TextAlignment="Center" />
+            <ProgressRing
+                Width="48"
+                Height="48"
+                Margin="0,0,0,20"
+                HorizontalAlignment="Center"
+                IsActive="True" />
+            <TextBlock
+                x:Name="StatusText"
+                Margin="0,0,0,12"
+                FontSize="16"
+                Foreground="{StaticResource PosTextSecondaryBrush}"
+                Text="Starting…"
+                TextAlignment="Center" />
+            <TextBlock
+                x:Name="ErrorText"
+                MaxWidth="520"
+                Margin="0,0,0,12"
+                FontSize="14"
+                Foreground="#FFB91C1C"
+                TextAlignment="Center"
+                TextWrapping="Wrap"
+                Visibility="Collapsed" />
+            <Button
+                x:Name="CloseAppButton"
+                MinWidth="160"
+                MinHeight="48"
+                Click="CloseApp_Click"
+                Content="Close"
+                Style="{StaticResource TabsHeaderActionButtonStyle}"
+                Visibility="Collapsed" />
+        </StackPanel>
+    </Grid>
+</Page>

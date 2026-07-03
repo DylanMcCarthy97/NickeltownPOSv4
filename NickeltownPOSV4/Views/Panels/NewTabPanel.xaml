@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Views.Panels.NewTabPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <SolidColorBrush x:Key="TapFieldBgBrush" Color="#FFF8FAFF" />
+        <SolidColorBrush x:Key="TapFieldBorderBrush" Color="#FFD6E3F5" />
+    </UserControl.Resources>
+    <Grid Padding="12,10,12,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer
+            Grid.Row="0"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalAlignment="Stretch"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="0">
+                <TextBlock
+                    FontSize="22"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                    Text="New Member Tab" />
+                <TextBlock
+                    Margin="0,8,0,0"
+                    FontSize="12"
+                    Foreground="{StaticResource PosBalanceNegativeBrush}"
+                    Text="{Binding StatusMessage, Mode=OneWay}"
+                    TextWrapping="WrapWholeWords"
+                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                <TextBlock
+                    Margin="0,8,0,2"
+                    FontSize="11"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="Member / account name" />
+                <Button
+                    MinHeight="48"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    Padding="12,10"
+                    Background="{StaticResource TapFieldBgBrush}"
+                    BorderBrush="{StaticResource TapFieldBorderBrush}"
+                    BorderThickness="1"
+                    Command="{Binding BeginNameEntryCommand}"
+                    CornerRadius="10"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                    Style="{StaticResource TabsHeaderActionButtonStyle}">
+                    <TextBlock Text="{Binding NameEntrySummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                </Button>
+                <TextBlock
+                    Margin="0,10,0,2"
+                    FontSize="11"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="Starting funds" />
+                <Button
+                    MinHeight="48"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    Padding="12,10"
+                    Background="{StaticResource TapFieldBgBrush}"
+                    BorderBrush="{StaticResource TapFieldBorderBrush}"
+                    BorderThickness="1"
+                    Command="{Binding BeginStartingFundsCommand}"
+                    CornerRadius="10"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                    Style="{StaticResource TabsHeaderActionButtonStyle}">
+                    <TextBlock Text="{Binding StartingFundsDisplay, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                </Button>
+                <TextBlock
+                    Margin="0,10,0,2"
+                    FontSize="11"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="Notes" />
+                <Button
+                    MinHeight="52"
+                    Margin="0,0,0,4"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Left"
+                    Padding="12,10"
+                    Background="{StaticResource TapFieldBgBrush}"
+                    BorderBrush="{StaticResource TapFieldBorderBrush}"
+                    BorderThickness="1"
+                    Command="{Binding BeginNotesEntryCommand}"
+                    CornerRadius="10"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                    Style="{StaticResource TabsHeaderActionButtonStyle}">
+                    <TextBlock
+                        MaxLines="4"
+                        Text="{Binding NotesSummary, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="WrapWholeWords" />
+                </Button>
+            </StackPanel>
+        </ScrollViewer>
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                Command="{Binding CancelCommand}"
+                Content="Cancel"
+                Style="{StaticResource TabsSlideFooterButtonStyle}" />
+            <Button
+                Grid.Column="2"
+                Command="{Binding SaveCommand}"
+                Content="Create"
+                Style="{StaticResource TabsSlideFooterButtonStyle}" />
+        </Grid>
+    </Grid>
+</UserControl>

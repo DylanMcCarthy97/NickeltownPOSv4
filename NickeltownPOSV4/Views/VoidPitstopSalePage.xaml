@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.VoidPitstopSalePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Grid Padding="14,12,14,12" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Void Pitstop sale" />
+                <TextBlock
+                    Style="{StaticResource SettingsHeroSubtitleStyle}"
+                    Text="Pick an active sale to mark as Voided. Stock is restored if the original sale deducted stock. Square sales must be refunded in Square."
+                    TextWrapping="WrapWholeWords" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Rows, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border
+                            Margin="0,4"
+                            Padding="14,12"
+                            Background="{StaticResource PosSurfaceBrush}"
+                            BorderBrush="{StaticResource PosBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="4">
+                                    <TextBlock FontSize="15" FontWeight="SemiBold">
+                                        <Run Text="Sale #" />
+                                        <Run Text="{Binding SaleId, Mode=OneWay}" />
+                                        <Run Text="  •  " />
+                                        <Run Text="{Binding TotalText, Mode=OneWay}" />
+                                        <Run Text="  •  " />
+                                        <Run Text="{Binding PaymentMethod, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock FontSize="12" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                        <Run Text="{Binding SoldAtText, Mode=OneWay}" />
+                                        <Run Text=" · staff " />
+                                        <Run Text="{Binding StaffDisplayName, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock FontSize="12" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding StockNote, Mode=OneWay}" />
+                                </StackPanel>
+                                <Button
+                                    Grid.Column="1"
+                                    MinWidth="120"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding VoidCommand}"
+                                    Content="Void"
+                                    Style="{StaticResource SettingsPrimaryButtonStyle}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10">
+            <Button Command="{Binding RefreshCommand}" Content="Refresh" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+            <Button Command="{Binding BackCommand}" Content="Back" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+            <TextBlock
+                Margin="6,0,0,0"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{StaticResource PosTextSecondaryBrush}"
+                Text="{Binding StatusMessage, Mode=OneWay}"
+                TextWrapping="WrapWholeWords" />
+        </StackPanel>
+    </Grid>
+</Page>

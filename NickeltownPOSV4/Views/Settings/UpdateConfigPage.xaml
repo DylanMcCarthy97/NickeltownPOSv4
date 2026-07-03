@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Settings.UpdateConfigPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Page.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Padding="14,12,14,12" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Software updates" />
+                <TextBlock
+                    Margin="0,2,0,0"
+                    Style="{StaticResource SettingsHeroSubtitleStyle}"
+                    Text="Kiosk checks your update server on startup and installs new MSIX packages automatically." />
+                <TextBlock
+                    Margin="0,8,0,0"
+                    FontWeight="SemiBold"
+                    Text="{Binding CurrentVersionText, Mode=OneWay}" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource SettingsCardStyle}">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Update feed (folder, https://, or UNC)" />
+                <TextBox
+                    PlaceholderText="https://your-server/pos-updates  or  \\server\share\pos-updates"
+                    Text="{Binding FeedBaseUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox Content="Check for updates when the app starts" IsChecked="{Binding CheckOnStartup, Mode=TwoWay}" />
+                <CheckBox Content="Install automatically without asking (kiosk)" IsChecked="{Binding AutoInstall, Mode=TwoWay}" />
+                <TextBlock
+                    FontSize="13"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="First-time setup: install the app once from the .msix. Later releases only need a new package and update-manifest.json on the feed."
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    Foreground="#FFB91C1C"
+                    Text="{Binding StatusMessage, Mode=OneWay}"
+                    TextWrapping="Wrap"
+                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                Command="{Binding CheckNowCommand}"
+                Content="Check now"
+                Style="{StaticResource SettingsPrimaryButtonStyle}" />
+            <Button
+                Grid.Column="1"
+                Command="{Binding SaveCommand}"
+                Content="Save"
+                Style="{StaticResource SettingsPrimaryButtonStyle}" />
+        </Grid>
+    </Grid>
+</Page>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Membership.MembershipHomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:NickeltownPOSV4.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Required">
+
+    <Page.Resources>
+        <Style x:Key="MembershipTileButtonStyle" TargetType="Button" BasedOn="{StaticResource PosHubTileButtonStyle}">
+            <Setter Property="MinHeight" Value="108" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="CornerRadius" Value="14" />
+        </Style>
+    </Page.Resources>
+
+    <Grid Padding="{StaticResource PosPagePadding}" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <controls:PosPageHero
+            Grid.Row="0"
+            IconGlyph="&#xE716;"
+            Subtitle="Applications, members, renewals, payments, cards, documents, and committee settings."
+            Title="Memberships" />
+
+        <Grid
+            Grid.Row="1"
+            Margin="0,4,0,0"
+            ColumnSpacing="10"
+            RowSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Button Grid.Row="0" Grid.Column="0" Command="{Binding OpenDashboardCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE9D2;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Dashboard" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Membership overview" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="0" Grid.Column="1" Command="{Binding OpenApplicationsCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE7C3;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Applications" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Review new applications" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="0" Grid.Column="2" Command="{Binding OpenMembersCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE716;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Members" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Active member register" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="0" Grid.Column="3" Command="{Binding OpenRenewalsCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE823;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Renewals" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Expiring memberships" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="1" Grid.Column="0" Command="{Binding OpenPaymentsCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE8C5;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Payments" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Fees and payment status" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="1" Grid.Column="1" Command="{Binding OpenCardsCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE8A5;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Membership Cards" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Card issuance tracking" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="1" Grid.Column="2" Command="{Binding OpenDocumentsCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE8A5;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Documents" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Forms and generated files" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="1" Grid.Column="3" Command="{Binding OpenReportsCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE9F9;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Reports" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Membership reporting" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Command="{Binding OpenSettingsCommand}" Style="{StaticResource MembershipTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon HorizontalAlignment="Left" FontSize="26" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE713;" />
+                    <TextBlock FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Settings" />
+                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Fees, membership year, club contact details, and reminders" TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+        </Grid>
+    </Grid>
+</Page>
