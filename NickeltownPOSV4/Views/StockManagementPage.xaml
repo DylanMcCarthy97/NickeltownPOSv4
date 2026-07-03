@@ -72,8 +72,14 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <TextBlock VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding ItemCountText, Mode=OneWay}" />
-                    <Button MinHeight="44" MinWidth="108" Click="AddItem_Click" Content="Add item" CornerRadius="12" Style="{StaticResource TabsHeaderActionButtonStyle}" />
-                    <Button MinHeight="44" MinWidth="96" Click="RefreshStock_Click" Content="Refresh" CornerRadius="12" Style="{StaticResource TabsHeaderActionButtonStyle}" />
+                    <Button
+                        MinHeight="44"
+                        MinWidth="108"
+                        AutomationProperties.Name="Add item"
+                        Click="AddItem_Click"
+                        Content="Add item"
+                        CornerRadius="12"
+                        Style="{StaticResource TabsHeaderActionButtonStyle}" />                    <Button MinHeight="44" MinWidth="96" Click="RefreshStock_Click" Content="Refresh" CornerRadius="12" Style="{StaticResource TabsHeaderActionButtonStyle}" />
                 </StackPanel>
             </Grid>
             <Border
