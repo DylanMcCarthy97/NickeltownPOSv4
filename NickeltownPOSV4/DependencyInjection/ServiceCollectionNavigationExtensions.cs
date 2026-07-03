@@ -21,6 +21,8 @@ internal static class ServiceCollectionNavigationExtensions
         services.AddSingleton<IWindowHandleProvider>(sp => sp.GetRequiredService<WindowHandleProvider>());
         services.AddSingleton<UserSessionService>();
         services.AddSingleton<IUserSessionService>(sp => sp.GetRequiredService<UserSessionService>());
+        services.AddSingleton<IAuthSignOutService, AuthSignOutService>();
+        services.AddSingleton<ISessionInactivityService, SessionInactivityService>();
         services.AddSingleton<IRootNavigationCoordinator, RootNavigationCoordinator>();
         services.AddSingleton<IStaffPinLookupCache, StaffPinLookupCache>();
         services.AddSingleton<IAuthenticationService, SqliteAuthenticationService>();

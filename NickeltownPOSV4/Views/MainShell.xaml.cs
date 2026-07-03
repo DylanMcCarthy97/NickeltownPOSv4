@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.ViewModels;
@@ -26,12 +27,17 @@ public sealed partial class MainShell : Page
         if (DataContext is MainShellViewModel vm)
         {
             ShellContentFrame.CacheSize = 8;
+            ShellContentFrame.Navigated += OnShellContentNavigated;
             vm.InitializeShell(ShellContentFrame);
         }
     }
 
+    private void OnShellContentNavigated(object sender, NavigationEventArgs e) =>
+        App.Services.GetRequiredService<ISessionInactivityService>().NotifyActivity();
+
     private void RouteButton_Click(object sender, RoutedEventArgs e)
     {
+        App.Services.GetRequiredService<ISessionInactivityService>().NotifyActivity();
         if (sender is not Button button || button.Tag is not string tag || !int.TryParse(tag, out var index))
         {
             return;

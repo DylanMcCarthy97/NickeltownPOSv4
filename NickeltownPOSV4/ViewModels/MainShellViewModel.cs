@@ -30,6 +30,8 @@ public sealed class MainShellViewModel : ObservableViewModel
 
     private readonly ISquareConfigService _squareConfig;
 
+    private readonly IAuthSignOutService _signOut;
+
     private string _headerTitle = "Nickeltown POS";
 
     private ShellRoute? _selectedRoute;
@@ -52,7 +54,8 @@ public sealed class MainShellViewModel : ObservableViewModel
         IUserSessionService session,
         IRootNavigationCoordinator rootNav,
         ISlidePanelService slide,
-        ISquareConfigService squareConfig)
+        ISquareConfigService squareConfig,
+        IAuthSignOutService signOut)
     {
         _navigation = navigation;
         _workspace = workspace;
@@ -60,6 +63,7 @@ public sealed class MainShellViewModel : ObservableViewModel
         _rootNav = rootNav;
         _slide = slide;
         _squareConfig = squareConfig;
+        _signOut = signOut;
 
         Routes = new ObservableCollection<ShellRoute>(
         [
@@ -97,6 +101,9 @@ public sealed class MainShellViewModel : ObservableViewModel
         {
             OnPropertyChanged(nameof(CanOpenAdminRoute));
             OnPropertyChanged(nameof(CanOpenReportsRoute));
+            OnPropertyChanged(nameof(SignedInUserText));
+            OnPropertyChanged(nameof(SignedInUserToolTip));
+            OnPropertyChanged(nameof(ShowSignedInUser));
             // OnPropertyChanged(nameof(CanOpenTreasurerRoute));
         }
     }
@@ -164,10 +171,35 @@ public sealed class MainShellViewModel : ObservableViewModel
         private set => SetProperty(ref _squareIsOnline, value);
     }
 
+    public bool ShowSignedInUser => _session.IsSignedIn && !string.IsNullOrWhiteSpace(SignedInUserText);
+
+    public string SignedInUserText
+    {
+        get
+        {
+            var name = _session.DisplayName?.Trim();
+            return string.IsNullOrWhiteSpace(name) ? string.Empty : name;
+        }
+    }
+
+    public string SignedInUserToolTip
+    {
+        get
+        {
+            var role = _session.Role?.Trim();
+            return string.IsNullOrWhiteSpace(role)
+                ? "Signed in"
+                : $"Signed in · {CultureInfo.CurrentCulture.TextInfo.ToTitleCase(role)}";
+        }
+    }
+
     public void InitializeShell(Frame shellFrame)
     {
         _navigation.AttachShellFrame(shellFrame);
         StartFooterTimers(shellFrame.DispatcherQueue);
+        OnPropertyChanged(nameof(SignedInUserText));
+        OnPropertyChanged(nameof(SignedInUserToolTip));
+        OnPropertyChanged(nameof(ShowSignedInUser));
 
         // Everyone starts on Tabs; nothing in that route is restricted.
         NavigateToRoute(TabsRoute);
@@ -216,12 +248,7 @@ public sealed class MainShellViewModel : ObservableViewModel
         SquareIsOnline = online;
     }
 
-    private void SignOut()
-    {
-        _slide.Close();
-        _session.Clear();
-        _rootNav.NavigateToLogin();
-    }
+    private void SignOut() => _signOut.SignOut();
 
     private void NavigateTo(ShellRoute? route)
     {

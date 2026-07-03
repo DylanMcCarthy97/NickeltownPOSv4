@@ -32,6 +32,8 @@ public sealed class SettingsPageViewModel : ObservableViewModel
     private readonly INavigationService _navigation;
     private readonly IRootNavigationCoordinator _rootNav;
     private readonly ISlidePanelService _slidePanel;
+    private readonly IAuthSignOutService _signOut;
+
     private readonly ISerialCashDrawerService _cashDrawer;
 
     private readonly IPosThemeService _themes;
@@ -65,7 +67,8 @@ public sealed class SettingsPageViewModel : ObservableViewModel
         IPosThemeService themes,
         Data.Sqlite.SqliteConnectionFactory db,
         ISquareRecoveryRepository squareRecovery,
-        IPitstopPaymentRecoveryService paymentRecovery)
+        IPitstopPaymentRecoveryService paymentRecovery,
+        IAuthSignOutService signOut)
     {
         _session = session;
         _navigation = navigation;
@@ -76,6 +79,7 @@ public sealed class SettingsPageViewModel : ObservableViewModel
         _db = db;
         _squareRecovery = squareRecovery;
         _paymentRecovery = paymentRecovery;
+        _signOut = signOut;
 
         _isAdmin = _session.IsManager;
         _session.PropertyChanged += OnSessionPropertyChanged;
@@ -281,12 +285,7 @@ public sealed class SettingsPageViewModel : ObservableViewModel
             new ShellRoute { Id = "settings", Title = "Settings", Glyph = "\uE713" });
     }
 
-    private void Logout()
-    {
-        _slidePanel.Close();
-        _session.Clear();
-        _rootNav.NavigateToLogin();
-    }
+    private void Logout() => _signOut.SignOut();
 
     private void ExitApp() => Application.Current.Exit();
 

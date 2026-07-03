@@ -64,6 +64,8 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     private readonly ISerialCashDrawerService _cashDrawer;
 
+    private readonly IAuthSignOutService _signOut;
+
     private readonly IAuditLogService _audit;
 
     private readonly List<PitstopCatalogProductRow> _allProducts = new();
@@ -144,7 +146,8 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         ISlidePanelService slidePanel,
         IRootNavigationCoordinator rootNav,
         ISerialCashDrawerService cashDrawer,
-        IAuditLogService audit)
+        IAuditLogService audit,
+        IAuthSignOutService signOut)
     {
         _catalog = catalog;
         _sales = sales;
@@ -161,6 +164,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         _rootNav = rootNav;
         _cashDrawer = cashDrawer;
         _audit = audit;
+        _signOut = signOut;
         _refreshBus.RefreshRequested += OnSharedPosDataRefreshRequested;
 
         CategoryChips = new ObservableCollection<PitstopCategoryChipViewModel>();
@@ -191,12 +195,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     public IRelayCommand SignOutCommand { get; }
 
-    private void SignOut()
-    {
-        _slidePanel.Close();
-        _session.Clear();
-        _rootNav.NavigateToLogin();
-    }
+    private void SignOut() => _signOut.SignOut();
 
     public PitstopCashNumpadHostViewModel CashNumpad => _cashNumpad;
 

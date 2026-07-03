@@ -232,6 +232,24 @@
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="14">
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="6"
+                        ToolTipService.ToolTip="{Binding SignedInUserToolTip, Mode=OneWay}"
+                        Visibility="{Binding ShowSignedInUser, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            FontSize="12"
+                            Foreground="{StaticResource PosOnDarkSecondaryForegroundBrush}"
+                            Glyph="&#xE77B;" />
+                        <TextBlock
+                            MaxWidth="140"
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosOnDarkForegroundBrush}"
+                            Text="{Binding SignedInUserText, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon
                             FontFamily="Segoe MDL2 Assets"

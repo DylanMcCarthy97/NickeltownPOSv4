@@ -57,6 +57,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     private readonly IRootNavigationCoordinator _rootNav;
 
+    private readonly IAuthSignOutService _signOut;
+
     private readonly INavigationService _navigation;
 
     private readonly IGuestCloseoutOpenBus _guestCloseoutOpen;
@@ -128,7 +130,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         INavigationService navigation,
         IGuestCloseoutOpenBus guestCloseoutOpen,
         IInputOverlayService inputOverlay,
-        IAuthenticationService authentication)
+        IAuthenticationService authentication,
+        IAuthSignOutService signOut)
     {
         _tabQuery = tabQuery;
         _refreshBus = refreshBus;
@@ -145,6 +148,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         _tabHistorySession = tabHistorySession;
         _undo = undo;
         _rootNav = rootNav;
+        _signOut = signOut;
         _navigation = navigation;
         _guestCloseoutOpen = guestCloseoutOpen;
         _inputOverlay = inputOverlay;
@@ -282,9 +286,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private void SignOutFromTabs()
     {
         ShellCloseSlideAndAddDrinks();
-        _undo.Clear();
-        _session.Clear();
-        _rootNav.NavigateToLogin();
+        _signOut.SignOut(clearTabUndo: true);
     }
 
     private void OnShellSessionPropertyChanged(object? sender, PropertyChangedEventArgs e)

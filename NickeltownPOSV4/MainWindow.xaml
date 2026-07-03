@@ -12,7 +12,9 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid Background="{StaticResource PosCanvasBrush}">
+    <Grid
+        x:Name="RootHostGrid"
+        Background="{StaticResource PosCanvasBrush}">
         <Frame x:Name="RootFrame" />
     </Grid>
 </Window>

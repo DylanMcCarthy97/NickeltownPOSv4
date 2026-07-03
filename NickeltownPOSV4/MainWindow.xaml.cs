@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Input;
 using NickeltownPOSV4.Services;
 using Windows.Graphics;
 using WinRT.Interop;
@@ -33,6 +34,18 @@ public sealed partial class MainWindow : Window
         var rootNav = App.Services.GetRequiredService<IRootNavigationCoordinator>();
         rootNav.Attach(RootFrame);
         rootNav.NavigateToStartup();
+
+        var inactivity = App.Services.GetRequiredService<ISessionInactivityService>();
+        inactivity.Start(DispatcherQueue.GetForCurrentThread());
+        AttachInactivityTracking(inactivity);
+    }
+
+    private void AttachInactivityTracking(ISessionInactivityService inactivity)
+    {
+        RootHostGrid.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((s, e) => inactivity.NotifyActivity()), true);
+        RootHostGrid.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler((s, e) => inactivity.NotifyActivity()), true);
+        RootHostGrid.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler((s, e) => inactivity.NotifyActivity()), true);
+        RootFrame.Navigated += (_, _) => inactivity.NotifyActivity();
     }
 
     private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
