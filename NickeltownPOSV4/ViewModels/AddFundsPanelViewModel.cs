@@ -414,11 +414,11 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                 var checkout = SquareTabCardCheckoutBuilder.Build(
                     amount,
                     feePercent,
-                    "Bar Tab Payment",
-                    "Bar Tab - Top Up",
+                    "Bar Top-Up",
+                    "Bar Tab",
                     catalogVariationId,
-                    $"Bar Tab Payment - {tabName}",
-                    "BarTab",
+                    $"Bar Top-Up - {tabName}",
+                    "BarTopUp",
                     tabName);
 
                 SquareWaitingMessage = SquareTabCardCheckoutBuilder.FormatWaitingMessage(
@@ -816,11 +816,11 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     private static FundTypeTileModel[] BuildTypes() =>
         new[]
         {
-            new FundTypeTileModel("cash", "Cash", "ðŸ’µ"),
-            new FundTypeTileModel("square", "Square Card", "ðŸ’³", true),
-            new FundTypeTileModel("raffle", "Raffle", "ðŸŽŸï¸"),
-            new FundTypeTileModel("reimburse", "Reimburse", "ðŸ§¾"),
-            new FundTypeTileModel("manual", "Adjustment", "ðŸ› ï¸"),
+            new FundTypeTileModel("cash", "Cash", "\U0001F4B5"),
+            new FundTypeTileModel("square", "Square Card", "\U0001F4B3", true),
+            new FundTypeTileModel("raffle", "Raffle", "\U0001F39F\uFE0F"),
+            new FundTypeTileModel("reimburse", "Reimburse", "\U0001F9FE"),
+            new FundTypeTileModel("manual", "Adjustment", "\U0001F6E0\uFE0F"),
             new FundTypeTileModel("correction", "Correction", "\u21BA"),
         };
 }

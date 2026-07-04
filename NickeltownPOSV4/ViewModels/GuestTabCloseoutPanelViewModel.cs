@@ -435,10 +435,10 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
             var checkout = SquareTabCardCheckoutBuilder.Build(
                 amount,
                 feePercent,
-                "Guest tab closeout",
-                "Bar Tab - Guest Closeout",
+                "Guest Tab Closeout",
+                "Bar Tab",
                 catalogVariationId,
-                "Guest tab closeout - " + tabName,
+                "Guest Tab Closeout - " + tabName,
                 "GuestCloseout",
                 tabName);
 

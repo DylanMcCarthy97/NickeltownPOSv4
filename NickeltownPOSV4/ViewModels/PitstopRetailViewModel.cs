@@ -1378,6 +1378,10 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
                 SquareCardPaymentOutcome cardOutcome;
                 try
                 {
+                    var terminalRequest = PitstopSquareCheckoutBuilder.BuildTerminalRequest(
+                        lines,
+                        charged,
+                        _pendingCardFee);
                     cardOutcome = await _squarePayments.PresentAndLogAsync(
                         new SquareCardPaymentRequest
                         {
@@ -1386,12 +1390,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
                             BaseAmount = baseTotal,
                             SurchargeAmount = _pendingCardFee,
                             ChargedAmount = charged,
-                            TerminalRequest = new SquarePaymentRequest
-                            {
-                                TotalAmount = charged,
-                                Note = $"Pitstop ${charged:0.00}",
-                                ReferenceId = "PitstopRetail",
-                            },
+                            TerminalRequest = terminalRequest,
                         },
                         _squareChargeCts.Token).ConfigureAwait(true);
                 }
