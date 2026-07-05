@@ -50,6 +50,8 @@ public sealed partial class StartupPage : Page
         {
             if (XamlRoot is not null)
             {
+                await AppUpdateRestartHelper.ShowUpdatedNotificationIfNeededAsync(XamlRoot).ConfigureAwait(true);
+
                 var updating = await AppUpdateUiHelper.TryHandleStartupUpdateAsync(XamlRoot).ConfigureAwait(true);
                 if (updating)
                 {
