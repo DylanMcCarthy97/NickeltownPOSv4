@@ -29,7 +29,9 @@ public interface IUserSessionService : System.ComponentModel.INotifyPropertyChan
     /// <summary>Treasurer-only routes (finance/audit). Admins also get access to keep the clubroom workflow simple.</summary>
     bool CanAccessTreasurer { get; }
 
-    void SetSignedIn(long staffPk, string? legacyId, string displayName, string? role);
+    bool IsDeveloper { get; }
+
+    void SetSignedIn(long staffPk, string? legacyId, string displayName, string? role, bool isDeveloper = false);
 
     void Clear();
 }

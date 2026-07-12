@@ -231,6 +231,19 @@
                         Grid.Column="2"
                         VerticalAlignment="Center"
                         Spacing="8">
+                        <StackPanel Visibility="{Binding CanRunTestReport, Converter={StaticResource BoolToVis}, Mode=OneWay}" Spacing="8">
+                            <Button
+                                MinWidth="172"
+                                Command="{Binding LoadTestReportCommand}"
+                                Content="Load test report"
+                                Style="{StaticResource EodSecondaryButtonStyle}" />
+                            <Button
+                                MinWidth="172"
+                                Command="{Binding ClearTestReportCommand}"
+                                Content="Clear test data"
+                                Style="{StaticResource EodSecondaryButtonStyle}"
+                                Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        </StackPanel>
                         <Button
                             MinWidth="172"
                             Command="{Binding ExportPdfCommand}"
@@ -238,6 +251,21 @@
                             Style="{StaticResource EodPrimaryButtonStyle}" />
                     </StackPanel>
                 </Grid>
+
+                <Border
+                    Padding="12,10"
+                    Background="#1A1D4ED8"
+                    BorderBrush="#FF2563EB"
+                    BorderThickness="2"
+                    CornerRadius="10"
+                    Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="#FF2563EB"
+                        Text="{Binding TestModeBannerText, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                </Border>
 
                 <Border
                     Padding="12,10"

@@ -219,7 +219,7 @@ public sealed class LoginViewModel : ObservableViewModel
                 return;
             }
 
-            _session.SetSignedIn(r.StaffPk, r.LegacyId, r.DisplayName, r.Role);
+            _session.SetSignedIn(r.StaffPk, r.LegacyId, r.DisplayName, r.Role, r.IsDeveloper);
             ApplyThemeFromAuth(r.UiTheme);
             ClearPin();
             if (r.RequiresPinChange)

@@ -93,6 +93,9 @@ public sealed class PitstopReportInputs
     public decimal? CashCounted { get; set; }
 
     public decimal? FloatRemoved { get; set; }
+
+    /// <summary>When true, POS totals and itemised lines use sample data instead of the database.</summary>
+    public bool UseTestPosData { get; set; }
 }
 
 /// <summary>Full calculated snapshot for UI preview + PDF.</summary>
@@ -189,6 +192,8 @@ public sealed class PitstopReportData
     public decimal? ExpectedCash { get; init; }
 
     public decimal? CashVariance { get; init; }
+
+    public bool IsTestReport { get; init; }
 }
 
 public sealed class PitstopProductAggregateRow

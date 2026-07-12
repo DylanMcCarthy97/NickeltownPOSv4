@@ -179,6 +179,7 @@ public sealed class DatabaseInitializer
         TryAddColumn(conn, "Bartenders", "PinSalt", "ALTER TABLE Bartenders ADD COLUMN PinSalt TEXT");
         TryAddColumn(conn, "Bartenders", "UiTheme", "ALTER TABLE Bartenders ADD COLUMN UiTheme TEXT");
         TryAddColumn(conn, "Bartenders", "LegacyPinPlain", "ALTER TABLE Bartenders ADD COLUMN LegacyPinPlain TEXT");
+        TryAddColumn(conn, "Bartenders", "IsDeveloper", "ALTER TABLE Bartenders ADD COLUMN IsDeveloper INTEGER NOT NULL DEFAULT 0");
         conn.Execute("CREATE INDEX IF NOT EXISTS IX_Bartenders_Active_LegacyPinPlain ON Bartenders(IsActive, LegacyPinPlain) WHERE LegacyPinPlain IS NOT NULL");
         conn.Execute("CREATE INDEX IF NOT EXISTS IX_TabEntries_TabId_EntryType ON TabEntries(TabId, EntryType)");
         BackfillBartenderLegacyPinPlain(conn);

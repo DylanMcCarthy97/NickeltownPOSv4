@@ -42,6 +42,8 @@ public sealed class AuthenticationResult
 
     public bool RequiresPinChange { get; init; }
 
+    public bool IsDeveloper { get; init; }
+
 
 
     public static AuthenticationResult Fail(string message) =>
@@ -62,7 +64,9 @@ public sealed class AuthenticationResult
 
         string? uiTheme = null,
 
-        bool requiresPinChange = false) =>
+        bool requiresPinChange = false,
+
+        bool isDeveloper = false) =>
 
         new()
 
@@ -81,6 +85,8 @@ public sealed class AuthenticationResult
             UiTheme = uiTheme,
 
             RequiresPinChange = requiresPinChange,
+
+            IsDeveloper = isDeveloper,
 
         };
 

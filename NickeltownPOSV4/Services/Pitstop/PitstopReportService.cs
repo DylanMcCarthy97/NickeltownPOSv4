@@ -27,8 +27,12 @@ public sealed class PitstopReportService
             end = start.AddDays(1);
         }
 
-        var pitstopTotals = await _pitstopSales.GetPitstopRetailPaymentTotalsAsync(start, end, cancellationToken).ConfigureAwait(false);
-        var lines = await _pitstopSales.GetItemisedLinesAsync(start, end, cancellationToken).ConfigureAwait(false);
+        var pitstopTotals = inputs.UseTestPosData
+            ? PitstopReportTestDataBuilder.BuildPosTotals()
+            : await _pitstopSales.GetPitstopRetailPaymentTotalsAsync(start, end, cancellationToken).ConfigureAwait(false);
+        var lines = inputs.UseTestPosData
+            ? PitstopReportTestDataBuilder.BuildPosLines()
+            : await _pitstopSales.GetItemisedLinesAsync(start, end, cancellationToken).ConfigureAwait(false);
 
         var pitCash = pitstopTotals.CashTotal;
         var pitCardCharged = pitstopTotals.CardChargedTotal;
@@ -141,6 +145,7 @@ public sealed class PitstopReportService
             CashVariance = inputs.CashCounted is decimal cc
                 ? cc - decimal.Round(inputs.InsideFloat + pitCash, 2, MidpointRounding.AwayFromZero)
                 : (decimal?)null,
+            IsTestReport = inputs.UseTestPosData,
         };
     }
 }

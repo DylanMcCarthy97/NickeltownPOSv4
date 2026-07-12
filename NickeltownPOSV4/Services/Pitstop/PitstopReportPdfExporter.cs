@@ -72,11 +72,22 @@ public static class PitstopReportPdfExporter
         });
 
         var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16, TextPrimary);
-        titleCell.AddElement(new Paragraph("Pitstop end-of-day report", titleFont)
+        var titleText = d.IsTestReport ? "Pitstop end-of-day report (TEST)" : "Pitstop end-of-day report";
+        titleCell.AddElement(new Paragraph(titleText, titleFont)
         {
             Alignment = Element.ALIGN_RIGHT,
             SpacingAfter = 4,
         });
+
+        if (d.IsTestReport)
+        {
+            var testBanner = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, new BaseColor(185, 28, 28));
+            titleCell.AddElement(new Paragraph("SAMPLE DATA — NOT A REAL EVENT", testBanner)
+            {
+                Alignment = Element.ALIGN_RIGHT,
+                SpacingAfter = 4,
+            });
+        }
 
         var body = FontFactory.GetFont(FontFactory.HELVETICA, 10, TextPrimary);
         titleCell.AddElement(new Paragraph(

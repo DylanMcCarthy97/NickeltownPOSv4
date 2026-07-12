@@ -28,7 +28,7 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
                 using var conn = _factory.OpenConnection();
                 var rows = conn.Query<StaffRow>(
                     """
-                    SELECT Id, LegacyId, Name, Role, IsActive
+                    SELECT Id, LegacyId, Name, Role, IsActive, IsDeveloper
                     FROM Bartenders
                     ORDER BY IsActive DESC, Name COLLATE NOCASE ASC
                     """)
@@ -40,7 +40,8 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
                         r.LegacyId,
                         string.IsNullOrWhiteSpace(r.Name) ? $"Staff {r.Id}" : r.Name!,
                         NormalizeRoleForDisplay(r.Role),
-                        r.IsActive != 0))
+                        r.IsActive != 0,
+                        r.IsDeveloper != 0))
                     .ToList();
             },
             cancellationToken);
@@ -91,7 +92,7 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
             },
             cancellationToken);
 
-    public Task UpdateAsync(long id, string displayName, string role, bool isActive, CancellationToken cancellationToken = default) =>
+    public Task UpdateAsync(long id, string displayName, string role, bool isActive, bool isDeveloper, CancellationToken cancellationToken = default) =>
         Task.Run(
             () =>
             {
@@ -108,6 +109,7 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
                     SET Name = @Name,
                         Role = @Role,
                         IsActive = @IsActive,
+                        IsDeveloper = @IsDeveloper,
                         UpdatedAt = datetime('now')
                     WHERE Id = @Id
                     """,
@@ -117,6 +119,7 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
                         Name = name,
                         Role = NormalizeRoleForStorage(role),
                         IsActive = isActive ? 1 : 0,
+                        IsDeveloper = isDeveloper ? 1 : 0,
                     });
                 _pinCache.Refresh(cancellationToken);
             },
@@ -279,5 +282,7 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
         public string? Role { get; set; }
 
         public long IsActive { get; set; }
+
+        public long IsDeveloper { get; set; }
     }
 }

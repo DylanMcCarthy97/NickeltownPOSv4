@@ -396,6 +396,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     private bool _mismatchExportAcknowledged;
     private string? _lastExportedPdfPath;
     private bool _pitstopArchivedAfterCurrentExport;
+    private bool _isTestMode;
     private PitstopReportData? _preview;
 
     private PitstopEodReconciliationReport? _pitstopReconciliationReport;
@@ -439,6 +440,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         ExportPdfCommand = new AsyncRelayCommand(ExportPdfAsync, () => !IsBusy && Preview is not null);
         ReloadOutsideLinesFromCatalogCommand = new AsyncRelayCommand(ReloadOutsideLinesFromCatalogAsync, () => !IsBusy);
         ToggleHideZeroOutsideLinesCommand = new RelayCommand(ToggleHideZeroOutsideLines);
+        LoadTestReportCommand = new AsyncRelayCommand(LoadTestReportAsync, () => !IsBusy && CanRunTestReport);
+        ClearTestReportCommand = new AsyncRelayCommand(ClearTestReportAsync, () => IsTestMode);
 
         BeginEventNameCommand = new AsyncRelayCommand(BeginEventNameAsync);
         BeginCombinedSquareCommand = new AsyncRelayCommand(BeginCombinedSquareAsync);
@@ -469,6 +472,32 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     public IAsyncRelayCommand ReloadOutsideLinesFromCatalogCommand { get; }
 
     public IRelayCommand ToggleHideZeroOutsideLinesCommand { get; }
+
+    public IAsyncRelayCommand LoadTestReportCommand { get; }
+
+    public IAsyncRelayCommand ClearTestReportCommand { get; }
+
+    public bool CanRunTestReport => _session.IsDeveloper;
+
+    public bool IsTestMode
+    {
+        get => _isTestMode;
+        private set
+        {
+            if (SetProperty(ref _isTestMode, value))
+            {
+                OnPropertyChanged(nameof(IsTestModeBannerVisible));
+                OnPropertyChanged(nameof(TestModeBannerText));
+                LoadTestReportCommand.NotifyCanExecuteChanged();
+                ClearTestReportCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsTestModeBannerVisible => IsTestMode;
+
+    public string TestModeBannerText =>
+        "TEST MODE - sample terminal sales and figures. Export is watermarked and archive is disabled.";
 
     public IAsyncRelayCommand BeginEventNameCommand { get; }
 
@@ -682,6 +711,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             {
                 ExportPdfCommand.NotifyCanExecuteChanged();
                 ReloadOutsideLinesFromCatalogCommand.NotifyCanExecuteChanged();
+                LoadTestReportCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -823,9 +853,14 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         {
             var inputs = BuildInputs();
             var data = await _report.BuildAsync(inputs, cancellationToken).ConfigureAwait(true);
-            _pitstopReconciliationReport = await _pitstopReconciliation
-                .BuildAsync(inputs.PeriodStartLocal, inputs.PeriodEndLocal, SquareFeePercent, cancellationToken)
-                .ConfigureAwait(true);
+            _pitstopReconciliationReport = IsTestMode
+                ? PitstopReportTestDataBuilder.BuildReconciliationReport(
+                    inputs.PeriodStartLocal,
+                    inputs.PeriodEndLocal,
+                    SquareFeePercent)
+                : await _pitstopReconciliation
+                    .BuildAsync(inputs.PeriodStartLocal, inputs.PeriodEndLocal, SquareFeePercent, cancellationToken)
+                    .ConfigureAwait(true);
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
@@ -853,9 +888,11 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             OnPropertyChanged(nameof(ReconciliationSummaryText));
             StatusMessage = data.OutsideCardMismatch
                 ? "Square batch does not match Pitstop terminal card — review before export."
-                : ReconciliationWarnings.Count > 0
-                    ? $"Pitstop totals updated — {ReconciliationWarnings.Count} reconciliation warning(s)."
-                    : "Pitstop totals are up to date (bar tabs excluded).";
+                : IsTestMode
+                    ? "Test report loaded — sample data only. Save and Export to preview the PDF."
+                    : ReconciliationWarnings.Count > 0
+                        ? $"Pitstop totals updated — {ReconciliationWarnings.Count} reconciliation warning(s)."
+                        : "Pitstop totals are up to date (bar tabs excluded).";
         }
         catch (Exception ex)
         {
@@ -883,6 +920,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             OutsideFloat = OutsideFloat,
             CashCounted = CashCounted,
             FloatRemoved = FloatRemoved,
+            UseTestPosData = IsTestMode,
         };
 
         foreach (var w in ReconciliationWarnings)
@@ -939,7 +977,9 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                 safe = "pitstop";
             }
 
-            var fn = $"{safe}_{ReportDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+            var fn = IsTestMode
+                ? $"TEST_{safe}_{ReportDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf"
+                : $"{safe}_{ReportDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
             var path = Path.Combine(dir, fn);
             await File.WriteAllBytesAsync(path, bytes, CancellationToken.None).ConfigureAwait(true);
             StatusMessage = _launcher.TryLaunch(path)
@@ -993,6 +1033,12 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     private async Task OfferArchivePitstopAfterExportAsync()
     {
+        if (IsTestMode)
+        {
+            StatusMessage = "Test report saved. Archive is disabled for sample data.";
+            return;
+        }
+
         if (!_session.IsManager)
         {
             try
@@ -1311,6 +1357,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     private async Task ResetPitstopEodFormFieldsAsync()
     {
+        IsTestMode = false;
         EventName = "Pitstop";
         CombinedSquareCardGross = 0m;
         InsideFloat = 0m;
@@ -1344,6 +1391,82 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     }
 
     private void ToggleHideZeroOutsideLines() => HideZeroOutsideLines = !HideZeroOutsideLines;
+
+    private async Task LoadTestReportAsync()
+    {
+        if (!CanRunTestReport)
+        {
+            StatusMessage = "Test reports require a developer account.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await PopulateOutsideLinesFromCatalogAsync(preserveExistingKeys: false).ConfigureAwait(true);
+
+            var outsideModels = _outsideLines.Select(x => x.ToModel()).ToList();
+            PitstopReportTestDataBuilder.ApplyOutsideLineSamples(outsideModels);
+            _outsideLines.Clear();
+            foreach (var row in outsideModels)
+            {
+                _outsideLines.Add(new OutsideLineEditVm(_input, row, OnOutsideLineChanged));
+            }
+
+            RebuildOutsideGroups();
+            SyncPrizeRowsFromMerch(preserveQuantities: false);
+            if (Prizes.Count > 0)
+            {
+                Prizes[0].Quantity = 2;
+            }
+
+            Expenses.Clear();
+            foreach (var expense in PitstopReportTestDataBuilder.BuildSampleExpenses())
+            {
+                var vm = new EventExpenseEditVm(_input, OnInputChanged)
+                {
+                    Description = expense.Description,
+                    Amount = expense.Amount,
+                };
+                Expenses.Add(vm);
+            }
+
+            IsTestMode = true;
+            EventName = PitstopReportTestDataBuilder.TestEventName;
+            ReportDate = DateTimeOffset.Now.Date;
+            CombinedSquareCardGross = PitstopReportTestDataBuilder.TestCardChargedTotal;
+            SquareFeePercent = 1.75m;
+            InsideFloat = PitstopReportTestDataBuilder.TestInsideFloat;
+            OutsideFloat = PitstopReportTestDataBuilder.TestOutsideFloat;
+            CashCounted = PitstopReportTestDataBuilder.TestInsideFloat + PitstopReportTestDataBuilder.TestCashTotal + 15m;
+            FloatRemoved = PitstopReportTestDataBuilder.TestInsideFloat;
+            ArchiveNotes = "TEST REPORT - sample data only. Not a real Pitstop event.";
+            HideZeroOutsideLines = false;
+            ResetExportReadyState();
+            _mismatchExportAcknowledged = false;
+            await RefreshPreviewAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ClearTestReportAsync()
+    {
+        if (!IsTestMode)
+        {
+            return;
+        }
+
+        await ResetPitstopEodFormFieldsAsync().ConfigureAwait(true);
+        await RefreshPreviewAsync().ConfigureAwait(true);
+        StatusMessage = "Test data cleared — showing live Pitstop figures again.";
+    }
 
     private async Task ReloadOutsideLinesFromCatalogAsync()
     {

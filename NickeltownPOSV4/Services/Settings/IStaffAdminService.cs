@@ -10,7 +10,7 @@ public interface IStaffAdminService
 
     Task<long> CreateAsync(string displayName, string role, string pin4, CancellationToken cancellationToken = default);
 
-    Task UpdateAsync(long id, string displayName, string role, bool isActive, CancellationToken cancellationToken = default);
+    Task UpdateAsync(long id, string displayName, string role, bool isActive, bool isDeveloper, CancellationToken cancellationToken = default);
 
     Task ResetPinAsync(long id, string newPin4, CancellationToken cancellationToken = default);
 
@@ -24,4 +24,5 @@ public sealed record StaffAdminRow(
     string? LegacyId,
     string DisplayName,
     string Role,
-    bool IsActive);
+    bool IsActive,
+    bool IsDeveloper);

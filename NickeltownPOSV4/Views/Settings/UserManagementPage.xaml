@@ -239,6 +239,19 @@
                                 OffContent="Inactive"
                                 OnContent="Active" />
                         </StackPanel>
+
+                        <StackPanel Spacing="6" Visibility="{Binding EditorShowsActiveToggle, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="DEVELOPER" />
+                            <ToggleSwitch
+                                IsOn="{Binding EditorIsDeveloper, Mode=TwoWay}"
+                                OffContent="No"
+                                OnContent="Yes" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Developers can run Pitstop test reports with sample data."
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Spacing="14">

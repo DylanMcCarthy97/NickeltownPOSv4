@@ -22,6 +22,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
     private string _editorDisplayName = string.Empty;
     private string _editorRole = "Staff";
     private bool _editorIsActive = true;
+    private bool _editorIsDeveloper;
     private string _editorPin = string.Empty;
 
     public UserManagementViewModel(
@@ -155,6 +156,12 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         set => SetProperty(ref _editorIsActive, value);
     }
 
+    public bool EditorIsDeveloper
+    {
+        get => _editorIsDeveloper;
+        set => SetProperty(ref _editorIsDeveloper, value);
+    }
+
     public string EditorPin
     {
         get => _editorPin;
@@ -206,6 +213,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         EditorDisplayName = string.Empty;
         EditorRole = "Staff";
         EditorIsActive = true;
+        EditorIsDeveloper = false;
         EditorPin = string.Empty;
         SetStatus(string.Empty);
         IsEditorOpen = true;
@@ -220,6 +228,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         EditorDisplayName = row.DisplayName;
         EditorRole = row.Role;
         EditorIsActive = row.IsActive;
+        EditorIsDeveloper = row.IsDeveloper;
         EditorPin = string.Empty;
         SetStatus(string.Empty);
         IsEditorOpen = true;
@@ -234,6 +243,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         EditorDisplayName = row.DisplayName;
         EditorRole = row.Role;
         EditorIsActive = row.IsActive;
+        EditorIsDeveloper = row.IsDeveloper;
         EditorPin = string.Empty;
         SetStatus(string.Empty);
         IsEditorOpen = true;
@@ -346,7 +356,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
             return;
         }
 
-        var ok = await UpdateAsync(_editorTargetId.Value, EditorDisplayName, EditorRole, EditorIsActive).ConfigureAwait(true);
+        var ok = await UpdateAsync(_editorTargetId.Value, EditorDisplayName, EditorRole, EditorIsActive, EditorIsDeveloper).ConfigureAwait(true);
         if (ok)
         {
             CloseEditor();
@@ -376,13 +386,13 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         }
     }
 
-    public async Task<bool> UpdateAsync(long id, string displayName, string role, bool isActive)
+    public async Task<bool> UpdateAsync(long id, string displayName, string role, bool isActive, bool isDeveloper)
     {
         try
         {
             IsBusy = true;
             SaveEditorCommand.NotifyCanExecuteChanged();
-            await _service.UpdateAsync(id, displayName, role, isActive).ConfigureAwait(true);
+            await _service.UpdateAsync(id, displayName, role, isActive, isDeveloper).ConfigureAwait(true);
             await RefreshAsync().ConfigureAwait(true);
             SetStatus($"Updated {displayName}.");
             return true;
@@ -451,6 +461,7 @@ public sealed class StaffRowViewModel : ObservableViewModel
         DisplayName = row.DisplayName;
         Role = row.Role;
         IsActive = row.IsActive;
+        IsDeveloper = row.IsDeveloper;
         LegacyId = row.LegacyId;
     }
 
@@ -464,6 +475,20 @@ public sealed class StaffRowViewModel : ObservableViewModel
 
     public bool IsActive { get; }
 
-    public string SubtitleText =>
-        IsActive ? $"{Role}" : $"{Role} (inactive)";
+    public bool IsDeveloper { get; }
+
+    public string SubtitleText
+    {
+        get
+        {
+            var parts = new System.Collections.Generic.List<string> { Role };
+            if (IsDeveloper)
+            {
+                parts.Add("Developer");
+            }
+
+            var text = string.Join(" · ", parts);
+            return IsActive ? text : $"{text} (inactive)";
+        }
+    }
 }

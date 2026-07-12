@@ -17,6 +17,8 @@ public sealed class UserSessionService : IUserSessionService
 
     private string? _role;
 
+    private bool _isDeveloper;
+
     public bool IsSignedIn
     {
         get => _isSignedIn;
@@ -75,15 +77,19 @@ public sealed class UserSessionService : IUserSessionService
     /// <summary>Treasurer + Admin can open Treasurer-scoped screens (Previous Pitstops finance details, Square Recovery, audit log).</summary>
     public bool CanAccessTreasurer => IsManager;
 
+    public bool IsDeveloper => _isDeveloper;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void SetSignedIn(long staffPk, string? legacyId, string displayName, string? role)
+    public void SetSignedIn(long staffPk, string? legacyId, string displayName, string? role, bool isDeveloper = false)
     {
         var normalizedRole = NormalizeRole(role);
         ActiveStaffId = staffPk;
         ActiveStaffLegacyId = legacyId;
         DisplayName = displayName;
         Role = normalizedRole;
+        SetField(ref _isDeveloper, isDeveloper);
+        OnPropertyChanged(nameof(IsDeveloper));
         IsSignedIn = true;
     }
 
@@ -94,6 +100,8 @@ public sealed class UserSessionService : IUserSessionService
         ActiveStaffLegacyId = null;
         DisplayName = null;
         Role = null;
+        SetField(ref _isDeveloper, false);
+        OnPropertyChanged(nameof(IsDeveloper));
     }
 
     private static string? NormalizeRole(string? role)

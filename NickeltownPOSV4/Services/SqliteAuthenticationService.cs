@@ -82,7 +82,7 @@ public sealed class StaffPinLookupCache : IStaffPinLookupCache
             var rows = conn.Query<StaffAuthRow>(
                 new CommandDefinition(
                     """
-                    SELECT Id, LegacyId, Name, PinHash, PinSalt, Role, UiTheme, RawJson, LegacyPinPlain
+                    SELECT Id, LegacyId, Name, PinHash, PinSalt, Role, UiTheme, RawJson, LegacyPinPlain, IsDeveloper
                     FROM Bartenders
                     WHERE IsActive = 1
                     """,
@@ -183,7 +183,8 @@ public sealed class StaffPinLookupCache : IStaffPinLookupCache
             string.IsNullOrWhiteSpace(b.Name) ? "Staff" : b.Name,
             b.Role,
             b.UiTheme,
-            SqliteAuthenticationService.RequiresPinChange(b.RawJson));
+            SqliteAuthenticationService.RequiresPinChange(b.RawJson),
+            b.IsDeveloper);
     }
 
     private static StaffAuthEntry ToEntry(StaffAuthRow r) =>
@@ -195,7 +196,8 @@ public sealed class StaffPinLookupCache : IStaffPinLookupCache
             r.PinSalt,
             r.Role,
             r.UiTheme,
-            r.RawJson);
+            r.RawJson,
+            r.IsDeveloper != 0);
 
     private sealed class StaffAuthRow
     {
@@ -216,6 +218,8 @@ public sealed class StaffPinLookupCache : IStaffPinLookupCache
         public string? RawJson { get; set; }
 
         public string? LegacyPinPlain { get; set; }
+
+        public long IsDeveloper { get; set; }
     }
 
     private sealed record StaffAuthEntry(
@@ -226,7 +230,8 @@ public sealed class StaffPinLookupCache : IStaffPinLookupCache
         string? PinSalt,
         string? Role,
         string? UiTheme,
-        string? RawJson);
+        string? RawJson,
+        bool IsDeveloper);
 }
 
 internal static class StaffPinPinLookupHelper
