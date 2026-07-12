@@ -26,6 +26,8 @@ public sealed class OutsideLineEditVm : ObservableViewModel
 
     private int _cashQty;
     private decimal _cashDollars;
+    private int _cardQty;
+    private decimal _cardDollars;
 
     public OutsideLineEditVm(IInputOverlayService input, OutsideItemSaleRow seed, Action onValuesChanged)
     {
@@ -38,9 +40,13 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         SuggestedUnitPrice = seed.SuggestedUnitPrice;
         _cashQty = seed.CashQty;
         _cashDollars = seed.CashDollars;
+        _cardQty = seed.CardQty;
+        _cardDollars = seed.CardDollars;
 
         BeginCashQtyCommand = new AsyncRelayCommand(BeginCashQtyAsync);
         BeginCashDollarsCommand = new AsyncRelayCommand(BeginCashDollarsAsync);
+        BeginCardQtyCommand = new AsyncRelayCommand(BeginCardQtyAsync);
+        BeginCardDollarsCommand = new AsyncRelayCommand(BeginCardDollarsAsync);
     }
 
     public string Key { get; }
@@ -59,7 +65,8 @@ public sealed class OutsideLineEditVm : ObservableViewModel
     public bool IsMerch =>
         string.Equals(OutsideLineKind, PitstopOutsideLineCatalogBuilder.LineKindMerchSku, StringComparison.Ordinal);
 
-    public bool HasAnyValue => CashQty > 0 || CashDollars > 0m;
+    public bool HasAnyValue =>
+        CashQty > 0 || CashDollars > 0m || CardQty > 0 || CardDollars > 0m;
 
     public string SuggestedPriceText
     {
@@ -79,7 +86,7 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         }
     }
 
-    public string RowTotalText => Money(CashDollars);
+    public string RowTotalText => Money(CashDollars + CardDollars);
 
     public int CashQty
     {
@@ -116,9 +123,48 @@ public sealed class OutsideLineEditVm : ObservableViewModel
 
     public string CashDollarsText => Money(_cashDollars);
 
+    public int CardQty
+    {
+        get => _cardQty;
+        set
+        {
+            if (SetProperty(ref _cardQty, value))
+            {
+                OnPropertyChanged(nameof(CardQtyText));
+                OnPropertyChanged(nameof(HasAnyValue));
+                OnPropertyChanged(nameof(RowTotalText));
+                ApplyCardDollarsFromSuggestedQty();
+                _onValuesChanged();
+            }
+        }
+    }
+
+    public string CardQtyText => _cardQty.ToString(Inv);
+
+    public decimal CardDollars
+    {
+        get => _cardDollars;
+        set
+        {
+            if (SetProperty(ref _cardDollars, value))
+            {
+                OnPropertyChanged(nameof(CardDollarsText));
+                OnPropertyChanged(nameof(HasAnyValue));
+                OnPropertyChanged(nameof(RowTotalText));
+                _onValuesChanged();
+            }
+        }
+    }
+
+    public string CardDollarsText => Money(_cardDollars);
+
     public IAsyncRelayCommand BeginCashQtyCommand { get; }
 
     public IAsyncRelayCommand BeginCashDollarsCommand { get; }
+
+    public IAsyncRelayCommand BeginCardQtyCommand { get; }
+
+    public IAsyncRelayCommand BeginCardDollarsCommand { get; }
 
     public OutsideItemSaleRow ToModel() =>
         new()
@@ -130,8 +176,8 @@ public sealed class OutsideLineEditVm : ObservableViewModel
             SuggestedUnitPrice = SuggestedUnitPrice,
             CashQty = CashQty,
             CashDollars = CashDollars,
-            CardQty = 0,
-            CardDollars = 0m,
+            CardQty = CardQty,
+            CardDollars = CardDollars,
         };
 
     private void ApplyCashDollarsFromSuggestedQty()
@@ -144,6 +190,18 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         CashDollars = CashQty <= 0
             ? 0m
             : decimal.Round(CashQty * p, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private void ApplyCardDollarsFromSuggestedQty()
+    {
+        if (SuggestedUnitPrice is not decimal p || p <= 0m)
+        {
+            return;
+        }
+
+        CardDollars = CardQty <= 0
+            ? 0m
+            : decimal.Round(CardQty * p, 2, MidpointRounding.AwayFromZero);
     }
 
     private async Task BeginCashQtyAsync()
@@ -161,6 +219,24 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         if (r.HasValue)
         {
             CashDollars = decimal.Round(r.Value, 2, MidpointRounding.AwayFromZero);
+        }
+    }
+
+    private async Task BeginCardQtyAsync()
+    {
+        var r = await _input.ShowIntegerNumpadAsync(CardQty, $"{DisplayLabel} — card qty", 0, 9999999, CancellationToken.None).ConfigureAwait(true);
+        if (r.HasValue)
+        {
+            CardQty = r.Value;
+        }
+    }
+
+    private async Task BeginCardDollarsAsync()
+    {
+        var r = await _input.ShowNumpadAsync(CardDollars, $"{DisplayLabel} — card $", false, CancellationToken.None).ConfigureAwait(true);
+        if (r.HasValue)
+        {
+            CardDollars = decimal.Round(r.Value, 2, MidpointRounding.AwayFromZero);
         }
     }
 
@@ -308,6 +384,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     private string _eventName = "Pitstop";
     private DateTimeOffset _reportDate = DateTimeOffset.Now.Date;
     private SquarePaymentReconciliationResult? _squareReconciliationResult;
+    private decimal? _manualCombinedSquareCardGross;
+    private bool _showManualCardFallback;
     private decimal _squareFeePercent = 1.75m;
     private decimal _insideFloat;
     private decimal _outsideFloat;
@@ -375,6 +453,9 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         BeginEventNameCommand = new AsyncRelayCommand(BeginEventNameAsync);
         ShowPosSquareTransactionsCommand = new AsyncRelayCommand(ShowPosSquareTransactionsAsync);
         ShowOutsideSquareTransactionsCommand = new AsyncRelayCommand(ShowOutsideSquareTransactionsAsync);
+        ToggleManualCardFallbackCommand = new RelayCommand(ToggleManualCardFallback);
+        BeginManualCombinedSquareCommand = new AsyncRelayCommand(BeginManualCombinedSquareAsync);
+        ClearManualCombinedSquareCommand = new RelayCommand(ClearManualCombinedSquare);
         BeginSquareFeeCommand = new AsyncRelayCommand(BeginSquareFeeAsync);
         BeginInsideFloatCommand = new AsyncRelayCommand(BeginInsideFloatAsync);
         BeginOutsideFloatCommand = new AsyncRelayCommand(BeginOutsideFloatAsync);
@@ -437,6 +518,12 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     public IAsyncRelayCommand ShowOutsideSquareTransactionsCommand { get; }
 
+    public IRelayCommand ToggleManualCardFallbackCommand { get; }
+
+    public IAsyncRelayCommand BeginManualCombinedSquareCommand { get; }
+
+    public IRelayCommand ClearManualCombinedSquareCommand { get; }
+
     public IAsyncRelayCommand BeginSquareFeeCommand { get; }
 
     public IAsyncRelayCommand BeginInsideFloatCommand { get; }
@@ -496,6 +583,57 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     public string CombinedSquareGrossText => Preview is null ? "\u2014" : Money(Preview.CombinedSquareCardGross);
 
+    public bool ShowManualCardFallback
+    {
+        get => _showManualCardFallback;
+        set
+        {
+            if (SetProperty(ref _showManualCardFallback, value))
+            {
+                OnPropertyChanged(nameof(ManualCardFallbackToggleLabel));
+            }
+        }
+    }
+
+    public string ManualCardFallbackToggleLabel =>
+        ShowManualCardFallback ? "Hide manual card fallback" : "Show manual card fallback";
+
+    public bool HasManualCombinedSquareCardGross =>
+        _manualCombinedSquareCardGross is decimal value && value > 0m;
+
+    public string ManualCombinedSquareCardGrossText =>
+        HasManualCombinedSquareCardGross
+            ? Money(_manualCombinedSquareCardGross!.Value)
+            : "Not entered";
+
+    public string ManualOutsideDerivedText
+    {
+        get
+        {
+            if (!HasManualCombinedSquareCardGross || Preview is null)
+            {
+                return "\u2014";
+            }
+
+            return Money(Preview.OutsideSquareGross);
+        }
+    }
+
+    public string ManualCardFallbackStatusText
+    {
+        get
+        {
+            if (!HasManualCombinedSquareCardGross)
+            {
+                return string.Empty;
+            }
+
+            return Preview?.UsingManualSquareCardFallback == true
+                ? "Manual fallback active — outside card = total minus POS terminal card."
+                : string.Empty;
+        }
+    }
+
     public string PosSquareTransactionCountText =>
         Preview is null ? "\u2014" : Preview.PosSquareTransactionCount.ToString(Inv);
 
@@ -529,6 +667,11 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             if (!string.IsNullOrWhiteSpace(_squareReconciliationResult.LoadError))
             {
                 return _squareReconciliationResult.LoadError;
+            }
+
+            if (HasManualCombinedSquareCardGross)
+            {
+                return "Manual Square card fallback active — automatic totals overridden.";
             }
 
             return $"Square loaded — {Preview?.PosSquareTransactionCount ?? 0} POS, {Preview?.OutsideSquareTransactionCount ?? 0} outside, {Preview?.OutsideTerminalProductSales.Count ?? 0} outside products.";
@@ -711,6 +854,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             {
                 RefreshSquareCommand.NotifyCanExecuteChanged();
                 OnPropertyChanged(nameof(SquareReconciliationStatusText));
+                OnPropertyChanged(nameof(ManualOutsideDerivedText));
+                OnPropertyChanged(nameof(ManualCardFallbackStatusText));
             }
         }
     }
@@ -736,6 +881,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                 OnPropertyChanged(nameof(PosSquareGrossText));
                 OnPropertyChanged(nameof(OutsideSquareGrossText));
                 OnPropertyChanged(nameof(CombinedSquareGrossText));
+                OnPropertyChanged(nameof(ManualOutsideDerivedText));
+                OnPropertyChanged(nameof(ManualCardFallbackStatusText));
                 OnPropertyChanged(nameof(PosSquareTransactionCountText));
                 OnPropertyChanged(nameof(OutsideSquareTransactionCountText));
                 OnPropertyChanged(nameof(SquareFeesText));
@@ -966,6 +1113,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             PeriodEndLocal = start.AddDays(1),
             StaffName = StaffDisplay is "\u2014" ? null : StaffDisplay,
             SquareReconciliation = _squareReconciliationResult,
+            ManualCombinedSquareCardGross = _manualCombinedSquareCardGross,
             SquareFeePercent = SquareFeePercent,
             InsideFloat = InsideFloat,
             OutsideFloat = OutsideFloat,
@@ -1403,6 +1551,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         IsTestMode = false;
         EventName = "Pitstop";
         _squareReconciliationResult = null;
+        _manualCombinedSquareCardGross = null;
+        ShowManualCardFallback = false;
         InsideFloat = 0m;
         OutsideFloat = 0m;
         SquareFeePercent = 1.75m;
@@ -1550,8 +1700,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                     SuggestedUnitPrice = t.SuggestedUnitPrice,
                     CashQty = prev.CashQty,
                     CashDollars = prev.CashDollars,
-                    CardQty = 0,
-                    CardDollars = 0m,
+                    CardQty = prev.CardQty,
+                    CardDollars = prev.CardDollars,
                 };
             }
 
@@ -1610,9 +1760,14 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     {
         var byItem = new Dictionary<long, (string Label, int Quantity)>();
 
-        foreach (var line in _outsideLines.Where(l => l.IsMerch && l.PitstopItemId is long itemId && itemId > 0))
+        foreach (var line in _outsideLines.Where(l => l.IsMerch && l.PitstopItemId is > 0))
         {
             var qty = line.CashQty;
+            if (Preview?.UsingManualSquareCardFallback == true)
+            {
+                qty += line.CardQty;
+            }
+
             if (qty <= 0)
             {
                 continue;
@@ -1629,7 +1784,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             }
         }
 
-        if (Preview is not null)
+        if (Preview is not null && Preview.UsingManualSquareCardFallback != true)
         {
             foreach (var squareProduct in Preview.OutsideTerminalProductSales.Where(p => p.ItemId > 0 && p.Quantity > 0))
             {
@@ -1864,6 +2019,43 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
         PosContentDialogHelper.ApplyPosStyle(dlg);
         await dlg.ShowAsync().AsTask().ConfigureAwait(true);
+    }
+
+    private void ToggleManualCardFallback() => ShowManualCardFallback = !ShowManualCardFallback;
+
+    private async Task BeginManualCombinedSquareAsync()
+    {
+        var current = _manualCombinedSquareCardGross ?? 0m;
+        var r = await _input.ShowNumpadAsync(current, "Total Square card gross (event day)", false, CancellationToken.None).ConfigureAwait(true);
+        if (r.HasValue)
+        {
+            _manualCombinedSquareCardGross = decimal.Round(r.Value, 2, MidpointRounding.AwayFromZero);
+            ShowManualCardFallback = true;
+            _mismatchExportAcknowledged = false;
+            OnPropertyChanged(nameof(HasManualCombinedSquareCardGross));
+            OnPropertyChanged(nameof(ManualCombinedSquareCardGrossText));
+            OnPropertyChanged(nameof(ManualOutsideDerivedText));
+            OnPropertyChanged(nameof(ManualCardFallbackStatusText));
+            OnPropertyChanged(nameof(SquareReconciliationStatusText));
+            ScheduleRefresh();
+        }
+    }
+
+    private void ClearManualCombinedSquare()
+    {
+        if (_manualCombinedSquareCardGross is null)
+        {
+            return;
+        }
+
+        _manualCombinedSquareCardGross = null;
+        _mismatchExportAcknowledged = false;
+        OnPropertyChanged(nameof(HasManualCombinedSquareCardGross));
+        OnPropertyChanged(nameof(ManualCombinedSquareCardGrossText));
+        OnPropertyChanged(nameof(ManualOutsideDerivedText));
+        OnPropertyChanged(nameof(ManualCardFallbackStatusText));
+        OnPropertyChanged(nameof(SquareReconciliationStatusText));
+        ScheduleRefresh();
     }
 
     private async Task BeginSquareFeeAsync()

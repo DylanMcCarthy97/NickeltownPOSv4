@@ -132,6 +132,16 @@ public static class PitstopReportPdfExporter
         AddKv(t, "Cash to deposit (after float)", d.CashToDeposit);
         AddKv(t, "Net event profit", d.NetEventProfit);
         doc.Add(t);
+        if (d.UsingManualSquareCardFallback)
+        {
+            doc.Add(new Paragraph(
+                "Manual Square card fallback was used — outside card was derived as total Square card minus POS terminal card.",
+                FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 9, Muted))
+            {
+                SpacingAfter = 6,
+            });
+        }
+
         doc.Add(new Paragraph(" ") { SpacingAfter = 6 });
     }
 

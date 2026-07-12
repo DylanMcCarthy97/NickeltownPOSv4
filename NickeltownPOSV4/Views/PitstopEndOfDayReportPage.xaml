@@ -110,6 +110,8 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Spacing="4">
                             <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash qty" />
@@ -123,6 +125,26 @@
                             <Button
                                 Command="{Binding BeginCashDollarsCommand}"
                                 Content="{Binding CashDollarsText, Mode=OneWay}"
+                                Style="{StaticResource EodCompactValueButtonStyle}" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="2"
+                            Spacing="4"
+                            Visibility="{Binding DataContext.ShowManualCardFallback, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card qty" />
+                            <Button
+                                Command="{Binding BeginCardQtyCommand}"
+                                Content="{Binding CardQtyText, Mode=OneWay}"
+                                Style="{StaticResource EodCompactValueButtonStyle}" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="3"
+                            Spacing="4"
+                            Visibility="{Binding DataContext.ShowManualCardFallback, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card $" />
+                            <Button
+                                Command="{Binding BeginCardDollarsCommand}"
+                                Content="{Binding CardDollarsText, Mode=OneWay}"
                                 Style="{StaticResource EodCompactValueButtonStyle}" />
                         </StackPanel>
                     </Grid>
@@ -448,6 +470,44 @@
                                 Command="{Binding BeginSquareFeeCommand}"
                                 Content="{Binding SquareFeePercentText, Mode=OneWay}"
                                 Style="{StaticResource EodValueButtonStyle}" />
+                            <Button
+                                Command="{Binding ToggleManualCardFallbackCommand}"
+                                Content="{Binding ManualCardFallbackToggleLabel, Mode=OneWay}"
+                                Style="{StaticResource EodSecondaryButtonStyle}" />
+                            <StackPanel Spacing="8" Visibility="{Binding ShowManualCardFallback, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                    Text="If Square import fails, enter the total card gross from your Square close-out for the event day. Outside card = total minus POS terminal card."
+                                    TextWrapping="WrapWholeWords" />
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Total Square card gross (manual)" />
+                                <Button
+                                    Command="{Binding BeginManualCombinedSquareCommand}"
+                                    Content="{Binding ManualCombinedSquareCardGrossText, Mode=OneWay}"
+                                    Style="{StaticResource EodValueButtonStyle}" />
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Outside card (derived)" />
+                                        <TextBlock Style="{StaticResource EodMetricValueStyle}" Text="{Binding ManualOutsideDerivedText, Mode=OneWay}" />
+                                    </StackPanel>
+                                    <Button
+                                        Grid.Column="1"
+                                        VerticalAlignment="Bottom"
+                                        Command="{Binding ClearManualCombinedSquareCommand}"
+                                        Content="Clear"
+                                        Style="{StaticResource EodSecondaryButtonStyle}" />
+                                </Grid>
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{StaticResource PosAccentBrush}"
+                                    Text="{Binding ManualCardFallbackStatusText, Mode=OneWay}"
+                                    TextWrapping="WrapWholeWords"
+                                    Visibility="{Binding HasManualCombinedSquareCardGross, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

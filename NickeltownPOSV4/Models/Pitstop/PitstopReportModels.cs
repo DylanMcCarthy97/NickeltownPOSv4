@@ -23,10 +23,10 @@ public sealed class OutsideItemSaleRow
 
     public decimal CashDollars { get; set; }
 
-    /// <summary>Legacy archived value only. New reports import outside card quantities from Square.</summary>
+    /// <summary>Manual outside card qty when Square import is unavailable.</summary>
     public int CardQty { get; set; }
 
-    /// <summary>Legacy archived value only. New reports import outside card totals from Square.</summary>
+    /// <summary>Manual outside card total when Square import is unavailable.</summary>
     public decimal CardDollars { get; set; }
 }
 
@@ -79,8 +79,11 @@ public sealed class PitstopReportInputs
 
     public string? StaffName { get; set; }
 
-    /// <summary>Automatic Square reconciliation for the report period (required for card totals).</summary>
+    /// <summary>Automatic Square reconciliation for the report period.</summary>
     public SquarePaymentReconciliationResult? SquareReconciliation { get; set; }
+
+    /// <summary>Manual total Square card gross for the event day when automatic import fails.</summary>
+    public decimal? ManualCombinedSquareCardGross { get; set; }
 
     /// <summary>Processor fee percent used when Square does not return fees, e.g. 1.75 means 1.75%.</summary>
     public decimal SquareFeePercent { get; set; } = 1.75m;
@@ -167,6 +170,8 @@ public sealed class PitstopReportData
     public decimal ExpectedSquareDeposit { get; init; }
 
     public bool SquareReconciliationLoaded { get; init; }
+
+    public bool UsingManualSquareCardFallback { get; init; }
 
     public string? SquareReconciliationError { get; init; }
 

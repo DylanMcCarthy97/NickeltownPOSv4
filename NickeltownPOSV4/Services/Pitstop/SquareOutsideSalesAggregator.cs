@@ -22,7 +22,8 @@ public static class SquareOutsideSalesAggregator
                 remainingSquare.Remove(square);
             }
 
-            if (cash.CashQty <= 0 && cash.CashDollars <= 0m && square is null)
+            if (cash.CashQty <= 0 && cash.CashDollars <= 0m && square is null
+                && cash.CardQty <= 0 && cash.CardDollars <= 0m)
             {
                 continue;
             }
@@ -36,8 +37,8 @@ public static class SquareOutsideSalesAggregator
                     : EventReportCategoryNormalizer.Merchandise,
                 CashQuantity = cash.CashQty,
                 CashTotal = Round(cash.CashDollars),
-                CardQuantity = square?.Quantity ?? 0,
-                CardTotal = square?.LineTotal ?? 0m,
+                CardQuantity = square?.Quantity ?? cash.CardQty,
+                CardTotal = square?.LineTotal ?? (cash.CardDollars > 0m ? Round(cash.CardDollars) : 0m),
             });
         }
 

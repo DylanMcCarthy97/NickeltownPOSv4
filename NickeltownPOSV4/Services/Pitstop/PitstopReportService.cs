@@ -42,11 +42,29 @@ public sealed class PitstopReportService
         var outsideCash = inputs.OutsideLines.Sum(r => r.CashDollars);
 
         var square = inputs.SquareReconciliation ?? SquarePaymentReconciliationResult.Empty("Square reconciliation has not been loaded.");
-        var combinedSquare = decimal.Round(square.CombinedSquareGross, 2, MidpointRounding.AwayFromZero);
-        var posSquare = decimal.Round(square.PosSquareGross, 2, MidpointRounding.AwayFromZero);
-        var outsideSquare = decimal.Round(square.OutsideSquareGross, 2, MidpointRounding.AwayFromZero);
-        var squareVsTerminalDiff = decimal.Round(posSquare - pitCardCharged, 2, MidpointRounding.AwayFromZero);
-        var squareMismatch = Math.Abs(squareVsTerminalDiff) > MismatchTolerance || square.Warnings.Count > 0;
+        var manualCombined = inputs.ManualCombinedSquareCardGross;
+        var usingManualFallback = manualCombined is > 0m;
+
+        decimal combinedSquare;
+        decimal posSquare;
+        decimal outsideSquare;
+        if (usingManualFallback)
+        {
+            combinedSquare = decimal.Round(manualCombined!.Value, 2, MidpointRounding.AwayFromZero);
+            posSquare = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero);
+            outsideSquare = decimal.Round(Math.Max(0m, combinedSquare - pitCardCharged), 2, MidpointRounding.AwayFromZero);
+        }
+        else
+        {
+            combinedSquare = decimal.Round(square.CombinedSquareGross, 2, MidpointRounding.AwayFromZero);
+            posSquare = decimal.Round(square.PosSquareGross, 2, MidpointRounding.AwayFromZero);
+            outsideSquare = decimal.Round(square.OutsideSquareGross, 2, MidpointRounding.AwayFromZero);
+        }
+
+        var squareVsTerminalDiff = decimal.Round(combinedSquare - pitCardCharged, 2, MidpointRounding.AwayFromZero);
+        var squareMismatch = usingManualFallback
+            ? combinedSquare < pitCardCharged - MismatchTolerance
+            : Math.Abs(posSquare - pitCardCharged) > MismatchTolerance || square.Warnings.Count > 0;
 
         var feePct = inputs.SquareFeePercent;
         var fees = square.ActualSquareFees is decimal actualFees
@@ -134,6 +152,18 @@ public sealed class PitstopReportService
             warnings.Add($"Square reconciliation: {square.LoadError}");
         }
 
+        if (usingManualFallback)
+        {
+            warnings.Add(
+                $"Manual Square card fallback active — total {combinedSquare:C2}, outside derived {outsideSquare:C2} "
+                + $"(total minus POS card {pitCardCharged:C2}).");
+            if (combinedSquare < pitCardCharged - MismatchTolerance)
+            {
+                warnings.Add(
+                    $"Manual Square total {combinedSquare:C2} is less than Pitstop terminal card {pitCardCharged:C2}.");
+            }
+        }
+
         return new PitstopReportData
         {
             EventName = inputs.EventName.Trim(),
@@ -154,6 +184,7 @@ public sealed class PitstopReportService
             ActualSquareFees = square.ActualSquareFees,
             ExpectedSquareDeposit = expectedDeposit,
             SquareReconciliationLoaded = square.LoadedFromSquare,
+            UsingManualSquareCardFallback = usingManualFallback,
             SquareReconciliationError = square.LoadError,
             SquareMatchedPayments = square.MatchedPayments.ToList(),
             SquareUnmatchedPayments = square.UnmatchedSquarePayments.ToList(),
