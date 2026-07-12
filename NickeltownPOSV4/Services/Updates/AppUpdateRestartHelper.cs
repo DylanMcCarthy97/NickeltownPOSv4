@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -25,12 +26,14 @@ public static class AppUpdateRestartHelper
     {
         WriteMarker(installedVersion);
 
-        var restartResult = AppInstance.Restart(string.Empty);
+        var restartResult = Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
         if (restartResult == AppRestartFailureReason.RestartPending)
         {
+            Application.Current.Exit();
             return;
         }
 
+        ScheduleDelayedRelaunch();
         Application.Current.Exit();
     }
 
@@ -119,6 +122,59 @@ public static class AppUpdateRestartHelper
         }
         catch (UnauthorizedAccessException)
         {
+        }
+    }
+
+    /// <summary>
+    /// MSIX in-place updates often fail <see cref="AppInstance.Restart"/>. Launch a short-lived
+    /// helper that waits for the package swap to finish, then opens this app again via shell.
+    /// </summary>
+    private static void ScheduleDelayedRelaunch()
+    {
+        if (!AppVersionInfo.IsPackaged)
+        {
+            return;
+        }
+
+        var aumid = TryGetAppUserModelId();
+        if (string.IsNullOrWhiteSpace(aumid))
+        {
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c ping localhost -n 4 >nul & explorer.exe shell:AppsFolder\\{aumid}",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+            });
+        }
+        catch (Exception)
+        {
+            // Best-effort relaunch only.
+        }
+    }
+
+    private static string? TryGetAppUserModelId()
+    {
+        try
+        {
+            var familyName = Windows.ApplicationModel.Package.Current.Id.FamilyName;
+            if (string.IsNullOrWhiteSpace(familyName))
+            {
+                return null;
+            }
+
+            // Matches Application Id="App" in Package.appxmanifest.
+            return $"{familyName}!App";
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
         }
     }
 }
