@@ -26,8 +26,6 @@ public sealed class OutsideLineEditVm : ObservableViewModel
 
     private int _cashQty;
     private decimal _cashDollars;
-    private int _cardQty;
-    private decimal _cardDollars;
 
     public OutsideLineEditVm(IInputOverlayService input, OutsideItemSaleRow seed, Action onValuesChanged)
     {
@@ -40,13 +38,9 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         SuggestedUnitPrice = seed.SuggestedUnitPrice;
         _cashQty = seed.CashQty;
         _cashDollars = seed.CashDollars;
-        _cardQty = seed.CardQty;
-        _cardDollars = seed.CardDollars;
 
         BeginCashQtyCommand = new AsyncRelayCommand(BeginCashQtyAsync);
         BeginCashDollarsCommand = new AsyncRelayCommand(BeginCashDollarsAsync);
-        BeginCardQtyCommand = new AsyncRelayCommand(BeginCardQtyAsync);
-        BeginCardDollarsCommand = new AsyncRelayCommand(BeginCardDollarsAsync);
     }
 
     public string Key { get; }
@@ -65,8 +59,7 @@ public sealed class OutsideLineEditVm : ObservableViewModel
     public bool IsMerch =>
         string.Equals(OutsideLineKind, PitstopOutsideLineCatalogBuilder.LineKindMerchSku, StringComparison.Ordinal);
 
-    public bool HasAnyValue =>
-        CashQty > 0 || CashDollars > 0m || CardQty > 0 || CardDollars > 0m;
+    public bool HasAnyValue => CashQty > 0 || CashDollars > 0m;
 
     public string SuggestedPriceText
     {
@@ -86,7 +79,7 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         }
     }
 
-    public string RowTotalText => Money(CashDollars + CardDollars);
+    public string RowTotalText => Money(CashDollars);
 
     public int CashQty
     {
@@ -123,48 +116,9 @@ public sealed class OutsideLineEditVm : ObservableViewModel
 
     public string CashDollarsText => Money(_cashDollars);
 
-    public int CardQty
-    {
-        get => _cardQty;
-        set
-        {
-            if (SetProperty(ref _cardQty, value))
-            {
-                OnPropertyChanged(nameof(CardQtyText));
-                OnPropertyChanged(nameof(HasAnyValue));
-                OnPropertyChanged(nameof(RowTotalText));
-                ApplyCardDollarsFromSuggestedQty();
-                _onValuesChanged();
-            }
-        }
-    }
-
-    public string CardQtyText => _cardQty.ToString(Inv);
-
-    public decimal CardDollars
-    {
-        get => _cardDollars;
-        set
-        {
-            if (SetProperty(ref _cardDollars, value))
-            {
-                OnPropertyChanged(nameof(CardDollarsText));
-                OnPropertyChanged(nameof(HasAnyValue));
-                OnPropertyChanged(nameof(RowTotalText));
-                _onValuesChanged();
-            }
-        }
-    }
-
-    public string CardDollarsText => Money(_cardDollars);
-
     public IAsyncRelayCommand BeginCashQtyCommand { get; }
 
     public IAsyncRelayCommand BeginCashDollarsCommand { get; }
-
-    public IAsyncRelayCommand BeginCardQtyCommand { get; }
-
-    public IAsyncRelayCommand BeginCardDollarsCommand { get; }
 
     public OutsideItemSaleRow ToModel() =>
         new()
@@ -176,8 +130,8 @@ public sealed class OutsideLineEditVm : ObservableViewModel
             SuggestedUnitPrice = SuggestedUnitPrice,
             CashQty = CashQty,
             CashDollars = CashDollars,
-            CardQty = CardQty,
-            CardDollars = CardDollars,
+            CardQty = 0,
+            CardDollars = 0m,
         };
 
     private void ApplyCashDollarsFromSuggestedQty()
@@ -190,18 +144,6 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         CashDollars = CashQty <= 0
             ? 0m
             : decimal.Round(CashQty * p, 2, MidpointRounding.AwayFromZero);
-    }
-
-    private void ApplyCardDollarsFromSuggestedQty()
-    {
-        if (SuggestedUnitPrice is not decimal p || p <= 0m)
-        {
-            return;
-        }
-
-        CardDollars = CardQty <= 0
-            ? 0m
-            : decimal.Round(CardQty * p, 2, MidpointRounding.AwayFromZero);
     }
 
     private async Task BeginCashQtyAsync()
@@ -219,24 +161,6 @@ public sealed class OutsideLineEditVm : ObservableViewModel
         if (r.HasValue)
         {
             CashDollars = decimal.Round(r.Value, 2, MidpointRounding.AwayFromZero);
-        }
-    }
-
-    private async Task BeginCardQtyAsync()
-    {
-        var r = await _input.ShowIntegerNumpadAsync(CardQty, $"{DisplayLabel} — card qty", 0, 9999999, CancellationToken.None).ConfigureAwait(true);
-        if (r.HasValue)
-        {
-            CardQty = r.Value;
-        }
-    }
-
-    private async Task BeginCardDollarsAsync()
-    {
-        var r = await _input.ShowNumpadAsync(CardDollars, $"{DisplayLabel} — card $", false, CancellationToken.None).ConfigureAwait(true);
-        if (r.HasValue)
-        {
-            CardDollars = decimal.Round(r.Value, 2, MidpointRounding.AwayFromZero);
         }
     }
 
@@ -365,6 +289,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     private readonly PitstopReportService _report;
     private readonly PitstopEodReconciliationService _pitstopReconciliation;
+    private readonly ISquarePaymentReconciliationService _squareReconciliation;
     private readonly IPitstopRetailSaleRepository _pitstopSales;
     private readonly IPitstopEodBatchRepository _pitstopBatches;
     private readonly PitstopOutsideLineCatalogBuilder _outsideCatalog;
@@ -382,7 +307,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     private string _eventName = "Pitstop";
     private DateTimeOffset _reportDate = DateTimeOffset.Now.Date;
-    private decimal _combinedSquare;
+    private SquarePaymentReconciliationResult? _squareReconciliationResult;
     private decimal _squareFeePercent = 1.75m;
     private decimal _insideFloat;
     private decimal _outsideFloat;
@@ -392,6 +317,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     private string _statusMessage = string.Empty;
     private bool _isBusy;
     private bool _isRefreshing;
+    private bool _isRefreshingSquare;
     private bool _hideZeroOutsideLines = true;
     private bool _mismatchExportAcknowledged;
     private string? _lastExportedPdfPath;
@@ -404,6 +330,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     public PitstopEndOfDayReportViewModel(
         PitstopReportService report,
         PitstopEodReconciliationService pitstopReconciliation,
+        ISquarePaymentReconciliationService squareReconciliation,
         IPitstopRetailSaleRepository pitstopSales,
         IPitstopEodBatchRepository pitstopBatches,
         PitstopOutsideLineCatalogBuilder outsideCatalog,
@@ -418,6 +345,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     {
         _report = report;
         _pitstopReconciliation = pitstopReconciliation;
+        _squareReconciliation = squareReconciliation;
         _pitstopSales = pitstopSales;
         _pitstopBatches = pitstopBatches;
         _outsideCatalog = outsideCatalog;
@@ -438,13 +366,15 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         AddExpenseCommand = new RelayCommand(AddExpense);
         RemoveExpenseCommand = new RelayCommand<EventExpenseEditVm>(RemoveExpense);
         ExportPdfCommand = new AsyncRelayCommand(ExportPdfAsync, () => !IsBusy && Preview is not null);
+        RefreshSquareCommand = new AsyncRelayCommand(RefreshSquareAsync, () => !IsBusy && !IsRefreshingSquare);
         ReloadOutsideLinesFromCatalogCommand = new AsyncRelayCommand(ReloadOutsideLinesFromCatalogAsync, () => !IsBusy);
         ToggleHideZeroOutsideLinesCommand = new RelayCommand(ToggleHideZeroOutsideLines);
         LoadTestReportCommand = new AsyncRelayCommand(LoadTestReportAsync, () => !IsBusy && CanRunTestReport);
         ClearTestReportCommand = new AsyncRelayCommand(ClearTestReportAsync, () => IsTestMode);
 
         BeginEventNameCommand = new AsyncRelayCommand(BeginEventNameAsync);
-        BeginCombinedSquareCommand = new AsyncRelayCommand(BeginCombinedSquareAsync);
+        ShowPosSquareTransactionsCommand = new AsyncRelayCommand(ShowPosSquareTransactionsAsync);
+        ShowOutsideSquareTransactionsCommand = new AsyncRelayCommand(ShowOutsideSquareTransactionsAsync);
         BeginSquareFeeCommand = new AsyncRelayCommand(BeginSquareFeeAsync);
         BeginInsideFloatCommand = new AsyncRelayCommand(BeginInsideFloatAsync);
         BeginOutsideFloatCommand = new AsyncRelayCommand(BeginOutsideFloatAsync);
@@ -468,6 +398,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     public IRelayCommand<EventExpenseEditVm> RemoveExpenseCommand { get; }
 
     public IAsyncRelayCommand ExportPdfCommand { get; }
+
+    public IAsyncRelayCommand RefreshSquareCommand { get; }
 
     public IAsyncRelayCommand ReloadOutsideLinesFromCatalogCommand { get; }
 
@@ -501,7 +433,9 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     public IAsyncRelayCommand BeginEventNameCommand { get; }
 
-    public IAsyncRelayCommand BeginCombinedSquareCommand { get; }
+    public IAsyncRelayCommand ShowPosSquareTransactionsCommand { get; }
+
+    public IAsyncRelayCommand ShowOutsideSquareTransactionsCommand { get; }
 
     public IAsyncRelayCommand BeginSquareFeeCommand { get; }
 
@@ -539,7 +473,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             if (SetProperty(ref _reportDate, value))
             {
                 ResetExportReadyState();
-                ScheduleRefresh();
+                _ = RefreshSquareAndPreviewAsync();
             }
         }
     }
@@ -556,21 +490,67 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
     }
 
-    public decimal CombinedSquareCardGross
+    public string PosSquareGrossText => Preview is null ? "\u2014" : Money(Preview.PosSquareGross);
+
+    public string OutsideSquareGrossText => Preview is null ? "\u2014" : Money(Preview.OutsideSquareGross);
+
+    public string CombinedSquareGrossText => Preview is null ? "\u2014" : Money(Preview.CombinedSquareCardGross);
+
+    public string PosSquareTransactionCountText =>
+        Preview is null ? "\u2014" : Preview.PosSquareTransactionCount.ToString(Inv);
+
+    public string OutsideSquareTransactionCountText =>
+        Preview is null ? "\u2014" : Preview.OutsideSquareTransactionCount.ToString(Inv);
+
+    public string SquareFeesText =>
+        Preview is null
+            ? "\u2014"
+            : Preview.ActualSquareFees is decimal f
+                ? Money(f)
+                : $"{Money(Preview.EstimatedSquareFees)} (est.)";
+
+    public string ExpectedSquareDepositText =>
+        Preview is null ? "\u2014" : Money(Preview.ExpectedSquareDeposit);
+
+    public string SquareReconciliationStatusText
     {
-        get => _combinedSquare;
-        set
+        get
         {
-            if (SetProperty(ref _combinedSquare, value))
+            if (IsRefreshingSquare)
             {
-                OnPropertyChanged(nameof(CombinedSquareCardGrossText));
-                _mismatchExportAcknowledged = false;
-                ScheduleRefresh();
+                return "Loading Square payments…";
             }
+
+            if (_squareReconciliationResult is null)
+            {
+                return "Square reconciliation not loaded.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(_squareReconciliationResult.LoadError))
+            {
+                return _squareReconciliationResult.LoadError;
+            }
+
+            return $"Square loaded — {Preview?.PosSquareTransactionCount ?? 0} POS, {Preview?.OutsideSquareTransactionCount ?? 0} outside, {Preview?.OutsideTerminalProductSales.Count ?? 0} outside products.";
         }
     }
 
-    public string CombinedSquareCardGrossText => Money(CombinedSquareCardGross);
+    public bool HasOutsideTerminalProductSales =>
+        Preview?.OutsideTerminalProductSales.Count > 0;
+
+    public IReadOnlyList<PitstopProductAggregateRow> OutsideTerminalProductSales =>
+        Preview?.OutsideTerminalProductSales ?? Array.Empty<PitstopProductAggregateRow>();
+
+    public IReadOnlyList<PitstopCategoryAggregateRow> OutsideTerminalCategorySales =>
+        Preview?.OutsideTerminalCategorySales ?? Array.Empty<PitstopCategoryAggregateRow>();
+
+    public bool HasCombinedOutsideSales => Preview?.CombinedOutsideSales.Count > 0;
+
+    public IReadOnlyList<CombinedOutsideSaleRow> CombinedOutsideSales =>
+        Preview?.CombinedOutsideSales ?? Array.Empty<CombinedOutsideSaleRow>();
+
+    public IReadOnlyList<EventCategoryComparisonRow> EventCategoryComparison =>
+        Preview?.EventCategoryComparison ?? Array.Empty<EventCategoryComparisonRow>();
 
     public decimal SquareFeePercent
     {
@@ -722,6 +702,19 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         private set => SetProperty(ref _isRefreshing, value);
     }
 
+    public bool IsRefreshingSquare
+    {
+        get => _isRefreshingSquare;
+        private set
+        {
+            if (SetProperty(ref _isRefreshingSquare, value))
+            {
+                RefreshSquareCommand.NotifyCanExecuteChanged();
+                OnPropertyChanged(nameof(SquareReconciliationStatusText));
+            }
+        }
+    }
+
     public PitstopReportData? Preview
     {
         get => _preview;
@@ -740,6 +733,20 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                 OnPropertyChanged(nameof(PitstopCardText));
                 OnPropertyChanged(nameof(OutsideCashText));
                 OnPropertyChanged(nameof(OutsideCardText));
+                OnPropertyChanged(nameof(PosSquareGrossText));
+                OnPropertyChanged(nameof(OutsideSquareGrossText));
+                OnPropertyChanged(nameof(CombinedSquareGrossText));
+                OnPropertyChanged(nameof(PosSquareTransactionCountText));
+                OnPropertyChanged(nameof(OutsideSquareTransactionCountText));
+                OnPropertyChanged(nameof(SquareFeesText));
+                OnPropertyChanged(nameof(ExpectedSquareDepositText));
+                OnPropertyChanged(nameof(SquareReconciliationStatusText));
+                OnPropertyChanged(nameof(HasOutsideTerminalProductSales));
+                OnPropertyChanged(nameof(OutsideTerminalProductSales));
+                OnPropertyChanged(nameof(OutsideTerminalCategorySales));
+                OnPropertyChanged(nameof(HasCombinedOutsideSales));
+                OnPropertyChanged(nameof(CombinedOutsideSales));
+                OnPropertyChanged(nameof(EventCategoryComparison));
                 OnPropertyChanged(nameof(SquareBatchText));
                 OnPropertyChanged(nameof(SquareTerminalDiffText));
                 OnPropertyChanged(nameof(LastRefreshedText));
@@ -766,8 +773,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             }
 
             return
-                $"Square batch ${Money(Preview.CombinedSquareCardGross)} does not match Pitstop terminal card ${Money(Preview.PitstopRetailCard)} "
-                + $"(diff ${Money(Preview.OutsideCardDifference)}). Check your Square close-out vs POS.";
+                $"Square POS total ${Money(Preview.PosSquareGross)} does not match Pitstop terminal card ${Money(Preview.PitstopRetailCard)} "
+                + $"(diff ${Money(Preview.OutsideCardDifference)}). Review Square reconciliation before export.";
         }
     }
 
@@ -783,7 +790,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     public string OutsideCashText => Preview is null ? "\u2014" : Money(Preview.OutsideCashTotal);
 
-    public string OutsideCardText => Preview is null ? "\u2014" : Money(Preview.OutsideMerchRaffleCardTotal);
+    public string OutsideCardText => Preview is null ? "\u2014" : Money(Preview.OutsideSquareGross);
 
     public string SquareBatchText => Preview is null ? "\u2014" : Money(Preview.CombinedSquareCardGross);
 
@@ -816,7 +823,43 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
 
         SyncPrizeRowsFromMerch(preserveQuantities: true);
-        await RefreshPreviewAsync().ConfigureAwait(true);
+        await RefreshSquareAndPreviewAsync().ConfigureAwait(true);
+    }
+
+    private async Task RefreshSquareAndPreviewAsync(CancellationToken cancellationToken = default)
+    {
+        await RefreshSquareAsync(cancellationToken).ConfigureAwait(true);
+    }
+
+    private async Task RefreshSquareAsync(CancellationToken cancellationToken = default)
+    {
+        IsRefreshingSquare = true;
+        try
+        {
+            var day = ReportDate.Date;
+            var start = new DateTimeOffset(day, ReportDate.Offset);
+            var end = start.AddDays(1);
+
+            _squareReconciliationResult = IsTestMode
+                ? PitstopReportTestDataBuilder.BuildSquareReconciliation(SquareFeePercent)
+                : await _squareReconciliation
+                    .ReconcileAsync(start, end, SquareFeePercent, cancellationToken)
+                    .ConfigureAwait(true);
+
+            _mismatchExportAcknowledged = false;
+            OnPropertyChanged(nameof(SquareReconciliationStatusText));
+        }
+        catch (Exception ex)
+        {
+            _squareReconciliationResult = SquarePaymentReconciliationResult.Empty(ex.Message);
+            StatusMessage = ex.Message;
+        }
+        finally
+        {
+            IsRefreshingSquare = false;
+        }
+
+        await RefreshPreviewAsync(cancellationToken).ConfigureAwait(true);
     }
 
     private void OnInputChanged()
@@ -873,6 +916,14 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                 ReconciliationWarnings.Add(w);
             }
 
+            foreach (var w in data.Warnings)
+            {
+                if (!string.IsNullOrWhiteSpace(w) && !ReconciliationWarnings.Contains(w))
+                {
+                    ReconciliationWarnings.Add(w);
+                }
+            }
+
             if (CashCounted is decimal counted && Preview is not null)
             {
                 var expected = InsideFloat + Preview.PitstopRetailCash;
@@ -887,7 +938,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
             OnPropertyChanged(nameof(ReconciliationSummaryText));
             StatusMessage = data.OutsideCardMismatch
-                ? "Square batch does not match Pitstop terminal card — review before export."
+                ? "Square reconciliation mismatch — review before export."
                 : IsTestMode
                     ? "Test report loaded — sample data only. Save and Export to preview the PDF."
                     : ReconciliationWarnings.Count > 0
@@ -914,7 +965,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             PeriodStartLocal = start,
             PeriodEndLocal = start.AddDays(1),
             StaffName = StaffDisplay is "\u2014" ? null : StaffDisplay,
-            CombinedSquareCardGross = CombinedSquareCardGross,
+            SquareReconciliation = _squareReconciliationResult,
             SquareFeePercent = SquareFeePercent,
             InsideFloat = InsideFloat,
             OutsideFloat = OutsideFloat,
@@ -922,14 +973,6 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             FloatRemoved = FloatRemoved,
             UseTestPosData = IsTestMode,
         };
-
-        foreach (var w in ReconciliationWarnings)
-        {
-            if (!string.IsNullOrWhiteSpace(w))
-            {
-                inputs.Warnings.Add(w);
-            }
-        }
 
         foreach (var o in _outsideLines)
         {
@@ -959,7 +1002,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         if (Preview.OutsideCardMismatch && !_mismatchExportAcknowledged)
         {
             _mismatchExportAcknowledged = true;
-            StatusMessage = "Square mismatch — tap Export PDF again to save anyway.";
+            StatusMessage = "Square mismatch — tap Save and Export again to save anyway.";
             return;
         }
 
@@ -1096,7 +1139,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             {
                 Text =
                     "This will move the sales to Previous Pitstops and stop them counting in the next EOD. "
-                    + "Outside merch and prize giveaway quantities will be deducted from main stock. "
+                    + "Outside cash and mapped Square product quantities, plus prize giveaways, will be deducted from main stock. "
                     + "Archived terminal sales stock will not be restored.",
                 TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
             },
@@ -1299,7 +1342,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             await ResetPitstopEodFormFieldsAsync().ConfigureAwait(true);
             ResetExportReadyState();
             _mismatchExportAcknowledged = false;
-            await RefreshPreviewAsync().ConfigureAwait(true);
+            await RefreshSquareAndPreviewAsync().ConfigureAwait(true);
             StatusMessage = stockDeductionCount > 0
                 ? $"Saved to Previous Pitstops and exported. {result.SalesArchived} sale(s) archived, stock updated. Form reset for the next event."
                 : $"Saved to Previous Pitstops and exported. {result.SalesArchived} sale(s) archived. Form reset for the next event.";
@@ -1359,7 +1402,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     {
         IsTestMode = false;
         EventName = "Pitstop";
-        CombinedSquareCardGross = 0m;
+        _squareReconciliationResult = null;
         InsideFloat = 0m;
         OutsideFloat = 0m;
         SquareFeePercent = 1.75m;
@@ -1434,7 +1477,6 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             IsTestMode = true;
             EventName = PitstopReportTestDataBuilder.TestEventName;
             ReportDate = DateTimeOffset.Now.Date;
-            CombinedSquareCardGross = PitstopReportTestDataBuilder.TestCardChargedTotal;
             SquareFeePercent = 1.75m;
             InsideFloat = PitstopReportTestDataBuilder.TestInsideFloat;
             OutsideFloat = PitstopReportTestDataBuilder.TestOutsideFloat;
@@ -1444,7 +1486,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             HideZeroOutsideLines = false;
             ResetExportReadyState();
             _mismatchExportAcknowledged = false;
-            await RefreshPreviewAsync().ConfigureAwait(true);
+            await RefreshSquareAndPreviewAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -1508,8 +1550,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                     SuggestedUnitPrice = t.SuggestedUnitPrice,
                     CashQty = prev.CashQty,
                     CashDollars = prev.CashDollars,
-                    CardQty = prev.CardQty,
-                    CardDollars = prev.CardDollars,
+                    CardQty = 0,
+                    CardDollars = 0m,
                 };
             }
 
@@ -1570,7 +1612,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
         foreach (var line in _outsideLines.Where(l => l.IsMerch && l.PitstopItemId is long itemId && itemId > 0))
         {
-            var qty = line.CashQty + line.CardQty;
+            var qty = line.CashQty;
             if (qty <= 0)
             {
                 continue;
@@ -1584,6 +1626,22 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             else
             {
                 byItem[itemId] = (line.DisplayLabel, qty);
+            }
+        }
+
+        if (Preview is not null)
+        {
+            foreach (var squareProduct in Preview.OutsideTerminalProductSales.Where(p => p.ItemId > 0 && p.Quantity > 0))
+            {
+                if (byItem.TryGetValue(squareProduct.ItemId, out var existing))
+                {
+                    byItem[squareProduct.ItemId] =
+                        (existing.Label, existing.Quantity + squareProduct.Quantity);
+                }
+                else
+                {
+                    byItem[squareProduct.ItemId] = (squareProduct.Name, squareProduct.Quantity);
+                }
             }
         }
 
@@ -1677,13 +1735,135 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
     }
 
-    private async Task BeginCombinedSquareAsync()
+    private async Task ShowPosSquareTransactionsAsync()
     {
-        var r = await _input.ShowNumpadAsync(CombinedSquareCardGross, "Square batch card gross", false, CancellationToken.None).ConfigureAwait(true);
-        if (r.HasValue)
+        if (Preview is null)
         {
-            CombinedSquareCardGross = decimal.Round(r.Value, 2, MidpointRounding.AwayFromZero);
+            return;
         }
+
+        await ShowSquareTransactionsDialogAsync(
+            "POS terminal (Square Terminal 0070)",
+            Preview.SquareMatchedPayments).ConfigureAwait(true);
+    }
+
+    private async Task ShowOutsideSquareTransactionsAsync()
+    {
+        if (Preview is null)
+        {
+            return;
+        }
+
+        await ShowSquareTransactionsDialogAsync(
+            "Outside terminal (Flounderers02)",
+            Preview.SquareUnmatchedPayments,
+            showLineItems: true).ConfigureAwait(true);
+    }
+
+    private async Task ShowSquareTransactionsDialogAsync(
+        string title,
+        IReadOnlyList<SquareReconciliationPaymentRow> rows,
+        bool showLineItems = false)
+    {
+        var xamlRoot = _windowHandle.GetXamlRoot();
+        if (xamlRoot is null)
+        {
+            return;
+        }
+
+        var panel = new StackPanel { Spacing = 10 };
+        if (rows.Count == 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "No transactions in this group.",
+                TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
+            });
+        }
+        else
+        {
+            foreach (var row in rows.OrderBy(r => r.PaidAt))
+            {
+                var card = string.IsNullOrWhiteSpace(row.CardLast4) ? "—" : $"•••• {row.CardLast4}";
+                var device = string.IsNullOrWhiteSpace(row.DeviceName) ? "—" : row.DeviceName;
+                var receipt = string.IsNullOrWhiteSpace(row.ReceiptNumber) ? "—" : row.ReceiptNumber;
+                var header = new TextBlock
+                {
+                    Text =
+                        $"{row.PaidAt.LocalDateTime:hh:mm tt}\n"
+                        + $"Receipt {receipt}   Total {row.GrossAmount:0.00}\n"
+                        + $"Device: {device}   Card: {card}",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
+                    FontSize = 14,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                };
+                panel.Children.Add(header);
+
+                if (showLineItems)
+                {
+                    if (row.LineItems.Count == 0)
+                    {
+                        panel.Children.Add(new TextBlock
+                        {
+                            Text = string.IsNullOrWhiteSpace(row.OrderLoadWarning)
+                                ? "No items loaded for this payment."
+                                : row.OrderLoadWarning,
+                            TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
+                            FontSize = 12,
+                            Foreground = (Microsoft.UI.Xaml.Media.Brush)Microsoft.UI.Xaml.Application.Current.Resources["PosTextSecondaryBrush"],
+                        });
+                    }
+                    else
+                    {
+                        foreach (var line in row.LineItems)
+                        {
+                            panel.Children.Add(new TextBlock
+                            {
+                                Text = $"{line.ItemName} x{line.Quantity}   {line.LineTotal:0.00}   ({line.CategoryName})",
+                                TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
+                                FontSize = 13,
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    panel.Children.Add(new TextBlock
+                    {
+                        Text = $"PaymentId: {row.PaymentId}",
+                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
+                        FontSize = 12,
+                        Foreground = (Microsoft.UI.Xaml.Media.Brush)Microsoft.UI.Xaml.Application.Current.Resources["PosTextSecondaryBrush"],
+                    });
+                }
+
+                panel.Children.Add(new Border
+                {
+                    Height = 1,
+                    Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 4),
+                    Background = (Microsoft.UI.Xaml.Media.Brush)Microsoft.UI.Xaml.Application.Current.Resources["PosBorderBrush"],
+                });
+            }
+        }
+
+        var scroll = new ScrollViewer
+        {
+            MaxHeight = 520,
+            Content = panel,
+            VerticalScrollBarVisibility = Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Auto,
+        };
+
+        var dlg = new ContentDialog
+        {
+            XamlRoot = xamlRoot,
+            Title = title,
+            Content = scroll,
+            CloseButtonText = "Close",
+            DefaultButton = ContentDialogButton.Close,
+        };
+
+        PosContentDialogHelper.ApplyPosStyle(dlg);
+        await dlg.ShowAsync().AsTask().ConfigureAwait(true);
     }
 
     private async Task BeginSquareFeeAsync()

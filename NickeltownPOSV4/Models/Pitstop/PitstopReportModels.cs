@@ -23,9 +23,33 @@ public sealed class OutsideItemSaleRow
 
     public decimal CashDollars { get; set; }
 
+    /// <summary>Legacy archived value only. New reports import outside card quantities from Square.</summary>
     public int CardQty { get; set; }
 
+    /// <summary>Legacy archived value only. New reports import outside card totals from Square.</summary>
     public decimal CardDollars { get; set; }
+}
+
+/// <summary>Combined outside sales: paper-sheet cash plus Square card order lines.</summary>
+public sealed class CombinedOutsideSaleRow
+{
+    public long? PitstopItemId { get; init; }
+
+    public string Name { get; init; } = string.Empty;
+
+    public string CategoryName { get; init; } = string.Empty;
+
+    public int CashQuantity { get; init; }
+
+    public decimal CashTotal { get; init; }
+
+    public int CardQuantity { get; init; }
+
+    public decimal CardTotal { get; init; }
+
+    public int CombinedQuantity => CashQuantity + CardQuantity;
+
+    public decimal CombinedTotal => CashTotal + CardTotal;
 }
 
 public sealed class EventExpenseRow
@@ -55,9 +79,10 @@ public sealed class PitstopReportInputs
 
     public string? StaffName { get; set; }
 
-    public decimal CombinedSquareCardGross { get; set; }
+    /// <summary>Automatic Square reconciliation for the report period (required for card totals).</summary>
+    public SquarePaymentReconciliationResult? SquareReconciliation { get; set; }
 
-    /// <summary>Processor fee percent, e.g. 1.75 means 1.75%.</summary>
+    /// <summary>Processor fee percent used when Square does not return fees, e.g. 1.75 means 1.75%.</summary>
     public decimal SquareFeePercent { get; set; } = 1.75m;
 
     public decimal InsideFloat { get; set; }
@@ -124,10 +149,32 @@ public sealed class PitstopReportData
     /// <summary>Pitstop terminal card charged (Square reconciliation anchor; tabs excluded).</summary>
     public decimal InsidePosCardTotalForReconciliation { get; init; }
 
-    /// <summary>Manual outside merch + raffle card $ (not from the terminal).</summary>
+    /// <summary>Outside terminal card gross imported from Square. Kept for archive compatibility.</summary>
     public decimal OutsideMerchRaffleCardTotal { get; init; }
 
     public decimal CombinedSquareCardGross { get; init; }
+
+    public decimal PosSquareGross { get; init; }
+
+    public decimal OutsideSquareGross { get; init; }
+
+    public int PosSquareTransactionCount { get; init; }
+
+    public int OutsideSquareTransactionCount { get; init; }
+
+    public decimal? ActualSquareFees { get; init; }
+
+    public decimal ExpectedSquareDeposit { get; init; }
+
+    public bool SquareReconciliationLoaded { get; init; }
+
+    public string? SquareReconciliationError { get; init; }
+
+    public IReadOnlyList<SquareReconciliationPaymentRow> SquareMatchedPayments { get; init; } = Array.Empty<SquareReconciliationPaymentRow>();
+
+    public IReadOnlyList<SquareReconciliationPaymentRow> SquareUnmatchedPayments { get; init; } = Array.Empty<SquareReconciliationPaymentRow>();
+
+    public IReadOnlyList<SquareMissingLocalPaymentRow> SquareMissingLocalPayments { get; init; } = Array.Empty<SquareMissingLocalPaymentRow>();
 
     public decimal OutsideCardDerived { get; init; }
 
@@ -161,6 +208,8 @@ public sealed class PitstopReportData
 
     public IReadOnlyList<OutsideItemSaleRow> OutsideLines { get; init; } = Array.Empty<OutsideItemSaleRow>();
 
+    public IReadOnlyList<CombinedOutsideSaleRow> CombinedOutsideSales { get; init; } = Array.Empty<CombinedOutsideSaleRow>();
+
     public IReadOnlyList<EventExpenseRow> Expenses { get; init; } = Array.Empty<EventExpenseRow>();
 
     public IReadOnlyList<MerchPrizeGiveawayRow> PrizeGiveaways { get; init; } = Array.Empty<MerchPrizeGiveawayRow>();
@@ -168,6 +217,16 @@ public sealed class PitstopReportData
     public IReadOnlyList<PitstopProductAggregateRow> PitstopProductSales { get; init; } = Array.Empty<PitstopProductAggregateRow>();
 
     public IReadOnlyList<PitstopCategoryAggregateRow> PitstopCategorySales { get; init; } = Array.Empty<PitstopCategoryAggregateRow>();
+
+    public IReadOnlyList<PitstopProductAggregateRow> OutsideTerminalProductSales { get; init; } = Array.Empty<PitstopProductAggregateRow>();
+
+    public IReadOnlyList<PitstopCategoryAggregateRow> OutsideTerminalCategorySales { get; init; } = Array.Empty<PitstopCategoryAggregateRow>();
+
+    public IReadOnlyList<PitstopProductAggregateRow> CombinedEventProductSales { get; init; } = Array.Empty<PitstopProductAggregateRow>();
+
+    public IReadOnlyList<PitstopCategoryAggregateRow> CombinedEventCategorySales { get; init; } = Array.Empty<PitstopCategoryAggregateRow>();
+
+    public IReadOnlyList<EventCategoryComparisonRow> EventCategoryComparison { get; init; } = Array.Empty<EventCategoryComparisonRow>();
 
     public IReadOnlyList<PitstopPaymentBreakdownRow> PitstopPaymentBreakdown { get; init; } = Array.Empty<PitstopPaymentBreakdownRow>();
 

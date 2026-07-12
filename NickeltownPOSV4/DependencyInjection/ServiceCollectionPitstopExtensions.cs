@@ -17,6 +17,8 @@ internal static class ServiceCollectionPitstopExtensions
         services.AddSingleton<IPitstopHeldSaleRepository, SqlitePitstopHeldSaleRepository>();
         services.AddSingleton<PitstopOutsideLineCatalogBuilder>();
         services.AddSingleton<PitstopReportService>();
+        services.AddSingleton<SquareOutsideOrderEnrichment>();
+        services.AddSingleton<ISquarePaymentReconciliationService, SquarePaymentReconciliationService>();
         services.AddSingleton<PitstopEodReconciliationService>();
         services.AddSingleton<PitstopSurchargeConfigLoader>();
         services.AddSingleton<IPitstopPaymentRecoveryService, PitstopPaymentRecoveryService>();

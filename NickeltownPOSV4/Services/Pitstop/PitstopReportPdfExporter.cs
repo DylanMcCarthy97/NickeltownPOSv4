@@ -37,6 +37,7 @@ public static class PitstopReportPdfExporter
             AddSummaryTable(doc, d);
             AddOutsideTable(doc, d);
             AddReconciliation(doc, d);
+            AddCategoryComparison(doc, d);
             AddCashCount(doc, d);
             AddExpensesAndFloats(doc, d);
             AddPitstopSales(doc, d);
@@ -122,8 +123,8 @@ public static class PitstopReportPdfExporter
         AddKv(t, "Pitstop card product base", d.PitstopCardBaseProductTotal);
         AddKv(t, "Pitstop card surcharge", d.PitstopCardSurchargeCollected);
         AddKv(t, "Outside cash (merch + raffle)", d.OutsideCashTotal);
-        AddKv(t, "Outside card (merch + raffle)", d.OutsideMerchRaffleCardTotal);
-        AddKv(t, "Square batch card gross", d.CombinedSquareCardGross);
+        AddKv(t, "Outside card (Square)", d.OutsideSquareGross);
+        AddKv(t, "Combined Square card gross", d.CombinedSquareCardGross);
         AddKv(t, "Total cash counted", d.TotalCashGross);
         AddKv(t, "Gross Pitstop sales", d.GrossSales);
         AddKv(t, "Total expenses", d.TotalExpenses);
@@ -136,43 +137,212 @@ public static class PitstopReportPdfExporter
 
     private static void AddOutsideTable(Document doc, PitstopReportData d)
     {
-        doc.Add(new Paragraph("Outside — merch & raffle", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary)) { SpacingAfter = 4 });
+        doc.Add(new Paragraph("Outside sales — manual cash + Square card", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary)) { SpacingAfter = 4 });
         var table = new PdfPTable(5) { WidthPercentage = 100 };
         table.SetWidths(new float[] { 2.4f, 0.9f, 1.1f, 0.9f, 1.1f });
-        AddH(table, "Line");
+        AddH(table, "Product");
         AddH(table, "Cash qty");
         AddH(table, "Cash $");
-        AddH(table, "Card qty");
-        AddH(table, "Card $");
-        foreach (var r in d.OutsideLines)
+        AddH(table, "Square qty");
+        AddH(table, "Square $");
+        foreach (var r in d.CombinedOutsideSales)
         {
-            AddC(table, r.DisplayLabel);
-            AddC(table, r.CashQty.ToString(Culture));
-            AddC(table, r.CashDollars.ToString("0.00", Culture));
-            AddC(table, r.CardQty.ToString(Culture));
-            AddC(table, r.CardDollars.ToString("0.00", Culture));
+            AddC(table, r.Name);
+            AddC(table, r.CashQuantity.ToString(Culture));
+            AddC(table, r.CashTotal.ToString("0.00", Culture));
+            AddC(table, r.CardQuantity.ToString(Culture));
+            AddC(table, r.CardTotal.ToString("0.00", Culture));
         }
 
         doc.Add(table);
+
+        if (d.SquareUnmatchedPayments.Count > 0)
+        {
+            doc.Add(new Paragraph("Outside Square transactions", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, TextPrimary)) { SpacingBefore = 6, SpacingAfter = 4 });
+            foreach (var payment in d.SquareUnmatchedPayments.OrderBy(x => x.PaidAt).Take(20))
+            {
+                var receipt = string.IsNullOrWhiteSpace(payment.ReceiptNumber) ? "—" : payment.ReceiptNumber;
+                doc.Add(new Paragraph(
+                    $"{payment.PaidAt.LocalDateTime:HH:mm}  receipt {receipt}  total {payment.GrossAmount:0.00}",
+                    FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9, TextPrimary)));
+                foreach (var line in payment.LineItems)
+                {
+                    doc.Add(new Paragraph(
+                        $"  {line.ItemName} x{line.Quantity}  {line.LineTotal:0.00}",
+                        FontFactory.GetFont(FontFactory.HELVETICA, 8, TextPrimary)));
+                }
+            }
+        }
+
         doc.Add(new Paragraph(" ") { SpacingAfter = 6 });
     }
 
     private static void AddReconciliation(Document doc, PitstopReportData d)
     {
-        doc.Add(new Paragraph("Square terminal reconciliation", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary)) { SpacingAfter = 4 });
+        doc.Add(new Paragraph("Square reconciliation", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary)) { SpacingAfter = 4 });
         var t = NewKeyValueTable();
-        AddKv(t, "Pitstop terminal card (POS)", d.PitstopRetailCard);
-        AddKv(t, "Square batch card gross", d.CombinedSquareCardGross);
-        AddKv(t, "Difference (batch − POS)", d.OutsideCardDifference);
+        AddKv(t, "POS terminal (Square Terminal 0070) — transactions", d.PosSquareTransactionCount);
+        AddKv(t, "POS terminal card gross", d.PosSquareGross);
+        AddKv(t, "Outside terminal (Flounderers02) — transactions", d.OutsideSquareTransactionCount);
+        AddKv(t, "Outside terminal card gross", d.OutsideSquareGross);
+        AddKv(t, "Combined Square card gross", d.CombinedSquareCardGross);
+        if (d.ActualSquareFees is decimal fees)
+        {
+            AddKv(t, "Square processing fees", fees);
+        }
+        else
+        {
+            AddKv(t, $"Est. Square fees ({d.SquareFeePercent:0.##}%)", d.EstimatedSquareFees);
+        }
+
+        AddKv(t, "Expected Square deposit", d.ExpectedSquareDeposit);
+        AddKv(t, "Pitstop terminal card (POS DB)", d.PitstopRetailCard);
+        AddKv(t, "Difference (Square POS − POS DB)", d.OutsideCardDifference);
         doc.Add(t);
+
         if (d.OutsideCardMismatch)
         {
             doc.Add(new Paragraph(
-                "Warning: Square batch does not match Pitstop terminal card total from POS.",
+                "Warning: Square POS total does not match Pitstop terminal card total from POS.",
                 FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 9, new BaseColor(185, 28, 28))));
         }
 
+        if (d.SquareUnmatchedPayments.Count > 0)
+        {
+            doc.Add(new Paragraph("Outside terminal payments (not in ClubPOS)", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, TextPrimary)) { SpacingBefore = 6, SpacingAfter = 4 });
+            var ut = new PdfPTable(4) { WidthPercentage = 100 };
+            ut.SetWidths(new float[] { 1.1f, 0.8f, 1f, 1.4f });
+            AddH(ut, "Time");
+            AddH(ut, "Amount");
+            AddH(ut, "Receipt");
+            AddH(ut, "Device");
+            foreach (var p in d.SquareUnmatchedPayments.Take(20))
+            {
+                AddC(ut, p.PaidAt.LocalDateTime.ToString("HH:mm", Culture));
+                AddC(ut, p.GrossAmount.ToString("0.00", Culture));
+                AddC(ut, string.IsNullOrWhiteSpace(p.ReceiptNumber) ? "—" : p.ReceiptNumber);
+                AddC(ut, string.IsNullOrWhiteSpace(p.DeviceName) ? "—" : p.DeviceName);
+            }
+
+            doc.Add(ut);
+        }
+
+        if (d.SquareMissingLocalPayments.Count > 0)
+        {
+            doc.Add(new Paragraph("Missing Square payments", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, new BaseColor(185, 28, 28))) { SpacingBefore = 6, SpacingAfter = 4 });
+            var mt = new PdfPTable(3) { WidthPercentage = 100 };
+            mt.SetWidths(new float[] { 1.6f, 0.8f, 2f });
+            AddH(mt, "Sale");
+            AddH(mt, "Amount");
+            AddH(mt, "PaymentId");
+            foreach (var m in d.SquareMissingLocalPayments.Take(20))
+            {
+                AddC(mt, m.SaleRef);
+                AddC(mt, m.Amount.ToString("0.00", Culture));
+                AddC(mt, m.PaymentId);
+            }
+
+            doc.Add(mt);
+        }
+
         doc.Add(new Paragraph(" ") { SpacingAfter = 6 });
+    }
+
+    private static void AddOutsideTerminalSales(Document doc, PitstopReportData d)
+    {
+        doc.Add(new Paragraph("Outside terminal — itemised sales (Square)", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary)) { SpacingAfter = 4 });
+        if (d.OutsideTerminalProductSales.Count == 0)
+        {
+            doc.Add(new Paragraph("No outside-terminal line items loaded.", FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 9, Muted)));
+        }
+        else
+        {
+            var pt = new PdfPTable(4) { WidthPercentage = 100 };
+            pt.SetWidths(new float[] { 2.2f, 1.4f, 0.7f, 0.9f });
+            AddH(pt, "Product");
+            AddH(pt, "Category");
+            AddH(pt, "Qty");
+            AddH(pt, "Total");
+            foreach (var p in d.OutsideTerminalProductSales.Take(30))
+            {
+                AddC(pt, p.Name);
+                AddC(pt, p.CategoryName);
+                AddC(pt, p.Quantity.ToString(Culture));
+                AddC(pt, p.LineTotal.ToString("0.00", Culture));
+            }
+
+            doc.Add(pt);
+        }
+
+        if (d.SquareUnmatchedPayments.Count > 0)
+        {
+            doc.Add(new Paragraph("Outside terminal transactions", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, TextPrimary)) { SpacingBefore = 6, SpacingAfter = 4 });
+            foreach (var p in d.SquareUnmatchedPayments.OrderBy(x => x.PaidAt).Take(20))
+            {
+                var receipt = string.IsNullOrWhiteSpace(p.ReceiptNumber) ? "—" : p.ReceiptNumber;
+                var device = string.IsNullOrWhiteSpace(p.DeviceName) ? "—" : p.DeviceName;
+                doc.Add(new Paragraph(
+                    $"{p.PaidAt.LocalDateTime:HH:mm}  rcpt {receipt}  {p.GrossAmount:0.00}  {device}",
+                    FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9, TextPrimary))
+                { SpacingAfter = 2 });
+
+                if (p.LineItems.Count == 0)
+                {
+                    doc.Add(new Paragraph(
+                        string.IsNullOrWhiteSpace(p.OrderLoadWarning) ? "No line items loaded." : p.OrderLoadWarning!,
+                        FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 8, Muted)));
+                }
+                else
+                {
+                    foreach (var line in p.LineItems)
+                    {
+                        doc.Add(new Paragraph(
+                            $"  {line.ItemName} x{line.Quantity}  {line.LineTotal:0.00}",
+                            FontFactory.GetFont(FontFactory.HELVETICA, 8, TextPrimary)));
+                    }
+                }
+            }
+        }
+
+        doc.Add(new Paragraph(" ") { SpacingAfter = 6 });
+    }
+
+    private static void AddCategoryComparison(Document doc, PitstopReportData d)
+    {
+        if (d.EventCategoryComparison.Count == 0)
+        {
+            return;
+        }
+
+        doc.Add(new Paragraph("Event sales by category", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary)) { SpacingAfter = 4 });
+        var ct = new PdfPTable(7) { WidthPercentage = 100 };
+        ct.SetWidths(new float[] { 1.4f, 0.7f, 0.9f, 0.7f, 0.9f, 0.7f, 0.9f });
+        AddH(ct, "Category");
+        AddH(ct, "POS qty");
+        AddH(ct, "POS $");
+        AddH(ct, "Outside qty");
+        AddH(ct, "Outside $");
+        AddH(ct, "Combined qty");
+        AddH(ct, "Combined $");
+        foreach (var row in d.EventCategoryComparison)
+        {
+            AddC(ct, row.CategoryName);
+            AddC(ct, row.ClubPosQuantity.ToString(Culture));
+            AddC(ct, row.ClubPosLineTotal.ToString("0.00", Culture));
+            AddC(ct, row.OutsideTerminalQuantity.ToString(Culture));
+            AddC(ct, row.OutsideTerminalLineTotal.ToString("0.00", Culture));
+            AddC(ct, row.CombinedQuantity.ToString(Culture));
+            AddC(ct, row.CombinedLineTotal.ToString("0.00", Culture));
+        }
+
+        doc.Add(ct);
+        doc.Add(new Paragraph(" ") { SpacingAfter = 6 });
+    }
+
+    private static void AddKv(PdfPTable t, string k, int v)
+    {
+        AddC(t, k);
+        AddC(t, v.ToString(Culture));
     }
 
     private static void AddExpensesAndFloats(Document doc, PitstopReportData d)

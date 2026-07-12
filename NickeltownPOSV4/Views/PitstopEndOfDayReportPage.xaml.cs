@@ -41,7 +41,7 @@ public sealed partial class PitstopEndOfDayReportPage : Page
             "Event" => EodSectionEvent,
             "Pos" => EodSectionPos,
             "Square" => EodSectionSquare,
-            "Outside" => EodSectionOutside,
+            "Outside" => EodSectionOutsideTerminalSales,
             "Prizes" => EodSectionPrizes,
             "Costs" => EodSectionCosts,
             "Summary" => EodSectionSummary,

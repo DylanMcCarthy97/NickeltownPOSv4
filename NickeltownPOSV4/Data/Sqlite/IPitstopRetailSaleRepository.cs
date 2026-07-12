@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using NickeltownPOSV4.Models.Pitstop;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -155,6 +156,11 @@ public interface IPitstopRetailSaleRepository
         CancellationToken cancellationToken = default);
 
     Task<PitstopRetailPeriodTotals> GetPitstopRetailPaymentTotalsAsync(
+        DateTimeOffset startInclusive,
+        DateTimeOffset endExclusive,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PitstopCardSaleRefRow>> GetPitstopCardSalesForPeriodAsync(
         DateTimeOffset startInclusive,
         DateTimeOffset endExclusive,
         CancellationToken cancellationToken = default);

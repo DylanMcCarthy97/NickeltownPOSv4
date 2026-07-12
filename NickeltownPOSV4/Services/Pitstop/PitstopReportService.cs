@@ -40,14 +40,21 @@ public sealed class PitstopReportService
         var pitCardSurcharge = pitstopTotals.CardSurchargeCollected;
 
         var outsideCash = inputs.OutsideLines.Sum(r => r.CashDollars);
-        var outsideCard = inputs.OutsideLines.Sum(r => r.CardDollars);
 
-        var squareBatch = decimal.Round(inputs.CombinedSquareCardGross, 2, MidpointRounding.AwayFromZero);
-        var squareVsTerminalDiff = decimal.Round(squareBatch - pitCardCharged, 2, MidpointRounding.AwayFromZero);
-        var squareMismatch = Math.Abs(squareVsTerminalDiff) > MismatchTolerance;
+        var square = inputs.SquareReconciliation ?? SquarePaymentReconciliationResult.Empty("Square reconciliation has not been loaded.");
+        var combinedSquare = decimal.Round(square.CombinedSquareGross, 2, MidpointRounding.AwayFromZero);
+        var posSquare = decimal.Round(square.PosSquareGross, 2, MidpointRounding.AwayFromZero);
+        var outsideSquare = decimal.Round(square.OutsideSquareGross, 2, MidpointRounding.AwayFromZero);
+        var squareVsTerminalDiff = decimal.Round(posSquare - pitCardCharged, 2, MidpointRounding.AwayFromZero);
+        var squareMismatch = Math.Abs(squareVsTerminalDiff) > MismatchTolerance || square.Warnings.Count > 0;
 
         var feePct = inputs.SquareFeePercent;
-        var fees = decimal.Round(squareBatch * (feePct / 100m), 2, MidpointRounding.AwayFromZero);
+        var fees = square.ActualSquareFees is decimal actualFees
+            ? decimal.Round(actualFees, 2, MidpointRounding.AwayFromZero)
+            : decimal.Round(combinedSquare * (feePct / 100m), 2, MidpointRounding.AwayFromZero);
+        var expectedDeposit = square.LoadedFromSquare
+            ? decimal.Round(square.ExpectedSquareDeposit, 2, MidpointRounding.AwayFromZero)
+            : decimal.Round(combinedSquare - fees, 2, MidpointRounding.AwayFromZero);
 
         var cashFloat = decimal.Round(inputs.InsideFloat + inputs.OutsideFloat, 2, MidpointRounding.AwayFromZero);
         var totalCash = decimal.Round(pitCash + outsideCash, 2, MidpointRounding.AwayFromZero);
@@ -56,7 +63,7 @@ public sealed class PitstopReportService
         var totalExpenses = decimal.Round(inputs.Expenses.Sum(e => e.Amount), 2, MidpointRounding.AwayFromZero);
 
         var gross = decimal.Round(
-            pitCash + pitCardCharged + outsideCash + outsideCard,
+            pitCash + outsideCash + combinedSquare,
             2,
             MidpointRounding.AwayFromZero);
         var net = decimal.Round(gross - totalExpenses - fees, 2, MidpointRounding.AwayFromZero);
@@ -71,7 +78,7 @@ public sealed class PitstopReportService
             {
                 ItemId = g.Key.ItemId,
                 Name = g.Key.ItemName,
-                CategoryName = g.Key.CategoryName ?? string.Empty,
+                CategoryName = EventReportCategoryNormalizer.Normalize(g.Key.CategoryName, g.Key.ItemName),
                 Quantity = g.Sum(x => x.Quantity),
                 LineTotal = decimal.Round(g.Sum(x => x.LineTotal), 2, MidpointRounding.AwayFromZero),
             })
@@ -80,7 +87,7 @@ public sealed class PitstopReportService
 
         var categories = lines
             .Where(l => l.ItemId > 0)
-            .GroupBy(l => l.CategoryName)
+            .GroupBy(l => EventReportCategoryNormalizer.Normalize(l.CategoryName, l.ItemName))
             .Select(g => new PitstopCategoryAggregateRow
             {
                 CategoryName = g.Key ?? string.Empty,
@@ -89,6 +96,18 @@ public sealed class PitstopReportService
             })
             .OrderByDescending(c => c.LineTotal)
             .ToList();
+
+        var outsideProducts = square.OutsideTerminalProductSales.ToList();
+        var outsideCategories = square.OutsideTerminalCategorySales.ToList();
+        var combinedOutsideSales = SquareOutsideSalesAggregator.BuildCombinedOutsideSales(
+            inputs.OutsideLines,
+            outsideProducts);
+        var combinedProducts = SquareOutsideSalesAggregator.MergeProductSales(products, outsideProducts);
+        var combinedCategories = SquareOutsideSalesAggregator.MergeCategorySales(categories, outsideCategories);
+        var categoryComparison = SquareOutsideSalesAggregator.BuildCategoryComparison(
+            categories,
+            outsideCategories,
+            combinedCategories);
 
         var payBreak = lines
             .Where(l => l.ItemId > 0)
@@ -100,6 +119,20 @@ public sealed class PitstopReportService
             })
             .OrderByDescending(p => p.Total)
             .ToList();
+
+        var warnings = inputs.Warnings.ToList();
+        foreach (var w in square.Warnings)
+        {
+            if (!string.IsNullOrWhiteSpace(w))
+            {
+                warnings.Add(w);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(square.LoadError))
+        {
+            warnings.Add($"Square reconciliation: {square.LoadError}");
+        }
 
         return new PitstopReportData
         {
@@ -113,14 +146,25 @@ public sealed class PitstopReportService
             PitstopCardBaseProductTotal = decimal.Round(pitCardBase, 2, MidpointRounding.AwayFromZero),
             PitstopCardSurchargeCollected = decimal.Round(pitCardSurcharge, 2, MidpointRounding.AwayFromZero),
             InsidePosCardTotalForReconciliation = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero),
-            CombinedSquareCardGross = squareBatch,
-            OutsideCardDerived = squareBatch,
+            CombinedSquareCardGross = combinedSquare,
+            PosSquareGross = posSquare,
+            OutsideSquareGross = outsideSquare,
+            PosSquareTransactionCount = square.PosTransactionCount,
+            OutsideSquareTransactionCount = square.OutsideTransactionCount,
+            ActualSquareFees = square.ActualSquareFees,
+            ExpectedSquareDeposit = expectedDeposit,
+            SquareReconciliationLoaded = square.LoadedFromSquare,
+            SquareReconciliationError = square.LoadError,
+            SquareMatchedPayments = square.MatchedPayments.ToList(),
+            SquareUnmatchedPayments = square.UnmatchedSquarePayments.ToList(),
+            SquareMissingLocalPayments = square.MissingLocalPayments.ToList(),
+            OutsideCardDerived = outsideSquare,
             OutsideCardItemisedBase = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero),
             OutsideCardDifference = squareVsTerminalDiff,
             OutsideCardMismatch = squareMismatch,
             OutsideCashTotal = decimal.Round(outsideCash, 2, MidpointRounding.AwayFromZero),
             TotalCashGross = totalCash,
-            TotalCardGross = decimal.Round(pitCardCharged + outsideCard, 2, MidpointRounding.AwayFromZero),
+            TotalCardGross = combinedSquare,
             GrossSales = gross,
             TotalExpenses = totalExpenses,
             EstimatedSquareFees = fees,
@@ -130,13 +174,19 @@ public sealed class PitstopReportService
             OutsideFloat = inputs.OutsideFloat,
             SquareFeePercent = feePct,
             OutsideLines = inputs.OutsideLines.ToList(),
+            CombinedOutsideSales = combinedOutsideSales,
             Expenses = inputs.Expenses.ToList(),
             PrizeGiveaways = inputs.PrizeGiveaways.ToList(),
             PitstopProductSales = products,
             PitstopCategorySales = categories,
+            OutsideTerminalProductSales = outsideProducts,
+            OutsideTerminalCategorySales = outsideCategories,
+            CombinedEventProductSales = combinedProducts,
+            CombinedEventCategorySales = combinedCategories,
+            EventCategoryComparison = categoryComparison,
             PitstopPaymentBreakdown = payBreak,
-            OutsideMerchRaffleCardTotal = decimal.Round(outsideCard, 2, MidpointRounding.AwayFromZero),
-            Warnings = inputs.Warnings.ToList(),
+            OutsideMerchRaffleCardTotal = outsideSquare,
+            Warnings = warnings,
             CashCounted = inputs.CashCounted,
             FloatRemoved = inputs.FloatRemoved,
             ExpectedCash = inputs.CashCounted is null

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using DateTimeStyles = System.Globalization.DateTimeStyles;
+using NickeltownPOSV4.Models.Pitstop;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -450,6 +451,49 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
             });
     }
 
+    public Task<IReadOnlyList<PitstopCardSaleRefRow>> GetPitstopCardSalesForPeriodAsync(
+        DateTimeOffset startInclusive,
+        DateTimeOffset endExclusive,
+        CancellationToken cancellationToken = default)
+    {
+        using var conn = _factory.OpenConnection();
+        var startIso = startInclusive.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
+        var endIso = endExclusive.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
+
+        var rows = conn.Query<PitstopCardSaleDbRow>(
+            new CommandDefinition(
+                """
+                SELECT
+                  Id AS SaleId,
+                  COALESCE(SaleGuid, LegacyId, cast(Id as text)) AS SaleRef,
+                  Total,
+                  trim(SquareExternalRef) AS SquareExternalRef,
+                  COALESCE(SoldAt, CreatedAt) AS SoldAtIso
+                FROM PitstopSales
+                WHERE lower(trim(COALESCE(SaleMode, ''))) = 'pitstop'
+                  AND PitstopEodBatchId IS NULL
+                  AND COALESCE(Status,'Active') = 'Active'
+                  AND lower(trim(COALESCE(PaymentMethod,''))) IN ('card','square')
+                  AND SquareExternalRef IS NOT NULL AND trim(SquareExternalRef) != ''
+                  AND datetime(COALESCE(SoldAt, CreatedAt)) >= datetime(@startIso)
+                  AND datetime(COALESCE(SoldAt, CreatedAt)) < datetime(@endIso)
+                ORDER BY datetime(COALESCE(SoldAt, CreatedAt)), Id
+                """,
+                new { startIso, endIso },
+                cancellationToken: cancellationToken));
+
+        var list = rows.Select(r => new PitstopCardSaleRefRow
+        {
+            SaleId = r.SaleId,
+            SaleRef = r.SaleRef ?? r.SaleId.ToString(CultureInfo.InvariantCulture),
+            Total = decimal.Round(r.Total, 2, MidpointRounding.AwayFromZero),
+            SquareExternalRef = r.SquareExternalRef ?? string.Empty,
+            SoldAt = ParseOffset(r.SoldAtIso),
+        }).ToList();
+
+        return Task.FromResult<IReadOnlyList<PitstopCardSaleRefRow>>(list);
+    }
+
     public Task<PitstopDaySalesClearResult> ClearPitstopRetailSalesForPeriodAsync(
         DateTimeOffset startInclusive,
         DateTimeOffset endExclusive,
@@ -776,5 +820,18 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
         public long ItemId { get; init; }
 
         public int Quantity { get; init; }
+    }
+
+    private sealed class PitstopCardSaleDbRow
+    {
+        public long SaleId { get; init; }
+
+        public string? SaleRef { get; init; }
+
+        public decimal Total { get; init; }
+
+        public string? SquareExternalRef { get; init; }
+
+        public string SoldAtIso { get; init; } = string.Empty;
     }
 }
