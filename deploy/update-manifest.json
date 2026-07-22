@@ -1,6 +1,6 @@
 {
-  "version": "1.0.7.7",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.7/NickeltownPOSV4_1.0.7.7_x64.msix",
-  "releaseNotes": "Fix Pitstop report date picker: open a centered calendar dialog so it no longer clips off-screen.",
+  "version": "1.0.7.8",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.8/NickeltownPOSV4_1.0.7.8_x64.msix",
+  "releaseNotes": "Pitstop cash: show change to give only after Complete sale, on a confirmation screen.",
   "mandatory": false
 }
