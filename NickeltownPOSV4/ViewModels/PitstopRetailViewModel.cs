@@ -104,6 +104,14 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     private bool _isCashSheetOpen;
 
+    private bool _isCashChangeSheetOpen;
+
+    private decimal _cashChangeDue;
+
+    private decimal _cashChangeReceived;
+
+    private decimal _cashChangeSaleTotal;
+
     private bool _isSendingSquare;
 
     private string _squareWaitingMessage = string.Empty;
@@ -186,6 +194,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         CardFeeConfirmCommand = new AsyncRelayCommand(ConfirmCardAndChargeAsync, () => CanConfirmCardFee());
         ConfirmCashSaleCommand = new AsyncRelayCommand(ConfirmCashSaleAsync, () => CanConfirmCash());
         CancelCashSheetCommand = new RelayCommand(CancelCashSheet, () => IsCashSheetOpen && !IsSendingSquare);
+        DismissCashChangeCommand = new RelayCommand(DismissCashChangeSheet, () => IsCashChangeSheetOpen);
         PrevProductPageCommand = new RelayCommand(() => ChangeProductPage(-1), () => !IsBusy && _currentProductPage > 1);
         NextProductPageCommand = new RelayCommand(() => ChangeProductPage(1), () => !IsBusy && _currentProductPage < _totalProductPages);
         RemoveSelectedCartItemCommand = new RelayCommand(RemoveSelectedCartItem, () => !IsBusy && SelectedCartLine is not null);
@@ -254,6 +263,8 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     public IAsyncRelayCommand ConfirmCashSaleCommand { get; }
 
     public IRelayCommand CancelCashSheetCommand { get; }
+
+    public IRelayCommand DismissCashChangeCommand { get; }
 
     public IRelayCommand PrevProductPageCommand { get; }
 
@@ -454,6 +465,19 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         }
     }
 
+    public bool IsCashChangeSheetOpen
+    {
+        get => _isCashChangeSheetOpen;
+        private set
+        {
+            if (SetProperty(ref _isCashChangeSheetOpen, value))
+            {
+                OnCheckoutOverlayChanged();
+                DismissCashChangeCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
     public bool IsSendingSquare
     {
         get => _isSendingSquare;
@@ -476,7 +500,8 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         private set => SetProperty(ref _squareWaitingMessage, value);
     }
 
-    public bool ShowCheckoutOverlay => IsPaySheetOpen || IsCardFeeSheetOpen || IsCashSheetOpen;
+    public bool ShowCheckoutOverlay =>
+        IsPaySheetOpen || IsCardFeeSheetOpen || IsCashSheetOpen || IsCashChangeSheetOpen;
 
     /// <summary>True while checkout or Square is in progress — blocks catalog edits and duplicate Pay.</summary>
     public bool IsPaymentLocked => IsBusy || IsSendingSquare || _paymentInFlight || ShowCheckoutOverlay;
@@ -487,20 +512,11 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     public string CashSaleTotalCaption => $"Total ${CashSaleTotalText}";
 
-    public string CashChangeText
-    {
-        get
-        {
-            if (!_cashNumpad.TryPeekCurrency(out var received))
-            {
-                return "0.00";
-            }
+    public string CashChangeDueText =>
+        "$" + _cashChangeDue.ToString("0.00", CultureInfo.InvariantCulture);
 
-            return PitstopCashPaymentHelper
-                .CalculateChange(received, _cashSaleTotal)
-                .ToString("0.00", CultureInfo.InvariantCulture);
-        }
-    }
+    public string CashChangeSummaryCaption =>
+        $"Received ${_cashChangeReceived.ToString("0.00", CultureInfo.InvariantCulture)} for sale ${_cashChangeSaleTotal.ToString("0.00", CultureInfo.InvariantCulture)}.";
 
     public bool CashConfirmEnabled =>
         _cashNumpad.TryPeekCurrency(out var received)
@@ -672,9 +688,11 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         OnPropertyChanged(nameof(CashReceivedDisplay));
         OnPropertyChanged(nameof(CashSaleTotalText));
         OnPropertyChanged(nameof(CashSaleTotalCaption));
-        OnPropertyChanged(nameof(CashChangeText));
+        OnPropertyChanged(nameof(CashChangeDueText));
+        OnPropertyChanged(nameof(CashChangeSummaryCaption));
         OnPropertyChanged(nameof(CashConfirmEnabled));
         OnPropertyChanged(nameof(CashShortWarning));
+        DismissCashChangeCommand.NotifyCanExecuteChanged();
     }
 
     private void NotifyWork()
@@ -915,6 +933,12 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
             return;
         }
 
+        if (IsCashChangeSheetOpen)
+        {
+            DismissCashChangeSheet();
+            return;
+        }
+
         CloseAllCheckoutUi();
     }
 
@@ -933,6 +957,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         IsPaySheetOpen = false;
         IsCardFeeSheetOpen = false;
         IsCashSheetOpen = false;
+        IsCashChangeSheetOpen = false;
         Payment = PitstopPaymentSelection.None;
         if (!IsSendingSquare && !IsBusy)
         {
@@ -970,7 +995,6 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     private void RaiseCashUi()
     {
         OnPropertyChanged(nameof(CashReceivedDisplay));
-        OnPropertyChanged(nameof(CashChangeText));
         OnPropertyChanged(nameof(CashConfirmEnabled));
         OnPropertyChanged(nameof(CashShortWarning));
         OnPropertyChanged(nameof(CashSaleTotalCaption));
@@ -982,6 +1006,22 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         _cashNumpad.PropertyChanged -= OnCashNumpadPropertyChanged;
         IsCashSheetOpen = false;
         IsPaySheetOpen = true;
+    }
+
+    private void OpenCashChangeSheet(decimal saleTotal, decimal received, decimal change)
+    {
+        _cashChangeSaleTotal = saleTotal;
+        _cashChangeReceived = received;
+        _cashChangeDue = change;
+        OnPropertyChanged(nameof(CashChangeDueText));
+        OnPropertyChanged(nameof(CashChangeSummaryCaption));
+        IsCashChangeSheetOpen = true;
+    }
+
+    private void DismissCashChangeSheet()
+    {
+        IsCashChangeSheetOpen = false;
+        OnPropertyChanged(nameof(IsPaymentLocked));
     }
 
     private void OpenCardFeePanel()
@@ -1506,10 +1546,23 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
                 }
             }
 
+            var showCashChange =
+                savedPayment == PitstopPaymentSelection.Cash
+                && cashTendered.HasValue
+                && cashChange.HasValue;
+            var changeSaleTotal = charged;
+            var changeReceived = cashTendered ?? 0m;
+            var changeDue = cashChange ?? 0m;
+
             CloseAllCheckoutUi();
             ClearCart();
             ClearPaymentTransaction();
             await LoadCatalogAsync().ConfigureAwait(true);
+
+            if (showCashChange)
+            {
+                OpenCashChangeSheet(changeSaleTotal, changeReceived, changeDue);
+            }
         }
         finally
         {
