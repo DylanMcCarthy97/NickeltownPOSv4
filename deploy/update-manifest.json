@@ -1,6 +1,6 @@
 {
-  "version": "1.0.7.5",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.5/NickeltownPOSV4_1.0.7.5_x64.msix",
-  "releaseNotes": "Pitstop EOD: automatic Square card reconciliation, outside terminal product import from Square orders, and hidden manual card fallback.",
+  "version": "1.0.7.6",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.6/NickeltownPOSV4_1.0.7.6_x64.msix",
+  "releaseNotes": "Pitstop end-of-event report: compact scrollable layout, clearer naming, Reports tile icon update, and printable staff how-to.",
   "mandatory": false
 }
