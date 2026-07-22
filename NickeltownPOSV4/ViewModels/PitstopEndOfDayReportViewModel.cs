@@ -451,6 +451,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         ClearTestReportCommand = new AsyncRelayCommand(ClearTestReportAsync, () => IsTestMode);
 
         BeginEventNameCommand = new AsyncRelayCommand(BeginEventNameAsync);
+        BeginReportDateCommand = new AsyncRelayCommand(BeginReportDateAsync);
         ShowPosSquareTransactionsCommand = new AsyncRelayCommand(ShowPosSquareTransactionsAsync);
         ShowOutsideSquareTransactionsCommand = new AsyncRelayCommand(ShowOutsideSquareTransactionsAsync);
         ToggleManualCardFallbackCommand = new RelayCommand(ToggleManualCardFallback);
@@ -514,6 +515,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     public IAsyncRelayCommand BeginEventNameCommand { get; }
 
+    public IAsyncRelayCommand BeginReportDateCommand { get; }
+
     public IAsyncRelayCommand ShowPosSquareTransactionsCommand { get; }
 
     public IAsyncRelayCommand ShowOutsideSquareTransactionsCommand { get; }
@@ -559,6 +562,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         {
             if (SetProperty(ref _reportDate, value))
             {
+                OnPropertyChanged(nameof(ReportPeriodCaption));
                 ResetExportReadyState();
                 _ = RefreshSquareAndPreviewAsync();
             }
@@ -1888,6 +1892,46 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         {
             EventName = r;
         }
+    }
+
+    private async Task BeginReportDateAsync()
+    {
+        var xamlRoot = _windowHandle.GetXamlRoot();
+        if (xamlRoot is null)
+        {
+            return;
+        }
+
+        var calendar = new CalendarView
+        {
+            SelectionMode = CalendarViewSelectionMode.Single,
+            MinHeight = 380,
+            MaxHeight = 440,
+            HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch,
+        };
+        calendar.SelectedDates.Clear();
+        calendar.SelectedDates.Add(ReportDate.DateTime);
+        calendar.SetDisplayDate(ReportDate.DateTime);
+
+        var dlg = new ContentDialog
+        {
+            XamlRoot = xamlRoot,
+            Title = "Report date",
+            Content = calendar,
+            PrimaryButtonText = "Use date",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+        };
+
+        PosContentDialogHelper.ApplyPosStyle(dlg);
+        var result = await dlg.ShowAsync().AsTask().ConfigureAwait(true);
+        if (result != ContentDialogResult.Primary || calendar.SelectedDates.Count == 0)
+        {
+            return;
+        }
+
+        var selected = calendar.SelectedDates[0].Date;
+        ReportDate = new DateTimeOffset(selected, ReportDate.Offset);
     }
 
     private async Task ShowPosSquareTransactionsAsync()

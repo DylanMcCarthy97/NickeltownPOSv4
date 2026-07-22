@@ -351,11 +351,11 @@
                                 Command="{Binding BeginEventNameCommand}"
                                 Content="{Binding EventName, Mode=OneWay}"
                                 Style="{StaticResource EodValueButtonStyle}" />
-                            <CalendarDatePicker Header="Report date" Date="{Binding ReportDate, Mode=TwoWay}" />
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Period:" />
-                                <TextBlock FontWeight="SemiBold" Text="{Binding ReportPeriodCaption, Mode=OneWay}" />
-                            </StackPanel>
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Report date" />
+                            <Button
+                                Command="{Binding BeginReportDateCommand}"
+                                Content="{Binding ReportPeriodCaption, Mode=OneWay}"
+                                Style="{StaticResource EodValueButtonStyle}" />
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Staff:" />
                                 <TextBlock FontWeight="SemiBold" Text="{Binding StaffDisplay, Mode=OneWay}" />
