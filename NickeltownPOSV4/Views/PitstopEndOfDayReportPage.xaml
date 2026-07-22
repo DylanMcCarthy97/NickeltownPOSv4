@@ -21,14 +21,14 @@
         </Style>
 
         <Style x:Key="EodPrimaryButtonStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="56" />
-            <Setter Property="MinWidth" Value="160" />
-            <Setter Property="Padding" Value="18,12" />
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="MinWidth" Value="148" />
+            <Setter Property="Padding" Value="16,10" />
             <Setter Property="Background" Value="{StaticResource PosAccentBrush}" />
             <Setter Property="Foreground" Value="#FFFFFFFF" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="FontSize" Value="16" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="FontSize" Value="14" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="UseSystemFocusVisuals" Value="False" />
@@ -153,183 +153,103 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid Padding="14,12">
+    <Grid Padding="14,10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Margin="0,0,0,10" Style="{StaticResource SettingsPageHeroStyle}">
-            <Grid ColumnSpacing="14">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Button
-                    Grid.Column="0"
-                    MinWidth="112"
-                    MinHeight="52"
-                    VerticalAlignment="Center"
-                    Click="Back_Click"
-                    Content="Reports"
-                    Style="{StaticResource EodSecondaryButtonStyle}" />
-                <Border
-                    Grid.Column="1"
-                    Width="56"
-                    Height="56"
-                    VerticalAlignment="Center"
-                    Background="{StaticResource SettingsHeroAccentBrush}"
-                    CornerRadius="16">
-                    <FontIcon
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontSize="26"
-                        Foreground="#FFFFFFFF"
-                        Glyph="&#xE8F5;" />
-                </Border>
-                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Pitstop cash-up" />
-                    <TextBlock
-                        Margin="0,4,0,0"
-                        Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Pitstop terminal and outside merch/raffle only. Bar tab sales are not included."
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Grid>
-        </Border>
-
+        <!-- Compact sticky chrome: title, key totals, export, section jump -->
         <Border
-            x:Name="EodSectionSummary"
-            Grid.Row="1"
+            Grid.Row="0"
             Margin="0,0,0,10"
-            Padding="16,14"
+            Padding="12,10"
             Background="{StaticResource PosSurfaceBrush}"
             BorderBrush="{StaticResource PosBorderBrush}"
             BorderThickness="1"
             CornerRadius="14">
-            <StackPanel Spacing="12">
-                <Grid ColumnSpacing="16">
+            <StackPanel Spacing="10">
+                <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Spacing="4">
+
+                    <Button
+                        Grid.Column="0"
+                        MinWidth="96"
+                        MinHeight="44"
+                        VerticalAlignment="Center"
+                        Click="Back_Click"
+                        Content="Reports"
+                        Style="{StaticResource EodSecondaryButtonStyle}" />
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Pitstop end of event report" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="Terminal + outside merch/raffle only · bar tabs excluded"
+                            TextWrapping="NoWrap"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
                         <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash to deposit" />
                         <TextBlock
-                            FontSize="28"
+                            FontSize="20"
                             FontWeight="Bold"
                             Text="{Binding CashToDepositText, Mode=OneWay}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Spacing="4">
-                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Net profit (Pitstop)" />
+
+                    <StackPanel Grid.Column="3" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Net profit" />
                         <TextBlock
-                            FontSize="28"
+                            FontSize="20"
                             FontWeight="Bold"
                             Foreground="{StaticResource PosAccentBrush}"
                             Text="{Binding NetProfitText, Mode=OneWay}" />
                     </StackPanel>
+
                     <StackPanel
-                        Grid.Column="2"
+                        Grid.Column="4"
                         VerticalAlignment="Center"
+                        Orientation="Horizontal"
                         Spacing="8">
-                        <StackPanel Visibility="{Binding CanRunTestReport, Converter={StaticResource BoolToVis}, Mode=OneWay}" Spacing="8">
-                            <Button
-                                MinWidth="172"
-                                Command="{Binding LoadTestReportCommand}"
-                                Content="Load test report"
-                                Style="{StaticResource EodSecondaryButtonStyle}" />
-                            <Button
-                                MinWidth="172"
-                                Command="{Binding ClearTestReportCommand}"
-                                Content="Clear test data"
-                                Style="{StaticResource EodSecondaryButtonStyle}"
-                                Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                        </StackPanel>
                         <Button
-                            MinWidth="172"
+                            MinWidth="132"
+                            MinHeight="44"
+                            Command="{Binding LoadTestReportCommand}"
+                            Content="Test data"
+                            Style="{StaticResource EodSecondaryButtonStyle}"
+                            Visibility="{Binding CanRunTestReport, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        <Button
+                            MinWidth="132"
+                            MinHeight="44"
+                            Command="{Binding ClearTestReportCommand}"
+                            Content="Clear test"
+                            Style="{StaticResource EodSecondaryButtonStyle}"
+                            Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        <Button
+                            MinWidth="148"
+                            MinHeight="44"
+                            HorizontalAlignment="Left"
                             Command="{Binding ExportPdfCommand}"
                             Content="Save and Export"
                             Style="{StaticResource EodPrimaryButtonStyle}" />
                     </StackPanel>
                 </Grid>
 
-                <Border
-                    Padding="12,10"
-                    Background="#1A1D4ED8"
-                    BorderBrush="#FF2563EB"
-                    BorderThickness="2"
-                    CornerRadius="10"
-                    Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="SemiBold"
-                        Foreground="#FF2563EB"
-                        Text="{Binding TestModeBannerText, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords" />
-                </Border>
-
-                <Border
-                    Padding="12,10"
-                    Background="#1A7F1D1D"
-                    BorderBrush="#FFB91C1C"
-                    BorderThickness="2"
-                    CornerRadius="10"
-                    Visibility="{Binding HasCardMismatch, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                    <TextBlock
-                        FontSize="13"
-                        FontWeight="SemiBold"
-                        Foreground="#FFB91C1C"
-                        Text="{Binding MismatchBannerText, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords" />
-                </Border>
-
-                <TextBlock
-                    FontSize="12"
-                    Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="{Binding StatusMessage, Mode=OneWay}"
-                    TextWrapping="WrapWholeWords" />
-                <TextBlock
-                    FontSize="12"
-                    FontWeight="SemiBold"
-                    Foreground="{StaticResource PosTextPrimaryBrush}"
-                    Text="{Binding ReconciliationSummaryText, Mode=OneWay}"
-                    TextWrapping="WrapWholeWords" />
-                <TextBlock
-                    FontSize="11"
-                    Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="Pitstop terminal sales only (bar tabs excluded)."
-                    TextWrapping="WrapWholeWords" />
-                <ItemsControl ItemsSource="{Binding ReconciliationWarnings, Mode=OneWay}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock
-                                Margin="0,2,0,0"
-                                FontSize="11"
-                                Foreground="#FFB45309"
-                                Text="{Binding}"
-                                TextWrapping="WrapWholeWords" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <TextBlock
-                    FontSize="11"
-                    Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="{Binding LastRefreshedText, Mode=OneWay}" />
-            </StackPanel>
-        </Border>
-
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-            <Grid MaxWidth="1060" HorizontalAlignment="Left">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="300" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Margin="0,0,16,0" Spacing="14">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                     <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Click="JumpSection_Click" Content="Summary" Style="{StaticResource EodNavChipStyle}" Tag="Summary" />
                         <Button Click="JumpSection_Click" Content="Event" Style="{StaticResource EodNavChipStyle}" Tag="Event" />
                         <Button Click="JumpSection_Click" Content="Terminal" Style="{StaticResource EodNavChipStyle}" Tag="Pos" />
                         <Button Click="JumpSection_Click" Content="Square" Style="{StaticResource EodNavChipStyle}" Tag="Square" />
@@ -337,6 +257,91 @@
                         <Button Click="JumpSection_Click" Content="Prizes" Style="{StaticResource EodNavChipStyle}" Tag="Prizes" />
                         <Button Click="JumpSection_Click" Content="Costs" Style="{StaticResource EodNavChipStyle}" Tag="Costs" />
                     </StackPanel>
+                </ScrollViewer>
+
+                <Border
+                    Padding="10,8"
+                    Background="#1A1D4ED8"
+                    BorderBrush="#FF2563EB"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                    <TextBlock
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="#FF2563EB"
+                        Text="{Binding TestModeBannerText, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                </Border>
+
+                <Border
+                    Padding="10,8"
+                    Background="#1A7F1D1D"
+                    BorderBrush="#FFB91C1C"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Visibility="{Binding HasCardMismatch, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                    <TextBlock
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="#FFB91C1C"
+                        Text="{Binding MismatchBannerText, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="1" MaxWidth="1200" HorizontalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="292" />
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer Grid.Column="0" Margin="0,0,12,0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="14">
+                    <Border
+                        x:Name="EodSectionSummary"
+                        Padding="14,12"
+                        Background="{StaticResource PosSurfaceBrush}"
+                        BorderBrush="{StaticResource PosBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14">
+                        <StackPanel Spacing="8">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="Status and reconciliation" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding StatusMessage, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                            <TextBlock
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding ReconciliationSummaryText, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Pitstop terminal sales only (bar tabs excluded)."
+                                TextWrapping="WrapWholeWords" />
+                            <ItemsControl ItemsSource="{Binding ReconciliationWarnings, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            Margin="0,2,0,0"
+                                            FontSize="11"
+                                            Foreground="#FFB45309"
+                                            Text="{Binding}"
+                                            TextWrapping="WrapWholeWords" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding LastRefreshedText, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
 
                     <Border x:Name="EodSectionEvent" Style="{StaticResource SettingsCardStyle}">
                         <StackPanel Padding="16" Spacing="12">
@@ -779,16 +784,18 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+            </ScrollViewer>
 
-                <Border
-                    Grid.Column="1"
-                    Padding="16,14"
-                    VerticalAlignment="Top"
-                    Background="{StaticResource PosSurfaceBrush}"
-                    BorderBrush="{StaticResource PosBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="14">
-                    <StackPanel Spacing="14">
+            <Border
+                Grid.Column="1"
+                Padding="14,12"
+                VerticalAlignment="Stretch"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="12">
                         <TextBlock FontSize="15" FontWeight="SemiBold" Text="Breakdown" />
                         <TextBlock
                             FontSize="12"
@@ -844,8 +851,8 @@
                             Content="Save and Export"
                             Style="{StaticResource EodPrimaryButtonStyle}" />
                     </StackPanel>
-                </Border>
-            </Grid>
-        </ScrollViewer>
+                </ScrollViewer>
+            </Border>
+        </Grid>
     </Grid>
 </Page>

@@ -32,7 +32,7 @@ public interface IReportPathProvider
 
 
 
-    /// <summary>Pitstop end-of-shift / cash-up reports will land here.</summary>
+    /// <summary>Pitstop end-of-day report PDFs land here.</summary>
 
     string GetPitstopReportsDirectory();
 

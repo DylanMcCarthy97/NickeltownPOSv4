@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pitstop end-of-day report — how to</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #4b5563;
+      --line: #d1d5db;
+      --accent: #0f766e;
+      --warn: #9a3412;
+      --soft: #f3f4f6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e5e7eb;
+      font: 12.5pt/1.45 "Segoe UI", Calibri, Arial, sans-serif;
+    }
+
+    .sheet {
+      max-width: 210mm;
+      margin: 16px auto;
+      padding: 18mm 16mm;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #111827;
+      color: #fff;
+      font-size: 11pt;
+    }
+
+    .toolbar button {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      background: #14b8a6;
+      color: #042f2e;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 22pt;
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 11pt;
+    }
+
+    h2 {
+      margin: 18px 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+      font-size: 13.5pt;
+      page-break-after: avoid;
+    }
+
+    h3 {
+      margin: 12px 0 6px;
+      font-size: 12pt;
+      page-break-after: avoid;
+    }
+
+    p, li { margin: 0 0 6px; }
+    ul, ol { margin: 0 0 10px; padding-left: 1.25em; }
+    li { margin-bottom: 4px; }
+
+    .callout {
+      margin: 10px 0 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--accent);
+      background: var(--soft);
+      border-radius: 6px;
+      page-break-inside: avoid;
+    }
+
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: #fff7ed;
+    }
+
+    .callout strong { color: inherit; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 11.5pt;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { background: var(--soft); }
+
+    .check {
+      width: 34px;
+      text-align: center;
+      font-size: 14pt;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10.5pt;
+    }
+
+    .footer {
+      margin-top: 18px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10pt;
+    }
+
+    .example {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 11pt;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none !important; }
+      .sheet {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+      a { color: inherit; text-decoration: none; }
+      h2 { break-after: avoid; }
+      .callout, table { break-inside: avoid; }
+    }
+
+    @page {
+      size: A4;
+      margin: 14mm;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <span>Pitstop end-of-day report how-to — open this file and print</span>
+    <button type="button" onclick="window.print()">Print</button>
+  </div>
+
+  <main class="sheet">
+    <div class="meta">
+      <span>Nickeltown POS · Pitstop reporting</span>
+      <span>Printable staff guide</span>
+    </div>
+
+    <h1>Pitstop end-of-day report — how to</h1>
+    <p class="subtitle">
+      End-of-event report for <strong>Pitstop terminal sales</strong> and
+      <strong>outside merch / raffle</strong> only. ClubPOS bar tabs are not included.
+    </p>
+
+    <div class="callout">
+      <strong>Where:</strong> Reports → Pitstop end-of-day report<br />
+      <strong>Top bar:</strong> Cash to deposit, Net profit, Save and Export<br />
+      <strong>Jump chips:</strong> Summary · Event · Terminal · Square · Outside · Prizes · Costs
+    </div>
+
+    <h2>1. Normal run (Square working)</h2>
+
+    <h3>Event</h3>
+    <ol>
+      <li>Set <strong>Event name</strong>.</li>
+      <li>Confirm <strong>Report date</strong> (event day).</li>
+      <li>Check staff name looks correct.</li>
+    </ol>
+
+    <h3>Terminal (automatic)</h3>
+    <ul>
+      <li><strong>Terminal cash</strong> and <strong>Terminal card</strong> come from Pitstop POS for that date.</li>
+      <li>No typing needed in this section.</li>
+    </ul>
+
+    <h3>Square</h3>
+    <ol>
+      <li>Tap <strong>Refresh Square</strong>.</li>
+      <li>Check <strong>POS terminal (Square Terminal 0070)</strong> — transaction count and amount.</li>
+      <li>Check <strong>Outside terminal (Flounderers02)</strong> — transaction count and amount.</li>
+      <li>Tap either amount to view the transaction list if you need to verify.</li>
+      <li>Confirm <strong>Combined Square gross</strong> looks like the day’s total card sales.</li>
+    </ol>
+
+    <h3>Outside sales (paper sheet)</h3>
+    <ol>
+      <li>Enter <strong>Cash qty</strong> and <strong>Cash $</strong> from the paper sheet (Merch and Raffle).</li>
+      <li>Card quantities / totals should fill from Flounderers02 when Square loaded correctly.</li>
+      <li>Optional: <strong>Reload lines</strong>, or hide unused merch lines.</li>
+    </ol>
+
+    <h3>Prizes, costs, float, cash count</h3>
+    <ol>
+      <li>Enter prize giveaway quantities (these deduct stock when archived).</li>
+      <li>Add any expenses.</li>
+      <li>Enter <strong>Inside float</strong> and <strong>Outside float</strong>.</li>
+      <li>Enter <strong>Cash counted</strong> and <strong>Float removed</strong> if you did a physical count.</li>
+      <li>Add archive notes if useful for later.</li>
+    </ol>
+
+    <h3>Finish</h3>
+    <ol>
+      <li>Check top totals and the right-hand <strong>Breakdown</strong>.</li>
+      <li>Tap <strong>Save and Export</strong> (PDF saves / opens).</li>
+      <li>If prompted, archive the Pitstop period (Admin / Treasurer) so sales are locked and stock is deducted.</li>
+    </ol>
+
+    <h2>2. Manual Square card fallback</h2>
+    <p>Use this when the outside terminal does not show up, or Square import fails / looks wrong.</p>
+
+    <div class="callout warn">
+      <strong>When to use:</strong> Outside terminal shows <strong>0 txns / $0</strong> but Flounderers02 took card,
+      <strong>or</strong> Square failed for the whole day.<br /><br />
+      Enter the <strong>combined</strong> Square card total for the event day
+      (POS terminal + outside terminal), not outside alone.
+    </div>
+
+    <ol>
+      <li>Go to <strong>Square</strong>.</li>
+      <li>Tap <strong>Show manual card fallback</strong>.</li>
+      <li>From Square (app / dashboard / close-out), get the <strong>total card gross for the event day</strong>.</li>
+      <li>Tap <strong>Total Square card gross (manual)</strong> and enter that total.</li>
+      <li>Check <strong>Outside card (derived)</strong> = your total − Pitstop terminal card.</li>
+      <li>Confirm status shows manual fallback is active.</li>
+      <li>On <strong>Outside sales</strong>, enter <strong>Card qty</strong> (and Card $ if shown) from the paper sheet —
+          stock needs this when Square product lines did not load.</li>
+      <li>Tap <strong>Save and Export</strong> as usual.</li>
+      <li>Use <strong>Clear</strong> later if you want to remove the override and return to automatic Square totals.</li>
+    </ol>
+
+    <h3>Example</h3>
+    <p class="example">
+      Square close-out total card = $1,200<br />
+      Pitstop terminal card = $800<br />
+      Outside card used in report = $400
+    </p>
+
+    
+    <h2>3. What is counted (and what is not)</h2>
+    <ul>
+      <li><strong>Counted from ClubPOS:</strong> Pitstop terminal cash and card only. Bar tabs / bar sales are never included.</li>
+      <li><strong>Counted from Square:</strong> Card payments for the report date at the configured Square location.
+          Payments that match a Pitstop sale = POS terminal. Payments that do not match ClubPOS = outside terminal (Flounderers02 / merch table).</li>
+      <li><strong>Important:</strong> If the bar also takes Square card on the <em>same</em> Square location, those bar card payments can show up as
+          &ldquo;outside&rdquo; because they are not linked to a Pitstop sale. Check the outside transaction list if outside totals look too high.</li>
+      <li><strong>Not counted:</strong> Bar tab cash, bar tab product lines, and anything outside the report date.</li>
+    </ul>
+    <h2>4. Mismatch / red banner</h2>
+    <ol>
+      <li>Tap the Square amounts and review the transaction lists.</li>
+      <li>Confirm the report date, then try <strong>Refresh Square</strong>.</li>
+      <li>If Square is still wrong, use the manual card fallback above.</li>
+      <li>First <strong>Save and Export</strong> may warn you — tap again to save anyway once you have checked the figures.</li>
+    </ol>
+
+    <h2>5. End of event checklist</h2>
+    <table>
+      <thead>
+        <tr>
+          <th class="check">☐</th>
+          <th>Step</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="check">☐</td><td>Event name and date correct</td></tr>
+        <tr><td class="check">☐</td><td>Refresh Square</td></tr>
+        <tr><td class="check">☐</td><td>POS + outside amounts look right <em>or</em> manual fallback entered</td></tr>
+        <tr><td class="check">☐</td><td>Outside cash entered from paper sheet</td></tr>
+        <tr><td class="check">☐</td><td>If fallback: card qty entered for merch / raffle</td></tr>
+        <tr><td class="check">☐</td><td>Prizes entered</td></tr>
+        <tr><td class="check">☐</td><td>Floats / expenses / cash counted</td></tr>
+        <tr><td class="check">☐</td><td>Save and Export</td></tr>
+        <tr><td class="check">☐</td><td>Archive when prompted (if authorised)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. Common mistakes</h2>
+    <ul>
+      <li><strong>Wrong date</strong> — Square and POS totals will not match the event.</li>
+      <li><strong>Entering only outside card</strong> into manual fallback — enter the combined Square card total for the day.</li>
+      <li><strong>Using fallback but skipping card qty</strong> on outside lines — money can look right but stock will be wrong.</li>
+      <li><strong>Expecting bar tabs from ClubPOS</strong> — they are never included.</li>
+      <li><strong>Bar Square on the same location</strong> — those card payments can inflate outside totals; check the outside txn list.</li>
+    </ul>
+
+    <p class="footer">
+      Keep this sheet near the bar till. File location:
+      <code>docs/Pitstop-End-Of-Day-Report-How-To.html</code>
+    </p>
+  </main>
+</body>
+</html>

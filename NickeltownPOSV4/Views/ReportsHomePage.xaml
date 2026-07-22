@@ -42,18 +42,18 @@
                 <StackPanel Spacing="10" VerticalAlignment="Center">
                     <FontIcon
                         HorizontalAlignment="Left"
-                        FontSize="32"
+                        FontSize="36"
                         Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE8A5;" />
+                        Glyph="&#xE9D2;" />
                     <TextBlock
                         FontSize="20"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Pitstop end-of-day" />
+                        Text="Pitstop end of event" />
                     <TextBlock
                         FontSize="13"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Pitstop terminal cash-up only (bar tabs excluded): Square batch, outside merch and raffle, prizes, and PDF."
+                        Text="End-of-event Pitstop report (bar tabs excluded): Square, outside merch and raffle, prizes, and PDF."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>
