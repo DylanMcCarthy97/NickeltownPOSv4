@@ -726,38 +726,20 @@
                             <TextBlock
                                 FontSize="12"
                                 Foreground="{StaticResource PosTextSecondaryBrush}"
-                                Text="Counted cash and notes are stored on the archived Pitstop record for later review."
+                                Text="Optional till count for over/short. Floats are entered above (Inside / Outside) and already used for cash to deposit."
                                 TextWrapping="WrapWholeWords" />
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="6">
-                                    <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Cash counted (end of day)" />
-                                    <Button
-                                        Command="{Binding BeginCashCountedCommand}"
-                                        Content="{Binding CashCountedText, Mode=OneWay}"
-                                        Style="{StaticResource EodValueButtonStyle}" />
-                                    <Button
-                                        HorizontalAlignment="Left"
-                                        Command="{Binding ClearCashCountedCommand}"
-                                        Content="Clear"
-                                        Style="{StaticResource EodSecondaryButtonStyle}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="6">
-                                    <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Float removed" />
-                                    <Button
-                                        Command="{Binding BeginFloatRemovedCommand}"
-                                        Content="{Binding FloatRemovedText, Mode=OneWay}"
-                                        Style="{StaticResource EodValueButtonStyle}" />
-                                    <Button
-                                        HorizontalAlignment="Left"
-                                        Command="{Binding ClearFloatRemovedCommand}"
-                                        Content="Clear"
-                                        Style="{StaticResource EodSecondaryButtonStyle}" />
-                                </StackPanel>
-                            </Grid>
+                            <StackPanel Spacing="6" MaxWidth="360">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Cash counted (end of day)" />
+                                <Button
+                                    Command="{Binding BeginCashCountedCommand}"
+                                    Content="{Binding CashCountedText, Mode=OneWay}"
+                                    Style="{StaticResource EodValueButtonStyle}" />
+                                <Button
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding ClearCashCountedCommand}"
+                                    Content="Clear"
+                                    Style="{StaticResource EodSecondaryButtonStyle}" />
+                            </StackPanel>
                             <Grid ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />

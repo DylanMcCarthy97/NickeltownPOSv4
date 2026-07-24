@@ -62,9 +62,11 @@ public sealed class PitstopReportService
         }
 
         var squareVsTerminalDiff = decimal.Round(combinedSquare - pitCardCharged, 2, MidpointRounding.AwayFromZero);
+        // Red mismatch banner is amount-only. Square warnings (e.g. excluded bar-terminal
+        // payments, outside sales) stay in Warnings / ReconciliationWarnings separately.
         var squareMismatch = usingManualFallback
             ? combinedSquare < pitCardCharged - MismatchTolerance
-            : Math.Abs(posSquare - pitCardCharged) > MismatchTolerance || square.Warnings.Count > 0;
+            : Math.Abs(posSquare - pitCardCharged) > MismatchTolerance;
 
         var feePct = inputs.SquareFeePercent;
         var fees = square.ActualSquareFees is decimal actualFees
