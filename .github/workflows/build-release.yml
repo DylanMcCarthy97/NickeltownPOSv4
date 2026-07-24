@@ -1,0 +1,163 @@
+name: Build and Release MSIX
+
+on:
+  push:
+    tags:
+      - 'v*.*.*.*'
+
+env:
+  PROJECT_PATH: NickeltownPOSV4/NickeltownPOSV4.csproj
+  MANIFEST_PATH: NickeltownPOSV4/Package.appxmanifest
+  CONFIGURATION: Release
+  PLATFORM: x64
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Extract version from tag
+      id: get_version
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = $tag -replace '^v', ''
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "Building version: $version"
+        
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.PROJECT_PATH }}
+      
+    - name: Decode certificate
+      if: env.CERTIFICATE_BASE64 != ''
+      shell: pwsh
+      env:
+        CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
+        CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+      run: |
+        if ($env:CERTIFICATE_BASE64) {
+          $certBytes = [System.Convert]::FromBase64String($env:CERTIFICATE_BASE64)
+          $certPath = Join-Path $env:GITHUB_WORKSPACE "GitHubActionsWorkflow.pfx"
+          [IO.File]::WriteAllBytes($certPath, $certBytes)
+          echo "CERTIFICATE_PATH=$certPath" >> $env:GITHUB_ENV
+        }
+    
+    - name: Build MSIX package
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        
+        # Update manifest version
+        [xml]$manifest = Get-Content "${{ env.MANIFEST_PATH }}"
+        $manifest.Package.Identity.Version = $version
+        $manifest.Save("${{ env.MANIFEST_PATH }}")
+        
+        # Build arguments
+        $buildArgs = @(
+          'publish',
+          '${{ env.PROJECT_PATH }}',
+          '-c', '${{ env.CONFIGURATION }}',
+          '-p:Platform=${{ env.PLATFORM }}',
+          '-p:UapAppxPackageBuildMode=SideloadOnly',
+          '-p:AppxBundle=Never',
+          '-p:GenerateAppxPackageOnBuild=true'
+        )
+        
+        # Add certificate if available
+        if ($env:CERTIFICATE_PATH) {
+          $buildArgs += "-p:PackageCertificateKeyFile=$env:CERTIFICATE_PATH"
+          if ($env:CERTIFICATE_PASSWORD) {
+            $buildArgs += "-p:PackageCertificatePassword=$env:CERTIFICATE_PASSWORD"
+          }
+        }
+        
+        dotnet @buildArgs
+        
+    - name: Find MSIX package
+      id: find_msix
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $msixName = "NickeltownPOSV4_${version}_${{ env.PLATFORM }}.msix"
+        
+        # Search for the built MSIX
+        $msixFiles = Get-ChildItem -Path . -Recurse -Filter "*.msix" | 
+          Where-Object { $_.Name -like "*${{ env.PLATFORM }}*" } |
+          Sort-Object LastWriteTime -Descending |
+          Select-Object -First 1
+        
+        if (-not $msixFiles) {
+          Write-Error "No MSIX file found!"
+          exit 1
+        }
+        
+        $msixPath = $msixFiles.FullName
+        $outputPath = Join-Path $env:GITHUB_WORKSPACE $msixName
+        
+        Copy-Item $msixPath $outputPath -Force
+        
+        echo "MSIX_PATH=$outputPath" >> $env:GITHUB_OUTPUT
+        echo "MSIX_NAME=$msixName" >> $env:GITHUB_OUTPUT
+        echo "Found MSIX: $msixName"
+        
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          Release ${{ steps.get_version.outputs.VERSION }}
+          
+          ## Installation
+          Download the MSIX package and install on Windows.
+          
+          ## Changes
+          See commit history for details.
+        draft: false
+        prerelease: false
+        
+    - name: Upload MSIX to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ steps.find_msix.outputs.MSIX_PATH }}
+        asset_name: ${{ steps.find_msix.outputs.MSIX_NAME }}
+        asset_content_type: application/octet-stream
+        
+    - name: Update manifest file
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $msixName = "${{ steps.find_msix.outputs.MSIX_NAME }}"
+        $packageUri = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$msixName"
+        
+        $manifest = @{
+          version = $version
+          packageUri = $packageUri
+          releaseNotes = "Release $version - See GitHub release notes for details."
+          mandatory = $false
+        }
+        
+        $manifest | ConvertTo-Json | Set-Content "deploy/update-manifest.json" -Encoding UTF8
+        
+    - name: Commit and push manifest
+      shell: pwsh
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add deploy/update-manifest.json
+        git diff --staged --quiet || git commit -m "Update manifest for ${{ github.ref_name }}"
+        git push origin HEAD:main
