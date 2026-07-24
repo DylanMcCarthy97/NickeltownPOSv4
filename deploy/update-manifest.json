@@ -1,6 +1,6 @@
 {
-  "version": "1.0.7.9",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.9/NickeltownPOSV4_1.0.7.9_x64.msix",
-  "releaseNotes": "Exclude bar tab EFTPOS payments from Pitstop Square reconciliation - fixes Square card reading showing bar tabs in Pitstop reports.",
+  "version": "1.0.7.10",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.10/NickeltownPOSV4_1.0.7.10_x64.msix",
+  "releaseNotes": "Exclude unmatched Square Terminal 0070 payments (e.g. bar tab top-ups) from Pitstop outside/Flounderers02 totals.",
   "mandatory": false
 }
