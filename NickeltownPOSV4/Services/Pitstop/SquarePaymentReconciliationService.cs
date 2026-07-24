@@ -20,15 +20,18 @@ public sealed class SquarePaymentReconciliationService : ISquarePaymentReconcili
     private readonly ISquareConfigService _config;
     private readonly IPitstopRetailSaleRepository _pitstopSales;
     private readonly SquareOutsideOrderEnrichment _outsideOrderEnrichment;
+    private readonly ISquarePaymentAttemptRepository _paymentAttempts;
 
     public SquarePaymentReconciliationService(
         ISquareConfigService config,
         IPitstopRetailSaleRepository pitstopSales,
-        SquareOutsideOrderEnrichment outsideOrderEnrichment)
+        SquareOutsideOrderEnrichment outsideOrderEnrichment,
+        ISquarePaymentAttemptRepository paymentAttempts)
     {
         _config = config;
         _pitstopSales = pitstopSales;
         _outsideOrderEnrichment = outsideOrderEnrichment;
+        _paymentAttempts = paymentAttempts;
     }
 
     public async Task<SquarePaymentReconciliationResult> ReconcileAsync(
@@ -80,8 +83,17 @@ public sealed class SquarePaymentReconciliationService : ISquarePaymentReconcili
                 ex.Message);
         }
 
+        var barTabPaymentIds = await _paymentAttempts
+            .GetBarTabSquarePaymentIdsAsync(periodStartLocal, end, cancellationToken)
+            .ConfigureAwait(false);
+        var barTabIdSet = new HashSet<string>(barTabPaymentIds, StringComparer.OrdinalIgnoreCase);
+
+        var filteredSnapshots = fetchResult.Snapshots
+            .Where(s => !barTabIdSet.Contains(s.PaymentId))
+            .ToList();
+
         var result = SquarePaymentReconciliationMatcher.Match(
-            fetchResult.Snapshots,
+            filteredSnapshots,
             localSales,
             pitTotals.CardChargedTotal,
             squareFeePercentFallback);

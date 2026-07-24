@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
@@ -194,6 +195,32 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
                 cancellationToken: cancellationToken));
 
         return Task.CompletedTask;
+    }
+
+    public Task<System.Collections.Generic.List<string>> GetBarTabSquarePaymentIdsAsync(
+        DateTimeOffset periodStart,
+        DateTimeOffset periodEnd,
+        CancellationToken cancellationToken = default)
+    {
+        using var conn = _factory.OpenConnection();
+        var paymentIds = conn.Query<string>(
+            new CommandDefinition(
+                """
+                SELECT SquarePaymentId
+                FROM SquarePaymentAttempts
+                WHERE PaymentType = 'TabTopUp'
+                  AND SquarePaymentId IS NOT NULL
+                  AND CreatedAt >= @start
+                  AND CreatedAt < @end
+                """,
+                new
+                {
+                    start = periodStart.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
+                    end = periodEnd.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
+                },
+                cancellationToken: cancellationToken));
+
+        return Task.FromResult(paymentIds.ToList());
     }
 
     private sealed class SquareAttemptRow

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NickeltownPOSV4.Models.Payments;
@@ -34,5 +36,14 @@ public interface ISquarePaymentAttemptRepository
     Task SaveRecoveryPayloadAsync(
         long attemptId,
         string recoveryPayloadJson,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all Square payment IDs for bar tab top-ups within the specified period.
+    /// Used to exclude bar tabs from Pitstop reports.
+    /// </summary>
+    Task<List<string>> GetBarTabSquarePaymentIdsAsync(
+        DateTimeOffset periodStart,
+        DateTimeOffset periodEnd,
         CancellationToken cancellationToken = default);
 }
