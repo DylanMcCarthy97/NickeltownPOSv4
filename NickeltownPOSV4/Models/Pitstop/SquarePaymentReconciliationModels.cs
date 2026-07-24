@@ -101,6 +101,17 @@ public sealed class SquarePaymentReconciliationResult
 
     public IReadOnlyList<SquareReconciliationPaymentRow> UnmatchedSquarePayments { get; init; } = Array.Empty<SquareReconciliationPaymentRow>();
 
+    /// <summary>
+    /// Square payments on the POS terminal that are not Pitstop sales (e.g. bar tab top-ups).
+    /// Excluded from Pitstop outside / combined totals.
+    /// </summary>
+    public IReadOnlyList<SquareReconciliationPaymentRow> ExcludedNonPitstopPayments { get; init; } =
+        Array.Empty<SquareReconciliationPaymentRow>();
+
+    public int ExcludedNonPitstopTransactionCount { get; init; }
+
+    public decimal ExcludedNonPitstopGross { get; init; }
+
     public IReadOnlyList<SquareMissingLocalPaymentRow> MissingLocalPayments { get; init; } = Array.Empty<SquareMissingLocalPaymentRow>();
 
     public IReadOnlyList<PitstopProductAggregateRow> OutsideTerminalProductSales { get; init; } = Array.Empty<PitstopProductAggregateRow>();

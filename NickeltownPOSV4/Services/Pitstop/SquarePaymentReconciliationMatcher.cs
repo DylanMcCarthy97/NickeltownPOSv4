@@ -37,9 +37,11 @@ public static class SquarePaymentReconciliationMatcher
         var matchedSquareIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var matchedRows = new List<SquareReconciliationPaymentRow>();
         var unmatchedRows = new List<SquareReconciliationPaymentRow>();
+        var excludedRows = new List<SquareReconciliationPaymentRow>();
         var warnings = new List<string>();
         decimal posGross = 0m;
         decimal outsideGross = 0m;
+        decimal excludedGross = 0m;
         decimal feeTotal = 0m;
         var hasFeeData = false;
 
@@ -51,11 +53,6 @@ public static class SquarePaymentReconciliationMatcher
             }
 
             var paymentId = payment.PaymentId.Trim();
-            if (payment.ProcessingFees > 0m)
-            {
-                feeTotal += payment.ProcessingFees;
-                hasFeeData = true;
-            }
 
             if (localByPaymentId.TryGetValue(paymentId, out var localSale))
             {
@@ -74,6 +71,7 @@ public static class SquarePaymentReconciliationMatcher
                     LocalSaleAmount = localSale.Total,
                 });
                 posGross += payment.GrossAmount;
+                AddFees(payment, ref feeTotal, ref hasFeeData);
 
                 if (Math.Abs(payment.GrossAmount - localSale.Total) > AmountMismatchTolerance)
                 {
@@ -81,10 +79,14 @@ public static class SquarePaymentReconciliationMatcher
                 }
 
                 AddDeviceMismatchWarning(warnings, payment.DeviceName, paymentId, expectPos: true);
+                continue;
             }
-            else
+
+            // Unmatched: only Flounderers02 (or unknown non-0070) counts as Pitstop outside merch.
+            // Unmatched 0070 payments are bar tabs / other POS card — not Pitstop outside.
+            if (IsPosDevice(payment.DeviceName))
             {
-                unmatchedRows.Add(new SquareReconciliationPaymentRow
+                excludedRows.Add(new SquareReconciliationPaymentRow
                 {
                     PaymentId = paymentId,
                     PaidAt = payment.PaidAt,
@@ -92,10 +94,29 @@ public static class SquarePaymentReconciliationMatcher
                     ReceiptNumber = payment.ReceiptNumber,
                     DeviceName = payment.DeviceName,
                     CardLast4 = payment.CardLast4,
-                    TerminalClass = SquarePaymentTerminalClass.OutsideTerminal,
+                    TerminalClass = SquarePaymentTerminalClass.PosTerminal,
                 });
-                outsideGross += payment.GrossAmount;
-                AddDeviceMismatchWarning(warnings, payment.DeviceName, paymentId, expectPos: false);
+                excludedGross += payment.GrossAmount;
+                continue;
+            }
+
+            unmatchedRows.Add(new SquareReconciliationPaymentRow
+            {
+                PaymentId = paymentId,
+                PaidAt = payment.PaidAt,
+                GrossAmount = payment.GrossAmount,
+                ReceiptNumber = payment.ReceiptNumber,
+                DeviceName = payment.DeviceName,
+                CardLast4 = payment.CardLast4,
+                TerminalClass = SquarePaymentTerminalClass.OutsideTerminal,
+            });
+            outsideGross += payment.GrossAmount;
+            AddFees(payment, ref feeTotal, ref hasFeeData);
+
+            if (IsOutsideDevice(payment.DeviceName) == false
+                && !string.IsNullOrWhiteSpace(payment.DeviceName))
+            {
+                warnings.Add($"Payment {paymentId} counted as outside but device is {payment.DeviceName}.");
             }
         }
 
@@ -117,6 +138,7 @@ public static class SquarePaymentReconciliationMatcher
 
         posGross = Round(posGross);
         outsideGross = Round(outsideGross);
+        excludedGross = Round(excludedGross);
         var combined = Round(posGross + outsideGross);
         decimal? actualFees = hasFeeData ? Round(feeTotal) : null;
         var feesForDeposit = actualFees ?? Round(combined * (squareFeePercentFallback / 100m));
@@ -128,9 +150,16 @@ public static class SquarePaymentReconciliationMatcher
             warnings.Add($"POS Square total {posGross:C2} differs from Pitstop terminal card {localPosCardTotal:C2} (diff {posDiff:C2}).");
         }
 
+        if (excludedRows.Count > 0)
+        {
+            warnings.Add(
+                $"Excluded {excludedRows.Count} Square payment(s) on {PosDeviceHint} that are not Pitstop sales "
+                + $"(e.g. bar tab top-ups), total {excludedGross:C2}.");
+        }
+
         if (unmatchedRows.Count > 0)
         {
-            warnings.Add($"{unmatchedRows.Count} outside-terminal Square payment(s) were not created through ClubPOS.");
+            warnings.Add($"{unmatchedRows.Count} outside-terminal Square payment(s) were not created through ClubPOS Pitstop.");
         }
 
         return new SquarePaymentReconciliationResult
@@ -140,14 +169,34 @@ public static class SquarePaymentReconciliationMatcher
             CombinedSquareGross = combined,
             PosTransactionCount = matchedRows.Count,
             OutsideTransactionCount = unmatchedRows.Count,
+            ExcludedNonPitstopGross = excludedGross,
+            ExcludedNonPitstopTransactionCount = excludedRows.Count,
             ActualSquareFees = actualFees,
             ExpectedSquareDeposit = expectedDeposit,
             LoadedFromSquare = true,
             MatchedPayments = matchedRows,
             UnmatchedSquarePayments = unmatchedRows,
+            ExcludedNonPitstopPayments = excludedRows,
             MissingLocalPayments = missingLocal,
             Warnings = warnings,
         };
+    }
+
+    internal static bool IsPosDevice(string? deviceName) =>
+        !string.IsNullOrWhiteSpace(deviceName)
+        && deviceName.Contains(PosDeviceHint, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsOutsideDevice(string? deviceName) =>
+        !string.IsNullOrWhiteSpace(deviceName)
+        && deviceName.Contains(OutsideDeviceHint, StringComparison.OrdinalIgnoreCase);
+
+    private static void AddFees(SquarePaymentSnapshot payment, ref decimal feeTotal, ref bool hasFeeData)
+    {
+        if (payment.ProcessingFees > 0m)
+        {
+            feeTotal += payment.ProcessingFees;
+            hasFeeData = true;
+        }
     }
 
     private static void AddDeviceMismatchWarning(List<string> warnings, string? deviceName, string paymentId, bool expectPos)
@@ -157,16 +206,12 @@ public static class SquarePaymentReconciliationMatcher
             return;
         }
 
-        var isPosDevice = deviceName.Contains(PosDeviceHint, StringComparison.OrdinalIgnoreCase);
-        var isOutsideDevice = deviceName.Contains(OutsideDeviceHint, StringComparison.OrdinalIgnoreCase);
+        var isPosDevice = IsPosDevice(deviceName);
+        var isOutsideDevice = IsOutsideDevice(deviceName);
 
         if (expectPos && !isPosDevice && isOutsideDevice)
         {
             warnings.Add($"Payment {paymentId} matched locally but device is {deviceName}.");
-        }
-        else if (!expectPos && isPosDevice)
-        {
-            warnings.Add($"Payment {paymentId} is unmatched but device is {deviceName}.");
         }
     }
 

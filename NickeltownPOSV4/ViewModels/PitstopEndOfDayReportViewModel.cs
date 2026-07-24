@@ -678,7 +678,12 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                 return "Manual Square card fallback active — automatic totals overridden.";
             }
 
-            return $"Square loaded — {Preview?.PosSquareTransactionCount ?? 0} POS, {Preview?.OutsideSquareTransactionCount ?? 0} outside, {Preview?.OutsideTerminalProductSales.Count ?? 0} outside products.";
+            var excluded = _squareReconciliationResult.ExcludedNonPitstopTransactionCount;
+            var excludedPart = excluded > 0
+                ? $", {excluded} non-Pitstop 0070 excluded"
+                : string.Empty;
+
+            return $"Square loaded — {Preview?.PosSquareTransactionCount ?? 0} POS, {Preview?.OutsideSquareTransactionCount ?? 0} outside{excludedPart}, {Preview?.OutsideTerminalProductSales.Count ?? 0} outside products.";
         }
     }
 
