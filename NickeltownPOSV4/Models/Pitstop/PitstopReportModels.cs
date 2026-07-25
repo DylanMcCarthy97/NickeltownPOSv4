@@ -82,7 +82,13 @@ public sealed class PitstopReportInputs
     /// <summary>Automatic Square reconciliation for the report period.</summary>
     public SquarePaymentReconciliationResult? SquareReconciliation { get; set; }
 
-    /// <summary>Manual total Square card gross for the event day when automatic import fails.</summary>
+    /// <summary>
+    /// When true, ignore Flounderers02 / outside-terminal Square import.
+    /// POS card comes from Pitstop; enter <see cref="ManualCombinedSquareCardGross"/> to derive outside.
+    /// </summary>
+    public bool UseManualSquareCardMode { get; set; }
+
+    /// <summary>Manual total Square card gross for the event day when automatic outside import is off.</summary>
     public decimal? ManualCombinedSquareCardGross { get; set; }
 
     /// <summary>Processor fee percent used when Square does not return fees, e.g. 1.75 means 1.75%.</summary>

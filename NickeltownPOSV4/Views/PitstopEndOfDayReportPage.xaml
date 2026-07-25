@@ -130,7 +130,7 @@
                         <StackPanel
                             Grid.Column="2"
                             Spacing="4"
-                            Visibility="{Binding DataContext.ShowManualCardFallback, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            Visibility="{Binding DataContext.IsSquareManualMode, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                             <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card qty" />
                             <Button
                                 Command="{Binding BeginCardQtyCommand}"
@@ -140,7 +140,7 @@
                         <StackPanel
                             Grid.Column="3"
                             Spacing="4"
-                            Visibility="{Binding DataContext.ShowManualCardFallback, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            Visibility="{Binding DataContext.IsSquareManualMode, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                             <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card $" />
                             <Button
                                 Command="{Binding BeginCardDollarsCommand}"
@@ -409,13 +409,45 @@
                                 <Button
                                     Grid.Column="1"
                                     Command="{Binding RefreshSquareCommand}"
-                                    Content="Refresh Square"
+                                    Content="{Binding RefreshSquareButtonLabel, Mode=OneWay}"
                                     Style="{StaticResource EodSecondaryButtonStyle}" />
+                            </Grid>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0">
+                                    <Border
+                                        Background="#1A2563EB"
+                                        BorderBrush="{StaticResource PosAccentBrush}"
+                                        BorderThickness="2"
+                                        CornerRadius="8"
+                                        Visibility="{Binding IsSquareAutoMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding SetSquareAutoModeCommand}"
+                                        Content="Auto"
+                                        Style="{StaticResource EodSecondaryButtonStyle}" />
+                                </Grid>
+                                <Grid Grid.Column="1">
+                                    <Border
+                                        Background="#1A2563EB"
+                                        BorderBrush="{StaticResource PosAccentBrush}"
+                                        BorderThickness="2"
+                                        CornerRadius="8"
+                                        Visibility="{Binding IsSquareManualMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding SetSquareManualModeCommand}"
+                                        Content="Manual"
+                                        Style="{StaticResource EodSecondaryButtonStyle}" />
+                                </Grid>
                             </Grid>
                             <TextBlock
                                 FontSize="12"
                                 Foreground="{StaticResource PosTextSecondaryBrush}"
-                                Text="Card totals are loaded from Square and matched to Pitstop sales by payment reference."
+                                Text="{Binding SquareModeHelpText, Mode=OneWay}"
                                 TextWrapping="WrapWholeWords" />
                             <TextBlock
                                 FontSize="12"
@@ -444,9 +476,28 @@
                                     Command="{Binding ShowPosSquareTransactionsCommand}"
                                     Content="{Binding PosSquareGrossText, Mode=OneWay}"
                                     Style="{StaticResource EodValueButtonStyle}" />
-                                <TextBlock Grid.Row="2" Style="{StaticResource EodMetricLabelStyle}" Text="Outside terminal (Flounderers02)" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource EodMetricLabelStyle}" Text="Txns" />
-                                <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource EodMetricValueStyle}" Text="{Binding OutsideSquareTransactionCountText, Mode=OneWay}" />
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Style="{StaticResource EodMetricLabelStyle}"
+                                    Text="Outside terminal (Flounderers02)"
+                                    Visibility="{Binding IsSquareAutoMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Style="{StaticResource EodMetricLabelStyle}"
+                                    Text="Outside card (derived)"
+                                    Visibility="{Binding IsSquareManualMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Grid.Column="1"
+                                    Style="{StaticResource EodMetricLabelStyle}"
+                                    Text="Txns"
+                                    Visibility="{Binding IsSquareAutoMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Grid.Column="2"
+                                    Style="{StaticResource EodMetricValueStyle}"
+                                    Text="{Binding OutsideSquareTransactionCountText, Mode=OneWay}"
+                                    Visibility="{Binding IsSquareAutoMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                 <Button
                                     Grid.Row="3"
                                     Grid.ColumnSpan="3"
@@ -454,38 +505,15 @@
                                     Content="{Binding OutsideSquareGrossText, Mode=OneWay}"
                                     Style="{StaticResource EodValueButtonStyle}" />
                                 <TextBlock Grid.Row="4" Style="{StaticResource EodMetricLabelStyle}" Text="Combined Square gross" />
-                                <TextBlock Grid.Row="4" Grid.Column="2" Style="{StaticResource EodMetricValueStyle}" Text="{Binding CombinedSquareGrossText, Mode=OneWay}" />
-                            </Grid>
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="100" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Square fees" />
-                                <TextBlock Grid.Column="1" Style="{StaticResource EodMetricValueStyle}" Text="{Binding SquareFeesText, Mode=OneWay}" />
-                                <TextBlock Grid.Row="1" Style="{StaticResource EodMetricLabelStyle}" Text="Expected deposit" />
-                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource EodMetricValueStyle}" Text="{Binding ExpectedSquareDepositText, Mode=OneWay}" />
-                            </Grid>
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Estimated fee % (fallback when Square fees unavailable)" />
-                            <Button
-                                Command="{Binding BeginSquareFeeCommand}"
-                                Content="{Binding SquareFeePercentText, Mode=OneWay}"
-                                Style="{StaticResource EodValueButtonStyle}" />
-                            <Button
-                                Command="{Binding ToggleManualCardFallbackCommand}"
-                                Content="{Binding ManualCardFallbackToggleLabel, Mode=OneWay}"
-                                Style="{StaticResource EodSecondaryButtonStyle}" />
-                            <StackPanel Spacing="8" Visibility="{Binding ShowManualCardFallback, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                 <TextBlock
-                                    FontSize="12"
-                                    Foreground="{StaticResource PosTextSecondaryBrush}"
-                                    Text="If Square import fails, enter the total card gross from your Square close-out for the event day. Outside card = total minus POS terminal card."
-                                    TextWrapping="WrapWholeWords" />
-                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Total Square card gross (manual)" />
+                                    Grid.Row="4"
+                                    Grid.Column="2"
+                                    Style="{StaticResource EodMetricValueStyle}"
+                                    Text="{Binding CombinedSquareGrossText, Mode=OneWay}"
+                                    Visibility="{Binding IsSquareAutoMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                            </Grid>
+                            <StackPanel Spacing="8" Visibility="{Binding IsSquareManualMode, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Combined Square card gross (manual)" />
                                 <Button
                                     Command="{Binding BeginManualCombinedSquareCommand}"
                                     Content="{Binding ManualCombinedSquareCardGrossText, Mode=OneWay}"
@@ -503,16 +531,34 @@
                                         Grid.Column="1"
                                         VerticalAlignment="Bottom"
                                         Command="{Binding ClearManualCombinedSquareCommand}"
-                                        Content="Clear"
+                                        Content="Clear total"
                                         Style="{StaticResource EodSecondaryButtonStyle}" />
                                 </Grid>
                                 <TextBlock
                                     FontSize="12"
                                     Foreground="{StaticResource PosAccentBrush}"
                                     Text="{Binding ManualCardFallbackStatusText, Mode=OneWay}"
-                                    TextWrapping="WrapWholeWords"
-                                    Visibility="{Binding HasManualCombinedSquareCardGross, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                    TextWrapping="WrapWholeWords" />
                             </StackPanel>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Square fees" />
+                                <TextBlock Grid.Column="1" Style="{StaticResource EodMetricValueStyle}" Text="{Binding SquareFeesText, Mode=OneWay}" />
+                                <TextBlock Grid.Row="1" Style="{StaticResource EodMetricLabelStyle}" Text="Expected deposit" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource EodMetricValueStyle}" Text="{Binding ExpectedSquareDepositText, Mode=OneWay}" />
+                            </Grid>
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Estimated fee % (used in Manual, or when Square fees unavailable)" />
+                            <Button
+                                Command="{Binding BeginSquareFeeCommand}"
+                                Content="{Binding SquareFeePercentText, Mode=OneWay}"
+                                Style="{StaticResource EodValueButtonStyle}" />
                         </StackPanel>
                     </Border>
 
@@ -522,12 +568,12 @@
                             <TextBlock
                                 FontSize="12"
                                 Foreground="{StaticResource PosTextSecondaryBrush}"
-                                Text="Enter paper-sheet cash quantities below. Card quantities and totals are imported automatically from Flounderers02 Square orders."
+                                Text="{Binding OutsideSalesHelpText, Mode=OneWay}"
                                 TextWrapping="WrapWholeWords" />
                             <TextBlock
                                 FontSize="12"
                                 Foreground="{StaticResource PosTextSecondaryBrush}"
-                                Text="Tap the outside terminal total above to view each receipt with items."
+                                Text="Tap the outside total in Square reconciliation to view receipts (Auto) or see how outside was derived (Manual)."
                                 TextWrapping="WrapWholeWords" />
                             <TextBlock
                                 FontSize="12"

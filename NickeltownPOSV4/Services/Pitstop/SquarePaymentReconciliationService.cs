@@ -38,7 +38,8 @@ public sealed class SquarePaymentReconciliationService : ISquarePaymentReconcili
         DateTimeOffset periodStartLocal,
         DateTimeOffset periodEndLocal,
         decimal squareFeePercentFallback,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool includeOutsideTerminal = true)
     {
         var end = periodEndLocal;
         if (end <= periodStartLocal)
@@ -98,6 +99,11 @@ public sealed class SquarePaymentReconciliationService : ISquarePaymentReconcili
             pitTotals.CardChargedTotal,
             squareFeePercentFallback);
 
+        if (!includeOutsideTerminal)
+        {
+            return WithoutOutsideTerminal(result);
+        }
+
         if (result.UnmatchedSquarePayments.Count == 0)
         {
             return result;
@@ -106,6 +112,43 @@ public sealed class SquarePaymentReconciliationService : ISquarePaymentReconcili
         return await _outsideOrderEnrichment
             .EnrichAsync(cfg, result, fetchResult.PaymentOrderIds, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    internal static SquarePaymentReconciliationResult WithoutOutsideTerminal(SquarePaymentReconciliationResult result)
+    {
+        var posGross = result.PosSquareGross;
+        var fees = result.ActualSquareFees;
+        // Fees from the full Square day may include outside; keep POS-matched fees only when available.
+        // Prefer estimate later in the report when manual combined is entered.
+        var warnings = result.Warnings
+            .Where(w =>
+                !w.Contains("outside-terminal", StringComparison.OrdinalIgnoreCase)
+                && !w.Contains("Excluded ", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return new SquarePaymentReconciliationResult
+        {
+            PosSquareGross = posGross,
+            OutsideSquareGross = 0m,
+            CombinedSquareGross = posGross,
+            PosTransactionCount = result.PosTransactionCount,
+            OutsideTransactionCount = 0,
+            ExcludedNonPitstopGross = result.ExcludedNonPitstopGross,
+            ExcludedNonPitstopTransactionCount = result.ExcludedNonPitstopTransactionCount,
+            ActualSquareFees = fees,
+            ExpectedSquareDeposit = result.ExpectedSquareDeposit,
+            LoadedFromSquare = result.LoadedFromSquare,
+            LoadError = result.LoadError,
+            MatchedPayments = result.MatchedPayments,
+            UnmatchedSquarePayments = Array.Empty<SquareReconciliationPaymentRow>(),
+            ExcludedNonPitstopPayments = result.ExcludedNonPitstopPayments,
+            MissingLocalPayments = result.MissingLocalPayments,
+            OutsideTerminalProductSales = Array.Empty<PitstopProductAggregateRow>(),
+            OutsideTerminalCategorySales = Array.Empty<PitstopCategoryAggregateRow>(),
+            OutsideOrdersLoadedCount = 0,
+            OutsideOrdersMissingCount = 0,
+            Warnings = warnings,
+        };
     }
 
     private sealed class FetchSquarePaymentsResult

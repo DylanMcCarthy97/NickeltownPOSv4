@@ -135,7 +135,7 @@ public static class PitstopReportPdfExporter
         if (d.UsingManualSquareCardFallback)
         {
             doc.Add(new Paragraph(
-                "Manual Square card fallback was used — outside card was derived as total Square card minus POS terminal card.",
+                "Manual Square mode was used — outside card was derived as combined Square card minus POS terminal card. Outside terminal was not imported.",
                 FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 9, Muted))
             {
                 SpacingAfter = 6,

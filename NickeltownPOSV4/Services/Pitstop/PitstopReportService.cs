@@ -43,16 +43,26 @@ public sealed class PitstopReportService
 
         var square = inputs.SquareReconciliation ?? SquarePaymentReconciliationResult.Empty("Square reconciliation has not been loaded.");
         var manualCombined = inputs.ManualCombinedSquareCardGross;
-        var usingManualFallback = manualCombined is > 0m;
+        var usingManualMode = inputs.UseManualSquareCardMode;
+        var usingManualFallback = usingManualMode && manualCombined is > 0m;
 
         decimal combinedSquare;
         decimal posSquare;
         decimal outsideSquare;
-        if (usingManualFallback)
+        if (usingManualMode)
         {
-            combinedSquare = decimal.Round(manualCombined!.Value, 2, MidpointRounding.AwayFromZero);
             posSquare = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero);
-            outsideSquare = decimal.Round(Math.Max(0m, combinedSquare - pitCardCharged), 2, MidpointRounding.AwayFromZero);
+            if (usingManualFallback)
+            {
+                combinedSquare = decimal.Round(manualCombined!.Value, 2, MidpointRounding.AwayFromZero);
+                outsideSquare = decimal.Round(Math.Max(0m, combinedSquare - pitCardCharged), 2, MidpointRounding.AwayFromZero);
+            }
+            else
+            {
+                // Manual mode before a combined total is entered: POS only, no outside Square.
+                combinedSquare = posSquare;
+                outsideSquare = 0m;
+            }
         }
         else
         {
@@ -66,13 +76,15 @@ public sealed class PitstopReportService
         // payments, outside sales) stay in Warnings / ReconciliationWarnings separately.
         var squareMismatch = usingManualFallback
             ? combinedSquare < pitCardCharged - MismatchTolerance
-            : Math.Abs(posSquare - pitCardCharged) > MismatchTolerance;
+            : !usingManualMode && Math.Abs(posSquare - pitCardCharged) > MismatchTolerance;
 
         var feePct = inputs.SquareFeePercent;
-        var fees = square.ActualSquareFees is decimal actualFees
+        // In manual mode fees are estimated from the combined total — do not use Square day fees
+        // that may include outside-terminal volume we intentionally ignored.
+        var fees = !usingManualMode && square.ActualSquareFees is decimal actualFees
             ? decimal.Round(actualFees, 2, MidpointRounding.AwayFromZero)
             : decimal.Round(combinedSquare * (feePct / 100m), 2, MidpointRounding.AwayFromZero);
-        var expectedDeposit = square.LoadedFromSquare
+        var expectedDeposit = !usingManualMode && square.LoadedFromSquare
             ? decimal.Round(square.ExpectedSquareDeposit, 2, MidpointRounding.AwayFromZero)
             : decimal.Round(combinedSquare - fees, 2, MidpointRounding.AwayFromZero);
 
@@ -117,8 +129,12 @@ public sealed class PitstopReportService
             .OrderByDescending(c => c.LineTotal)
             .ToList();
 
-        var outsideProducts = square.OutsideTerminalProductSales.ToList();
-        var outsideCategories = square.OutsideTerminalCategorySales.ToList();
+        var outsideProducts = usingManualMode
+            ? new List<PitstopProductAggregateRow>()
+            : square.OutsideTerminalProductSales.ToList();
+        var outsideCategories = usingManualMode
+            ? new List<PitstopCategoryAggregateRow>()
+            : square.OutsideTerminalCategorySales.ToList();
         var combinedOutsideSales = SquareOutsideSalesAggregator.BuildCombinedOutsideSales(
             inputs.OutsideLines,
             outsideProducts);
@@ -141,28 +157,46 @@ public sealed class PitstopReportService
             .ToList();
 
         var warnings = inputs.Warnings.ToList();
-        foreach (var w in square.Warnings)
+        if (!usingManualMode)
         {
-            if (!string.IsNullOrWhiteSpace(w))
+            foreach (var w in square.Warnings)
             {
-                warnings.Add(w);
+                if (!string.IsNullOrWhiteSpace(w))
+                {
+                    warnings.Add(w);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(square.LoadError))
+            {
+                warnings.Add($"Square reconciliation: {square.LoadError}");
             }
         }
-
-        if (!string.IsNullOrWhiteSpace(square.LoadError))
+        else if (!string.IsNullOrWhiteSpace(square.LoadError)
+                 && square.MatchedPayments.Count == 0
+                 && !square.LoadedFromSquare)
         {
-            warnings.Add($"Square reconciliation: {square.LoadError}");
+            // POS refresh failed in manual mode — still note it, but do not treat as outside confusion.
+            warnings.Add($"Square POS refresh: {square.LoadError}");
         }
 
-        if (usingManualFallback)
+        if (usingManualMode)
         {
-            warnings.Add(
-                $"Manual Square card fallback active — total {combinedSquare:C2}, outside derived {outsideSquare:C2} "
-                + $"(total minus POS card {pitCardCharged:C2}).");
-            if (combinedSquare < pitCardCharged - MismatchTolerance)
+            if (usingManualFallback)
             {
                 warnings.Add(
-                    $"Manual Square total {combinedSquare:C2} is less than Pitstop terminal card {pitCardCharged:C2}.");
+                    $"Manual Square mode — combined {combinedSquare:C2}, outside derived {outsideSquare:C2} "
+                    + $"(combined minus POS card {pitCardCharged:C2}). Outside terminal not imported.");
+                if (combinedSquare < pitCardCharged - MismatchTolerance)
+                {
+                    warnings.Add(
+                        $"Manual Square total {combinedSquare:C2} is less than Pitstop terminal card {pitCardCharged:C2}.");
+                }
+            }
+            else
+            {
+                warnings.Add(
+                    "Manual Square mode — enter combined Square card gross for the day. Outside terminal is not imported.");
             }
         }
 
@@ -182,14 +216,16 @@ public sealed class PitstopReportService
             PosSquareGross = posSquare,
             OutsideSquareGross = outsideSquare,
             PosSquareTransactionCount = square.PosTransactionCount,
-            OutsideSquareTransactionCount = square.OutsideTransactionCount,
-            ActualSquareFees = square.ActualSquareFees,
+            OutsideSquareTransactionCount = usingManualMode ? 0 : square.OutsideTransactionCount,
+            ActualSquareFees = usingManualMode ? null : square.ActualSquareFees,
             ExpectedSquareDeposit = expectedDeposit,
             SquareReconciliationLoaded = square.LoadedFromSquare,
             UsingManualSquareCardFallback = usingManualFallback,
             SquareReconciliationError = square.LoadError,
             SquareMatchedPayments = square.MatchedPayments.ToList(),
-            SquareUnmatchedPayments = square.UnmatchedSquarePayments.ToList(),
+            SquareUnmatchedPayments = usingManualMode
+                ? new List<SquareReconciliationPaymentRow>()
+                : square.UnmatchedSquarePayments.ToList(),
             SquareMissingLocalPayments = square.MissingLocalPayments.ToList(),
             OutsideCardDerived = outsideSquare,
             OutsideCardItemisedBase = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero),

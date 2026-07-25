@@ -241,27 +241,30 @@
       <li>If prompted, archive the Pitstop period (Admin / Treasurer) so sales are locked and stock is deducted.</li>
     </ol>
 
-    <h2>2. Manual Square card fallback</h2>
-    <p>Use this when the outside terminal does not show up, or Square import fails / looks wrong.</p>
+    <h2>2. Square: Auto vs Manual</h2>
+    <p>On the <strong>Square</strong> section, choose <strong>Auto</strong> or <strong>Manual</strong>.</p>
+
+    <h3>Auto (default)</h3>
+    <p>Loads POS and outside (Flounderers02) from Square and matches payments to Pitstop sales.</p>
+
+    <h3>Manual</h3>
+    <p>Use when outside Square import fails or looks wrong. Manual does <strong>not</strong> import the outside terminal.</p>
 
     <div class="callout warn">
-      <strong>When to use:</strong> Outside terminal shows <strong>0 txns / $0</strong> but Flounderers02 took card,
-      <strong>or</strong> Square failed for the whole day.<br /><br />
+      <strong>Manual flow:</strong> POS terminal comes from Pitstop / Square match.
       Enter the <strong>combined</strong> Square card total for the event day
-      (POS terminal + outside terminal), not outside alone.
+      (POS + outside), not outside alone. Outside card = combined − POS.
     </div>
 
     <ol>
       <li>Go to <strong>Square</strong>.</li>
-      <li>Tap <strong>Show manual card fallback</strong>.</li>
+      <li>Tap <strong>Manual</strong>.</li>
       <li>From Square (app / dashboard / close-out), get the <strong>total card gross for the event day</strong>.</li>
-      <li>Tap <strong>Total Square card gross (manual)</strong> and enter that total.</li>
+      <li>Tap <strong>Combined Square card gross</strong> and enter that total.</li>
       <li>Check <strong>Outside card (derived)</strong> = your total − Pitstop terminal card.</li>
-      <li>Confirm status shows manual fallback is active.</li>
-      <li>On <strong>Outside sales</strong>, enter <strong>Card qty</strong> (and Card $ if shown) from the paper sheet —
-          stock needs this when Square product lines did not load.</li>
+      <li>On <strong>Outside sales</strong>, enter <strong>Card qty</strong> / <strong>Card $</strong> from the paper sheet for stock.</li>
       <li>Tap <strong>Save and Export</strong> as usual.</li>
-      <li>Use <strong>Clear</strong> later if you want to remove the override and return to automatic Square totals.</li>
+      <li>Switch back to <strong>Auto</strong> later if you want full Square import again.</li>
     </ol>
 
     <h3>Example</h3>
@@ -285,7 +288,7 @@
     <ol>
       <li>Tap the Square amounts and review the transaction lists.</li>
       <li>Confirm the report date, then try <strong>Refresh Square</strong>.</li>
-      <li>If Square is still wrong, use the manual card fallback above.</li>
+      <li>If Square is still wrong, switch to <strong>Manual</strong> above.</li>
       <li>First <strong>Save and Export</strong> may warn you — tap again to save anyway once you have checked the figures.</li>
     </ol>
 
@@ -300,9 +303,9 @@
       <tbody>
         <tr><td class="check">☐</td><td>Event name and date correct</td></tr>
         <tr><td class="check">☐</td><td>Refresh Square</td></tr>
-        <tr><td class="check">☐</td><td>POS + outside amounts look right <em>or</em> manual fallback entered</td></tr>
+        <tr><td class="check">☐</td><td>POS + outside amounts look right <em>or</em> Manual combined total entered</td></tr>
         <tr><td class="check">☐</td><td>Outside cash entered from paper sheet</td></tr>
-        <tr><td class="check">☐</td><td>If fallback: card qty entered for merch / raffle</td></tr>
+        <tr><td class="check">☐</td><td>If Manual: card qty entered for merch / raffle</td></tr>
         <tr><td class="check">☐</td><td>Prizes entered</td></tr>
         <tr><td class="check">☐</td><td>Floats / expenses / cash counted</td></tr>
         <tr><td class="check">☐</td><td>Save and Export</td></tr>
@@ -313,8 +316,8 @@
     <h2>6. Common mistakes</h2>
     <ul>
       <li><strong>Wrong date</strong> — Square and POS totals will not match the event.</li>
-      <li><strong>Entering only outside card</strong> into manual fallback — enter the combined Square card total for the day.</li>
-      <li><strong>Using fallback but skipping card qty</strong> on outside lines — money can look right but stock will be wrong.</li>
+      <li><strong>Entering only outside card</strong> into Manual combined total — enter the combined Square card total for the day.</li>
+      <li><strong>Using Manual but skipping card qty</strong> on outside lines — money can look right but stock will be wrong.</li>
       <li><strong>Expecting bar tabs from ClubPOS</strong> — they are never included.</li>
       <li><strong>Bar Square on the same location</strong> — those card payments can inflate outside totals; check the outside txn list.</li>
     </ul>

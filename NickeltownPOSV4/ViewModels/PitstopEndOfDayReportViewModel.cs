@@ -385,7 +385,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     private DateTimeOffset _reportDate = DateTimeOffset.Now.Date;
     private SquarePaymentReconciliationResult? _squareReconciliationResult;
     private decimal? _manualCombinedSquareCardGross;
-    private bool _showManualCardFallback;
+    private bool _isSquareManualMode;
     private decimal _squareFeePercent = 1.75m;
     private decimal _insideFloat;
     private decimal _outsideFloat;
@@ -454,7 +454,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         BeginReportDateCommand = new AsyncRelayCommand(BeginReportDateAsync);
         ShowPosSquareTransactionsCommand = new AsyncRelayCommand(ShowPosSquareTransactionsAsync);
         ShowOutsideSquareTransactionsCommand = new AsyncRelayCommand(ShowOutsideSquareTransactionsAsync);
-        ToggleManualCardFallbackCommand = new RelayCommand(ToggleManualCardFallback);
+        SetSquareAutoModeCommand = new RelayCommand(SetSquareAutoMode);
+        SetSquareManualModeCommand = new RelayCommand(SetSquareManualMode);
         BeginManualCombinedSquareCommand = new AsyncRelayCommand(BeginManualCombinedSquareAsync);
         ClearManualCombinedSquareCommand = new RelayCommand(ClearManualCombinedSquare);
         BeginSquareFeeCommand = new AsyncRelayCommand(BeginSquareFeeAsync);
@@ -521,7 +522,9 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     public IAsyncRelayCommand ShowOutsideSquareTransactionsCommand { get; }
 
-    public IRelayCommand ToggleManualCardFallbackCommand { get; }
+    public IRelayCommand SetSquareAutoModeCommand { get; }
+
+    public IRelayCommand SetSquareManualModeCommand { get; }
 
     public IAsyncRelayCommand BeginManualCombinedSquareCommand { get; }
 
@@ -587,20 +590,37 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
 
     public string CombinedSquareGrossText => Preview is null ? "\u2014" : Money(Preview.CombinedSquareCardGross);
 
-    public bool ShowManualCardFallback
+    public bool IsSquareManualMode
     {
-        get => _showManualCardFallback;
-        set
+        get => _isSquareManualMode;
+        private set
         {
-            if (SetProperty(ref _showManualCardFallback, value))
+            if (SetProperty(ref _isSquareManualMode, value))
             {
-                OnPropertyChanged(nameof(ManualCardFallbackToggleLabel));
+                OnPropertyChanged(nameof(IsSquareAutoMode));
+                OnPropertyChanged(nameof(SquareModeHelpText));
+                OnPropertyChanged(nameof(OutsideSalesHelpText));
+                OnPropertyChanged(nameof(RefreshSquareButtonLabel));
+                OnPropertyChanged(nameof(SquareReconciliationStatusText));
+                OnPropertyChanged(nameof(ManualCardFallbackStatusText));
             }
         }
     }
 
-    public string ManualCardFallbackToggleLabel =>
-        ShowManualCardFallback ? "Hide manual card fallback" : "Show manual card fallback";
+    public bool IsSquareAutoMode => !IsSquareManualMode;
+
+    public string SquareModeHelpText =>
+        IsSquareManualMode
+            ? "Manual: POS terminal from Pitstop / Square match. Enter combined Square card for the day — outside = combined − POS. Outside terminal is not imported."
+            : "Auto: card totals load from Square and match to Pitstop sales. Outside terminal (Flounderers02) is imported automatically.";
+
+    public string OutsideSalesHelpText =>
+        IsSquareManualMode
+            ? "Enter paper-sheet cash. Enter Card qty / Card $ for stock (outside Square products are not imported in Manual mode)."
+            : "Enter paper-sheet cash quantities below. Card quantities and totals are imported automatically from Flounderers02 Square orders.";
+
+    public string RefreshSquareButtonLabel =>
+        IsSquareManualMode ? "Refresh POS Square" : "Refresh Square";
 
     public bool HasManualCombinedSquareCardGross =>
         _manualCombinedSquareCardGross is decimal value && value > 0m;
@@ -608,7 +628,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     public string ManualCombinedSquareCardGrossText =>
         HasManualCombinedSquareCardGross
             ? Money(_manualCombinedSquareCardGross!.Value)
-            : "Not entered";
+            : "Tap to enter combined total";
 
     public string ManualOutsideDerivedText
     {
@@ -627,13 +647,18 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     {
         get
         {
-            if (!HasManualCombinedSquareCardGross)
+            if (!IsSquareManualMode)
             {
                 return string.Empty;
             }
 
+            if (!HasManualCombinedSquareCardGross)
+            {
+                return "Enter the combined Square card gross for the event day (POS + outside).";
+            }
+
             return Preview?.UsingManualSquareCardFallback == true
-                ? "Manual fallback active — outside card = total minus POS terminal card."
+                ? "Manual active — outside card = combined minus POS terminal card. Outside terminal not imported."
                 : string.Empty;
         }
     }
@@ -660,7 +685,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         {
             if (IsRefreshingSquare)
             {
-                return "Loading Square payments…";
+                return IsSquareManualMode ? "Loading POS Square payments…" : "Loading Square payments…";
             }
 
             if (_squareReconciliationResult is null)
@@ -668,14 +693,23 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                 return "Square reconciliation not loaded.";
             }
 
-            if (!string.IsNullOrWhiteSpace(_squareReconciliationResult.LoadError))
+            if (!string.IsNullOrWhiteSpace(_squareReconciliationResult.LoadError)
+                && !IsSquareManualMode)
             {
                 return _squareReconciliationResult.LoadError;
             }
 
-            if (HasManualCombinedSquareCardGross)
+            if (IsSquareManualMode)
             {
-                return "Manual Square card fallback active — automatic totals overridden.";
+                if (!string.IsNullOrWhiteSpace(_squareReconciliationResult.LoadError)
+                    && _squareReconciliationResult.MatchedPayments.Count == 0)
+                {
+                    return _squareReconciliationResult.LoadError;
+                }
+
+                return HasManualCombinedSquareCardGross
+                    ? "Manual mode — outside derived from combined total; outside terminal not imported."
+                    : "Manual mode — enter combined Square card gross. Outside terminal not imported.";
             }
 
             var excluded = _squareReconciliationResult.ExcludedNonPitstopTransactionCount;
@@ -999,8 +1033,19 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             _squareReconciliationResult = IsTestMode
                 ? PitstopReportTestDataBuilder.BuildSquareReconciliation(SquareFeePercent)
                 : await _squareReconciliation
-                    .ReconcileAsync(start, end, SquareFeePercent, cancellationToken)
+                    .ReconcileAsync(
+                        start,
+                        end,
+                        SquareFeePercent,
+                        cancellationToken,
+                        includeOutsideTerminal: !IsSquareManualMode)
                     .ConfigureAwait(true);
+
+            if (IsSquareManualMode && _squareReconciliationResult is not null)
+            {
+                _squareReconciliationResult =
+                    SquarePaymentReconciliationService.WithoutOutsideTerminal(_squareReconciliationResult);
+            }
 
             _mismatchExportAcknowledged = false;
             OnPropertyChanged(nameof(SquareReconciliationStatusText));
@@ -1122,7 +1167,8 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             PeriodEndLocal = start.AddDays(1),
             StaffName = StaffDisplay is "\u2014" ? null : StaffDisplay,
             SquareReconciliation = _squareReconciliationResult,
-            ManualCombinedSquareCardGross = _manualCombinedSquareCardGross,
+            UseManualSquareCardMode = IsSquareManualMode,
+            ManualCombinedSquareCardGross = IsSquareManualMode ? _manualCombinedSquareCardGross : null,
             SquareFeePercent = SquareFeePercent,
             InsideFloat = InsideFloat,
             OutsideFloat = OutsideFloat,
@@ -1561,7 +1607,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         EventName = "Pitstop";
         _squareReconciliationResult = null;
         _manualCombinedSquareCardGross = null;
-        ShowManualCardFallback = false;
+        IsSquareManualMode = false;
         InsideFloat = 0m;
         OutsideFloat = 0m;
         SquareFeePercent = 1.75m;
@@ -1958,6 +2004,33 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
             return;
         }
 
+        if (IsSquareManualMode)
+        {
+            var xamlRoot = _windowHandle.GetXamlRoot();
+            if (xamlRoot is null)
+            {
+                return;
+            }
+
+            var dlg = new ContentDialog
+            {
+                XamlRoot = xamlRoot,
+                Title = "Outside card (manual)",
+                Content = new TextBlock
+                {
+                    Text = HasManualCombinedSquareCardGross
+                        ? $"Outside card ${Money(Preview.OutsideSquareGross)} is derived as combined Square total minus POS terminal card. Outside terminal receipts are not imported in Manual mode."
+                        : "Switch stays in Manual — enter the combined Square card gross for the day to derive outside. Outside terminal receipts are not imported.",
+                    TextWrapping = Microsoft.UI.Xaml.TextWrapping.WrapWholeWords,
+                },
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            PosContentDialogHelper.ApplyPosStyle(dlg);
+            await dlg.ShowAsync().AsTask().ConfigureAwait(true);
+            return;
+        }
+
         await ShowSquareTransactionsDialogAsync(
             "Outside terminal (Flounderers02)",
             Preview.SquareUnmatchedPayments,
@@ -2070,16 +2143,50 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         await dlg.ShowAsync().AsTask().ConfigureAwait(true);
     }
 
-    private void ToggleManualCardFallback() => ShowManualCardFallback = !ShowManualCardFallback;
+    private void SetSquareAutoMode()
+    {
+        if (!IsSquareManualMode && _manualCombinedSquareCardGross is null)
+        {
+            return;
+        }
+
+        IsSquareManualMode = false;
+        _manualCombinedSquareCardGross = null;
+        _mismatchExportAcknowledged = false;
+        OnPropertyChanged(nameof(HasManualCombinedSquareCardGross));
+        OnPropertyChanged(nameof(ManualCombinedSquareCardGrossText));
+        OnPropertyChanged(nameof(ManualOutsideDerivedText));
+        OnPropertyChanged(nameof(ManualCardFallbackStatusText));
+        OnPropertyChanged(nameof(SquareReconciliationStatusText));
+        _ = RefreshSquareAndPreviewAsync();
+    }
+
+    private void SetSquareManualMode()
+    {
+        if (IsSquareManualMode)
+        {
+            return;
+        }
+
+        IsSquareManualMode = true;
+        _mismatchExportAcknowledged = false;
+        OnPropertyChanged(nameof(ManualCardFallbackStatusText));
+        OnPropertyChanged(nameof(SquareReconciliationStatusText));
+        _ = RefreshSquareAndPreviewAsync();
+    }
 
     private async Task BeginManualCombinedSquareAsync()
     {
+        if (!IsSquareManualMode)
+        {
+            SetSquareManualMode();
+        }
+
         var current = _manualCombinedSquareCardGross ?? 0m;
-        var r = await _input.ShowNumpadAsync(current, "Total Square card gross (event day)", false, CancellationToken.None).ConfigureAwait(true);
+        var r = await _input.ShowNumpadAsync(current, "Combined Square card gross (event day)", false, CancellationToken.None).ConfigureAwait(true);
         if (r.HasValue)
         {
             _manualCombinedSquareCardGross = decimal.Round(r.Value, 2, MidpointRounding.AwayFromZero);
-            ShowManualCardFallback = true;
             _mismatchExportAcknowledged = false;
             OnPropertyChanged(nameof(HasManualCombinedSquareCardGross));
             OnPropertyChanged(nameof(ManualCombinedSquareCardGrossText));
