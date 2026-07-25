@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.AppLifecycle;
 using Windows.ApplicationModel.Core;
 
@@ -91,17 +90,7 @@ public static class AppUpdateRestartHelper
             return;
         }
 
-        var dlg = new ContentDialog
-        {
-            XamlRoot = xamlRoot,
-            Title = "Update complete",
-            Content = $"Nickeltown POS has been updated to version {version.Trim()}.",
-            CloseButtonText = "OK",
-            DefaultButton = ContentDialogButton.Close,
-        };
-
-        PosContentDialogHelper.ApplyPosStyle(dlg);
-        await dlg.ShowAsync();
+        await AppUpdateDialogFactory.CreateCompleteDialog(xamlRoot, version).ShowAsync();
     }
 
     private static string? TryConsumePendingNotification()

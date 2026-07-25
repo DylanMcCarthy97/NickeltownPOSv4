@@ -10,6 +10,6 @@ public interface IAppUpdateService
 
     Task<AppUpdateInstallResult> InstallUpdateAsync(
         AppUpdateManifest manifest,
-        IProgress<string>? progress = null,
+        IProgress<AppUpdateProgress>? progress = null,
         CancellationToken cancellationToken = default);
 }

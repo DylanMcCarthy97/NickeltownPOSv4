@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
@@ -77,7 +78,7 @@ public sealed class AppUpdateService : IAppUpdateService
 
     public async Task<AppUpdateInstallResult> InstallUpdateAsync(
         AppUpdateManifest manifest,
-        IProgress<string>? progress = null,
+        IProgress<AppUpdateProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (!AppVersionInfo.IsPackaged)
@@ -92,15 +93,15 @@ public sealed class AppUpdateService : IAppUpdateService
 
         try
         {
-            progress?.Report("Downloading update…");
-            var localMsix = await DownloadPackageAsync(manifest.PackageUri, cancellationToken).ConfigureAwait(false);
+            progress?.Report(new AppUpdateProgress(AppUpdateStage.PullIn, "Starting the download…", 0));
+            var localMsix = await DownloadPackageAsync(manifest.PackageUri, progress, cancellationToken).ConfigureAwait(false);
 
             // Arm out-of-process relaunch BEFORE AddPackageAsync. ForceApplicationShutdown may
             // kill this process mid-deploy; the watchdog still relaunches after we exit.
-            progress?.Report("Preparing restart…");
+            progress?.Report(new AppUpdateProgress(AppUpdateStage.FitBuild, "Getting ready to install…"));
             AppUpdateRestartHelper.ArmRelaunchBeforeInstall(manifest.Version);
 
-            progress?.Report("Installing update…");
+            progress?.Report(new AppUpdateProgress(AppUpdateStage.FitBuild, "Fitting the new build…"));
             var pm = new PackageManager();
             var options = DeploymentOptions.ForceApplicationShutdown
                 | DeploymentOptions.ForceUpdateFromAnyVersion;
@@ -114,6 +115,7 @@ public sealed class AppUpdateService : IAppUpdateService
             {
                 _logger.LogInformation("Installed update {Version} from {Package}", manifest.Version, localMsix);
                 TryDeleteFile(localMsix);
+                progress?.Report(new AppUpdateProgress(AppUpdateStage.Restart, "Closing the till for restart…"));
                 return AppUpdateInstallResult.Success(shutdown: true);
             }
 
@@ -179,7 +181,10 @@ public sealed class AppUpdateService : IAppUpdateService
         return JsonSerializer.Deserialize<AppUpdateManifest>(json, JsonOptions);
     }
 
-    private static async Task<string> DownloadPackageAsync(string packageUri, CancellationToken cancellationToken)
+    private static async Task<string> DownloadPackageAsync(
+        string packageUri,
+        IProgress<AppUpdateProgress>? progress,
+        CancellationToken cancellationToken)
     {
         var fileName = Path.GetFileName(packageUri);
         if (string.IsNullOrWhiteSpace(fileName))
@@ -197,9 +202,11 @@ public sealed class AppUpdateService : IAppUpdateService
             using var response = await Http.GetAsync(new Uri(packageUri), HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
+
+            var total = response.Content.Headers.ContentLength;
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             await using var file = File.Create(dest);
-            await stream.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+            await CopyWithProgressAsync(stream, file, total, progress, cancellationToken).ConfigureAwait(false);
             return dest;
         }
 
@@ -207,9 +214,62 @@ public sealed class AppUpdateService : IAppUpdateService
             ? new Uri(packageUri).LocalPath
             : packageUri;
 
+        progress?.Report(new AppUpdateProgress(AppUpdateStage.PullIn, "Copying the build off the feed…"));
         File.Copy(source, dest, overwrite: true);
+        progress?.Report(new AppUpdateProgress(AppUpdateStage.PullIn, "Build copied", 100));
         return dest;
     }
+
+    private static async Task CopyWithProgressAsync(
+        Stream source,
+        Stream destination,
+        long? totalBytes,
+        IProgress<AppUpdateProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        var buffer = new byte[81920];
+        long received = 0;
+        var lastReportedPercent = -1;
+        var lastReport = DateTimeOffset.MinValue;
+
+        while (true)
+        {
+            var read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+            if (read == 0)
+            {
+                break;
+            }
+
+            await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+            received += read;
+
+            if (progress is null)
+            {
+                continue;
+            }
+
+            var percent = totalBytes is > 0 ? (int)(received * 100 / totalBytes.Value) : -1;
+            var now = DateTimeOffset.UtcNow;
+
+            // Throttle so a fast LAN download does not flood the dispatcher.
+            if (percent == lastReportedPercent && now - lastReport < TimeSpan.FromMilliseconds(400))
+            {
+                continue;
+            }
+
+            lastReportedPercent = percent;
+            lastReport = now;
+
+            progress.Report(percent >= 0
+                ? new AppUpdateProgress(AppUpdateStage.PullIn, $"{Megabytes(received)} of {Megabytes(totalBytes!.Value)} downloaded", percent)
+                : new AppUpdateProgress(AppUpdateStage.PullIn, $"{Megabytes(received)} downloaded"));
+        }
+
+        progress?.Report(new AppUpdateProgress(AppUpdateStage.PullIn, $"{Megabytes(received)} downloaded", 100));
+    }
+
+    private static string Megabytes(long bytes) =>
+        (bytes / 1024d / 1024d).ToString("0.0", CultureInfo.CurrentCulture) + " MB";
 
     private static void TryDeleteFile(string path)
     {

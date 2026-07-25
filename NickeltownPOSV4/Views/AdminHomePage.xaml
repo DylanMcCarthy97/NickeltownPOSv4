@@ -456,7 +456,7 @@
                 Grid.Row="3"
                 Grid.Column="0"
                 Grid.ColumnSpan="2"
-                AutomationProperties.Name="Software updates"
+                AutomationProperties.Name="Garage updates"
                 Command="{Binding AppUpdatesCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
                 <StackPanel Spacing="6">
@@ -469,11 +469,11 @@
                         FontSize="15"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Software updates" />
+                        Text="Garage updates" />
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Auto-update feed for kiosk MSIX installs"
+                        Text="Check the feed, fit the new build, auto restart"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>

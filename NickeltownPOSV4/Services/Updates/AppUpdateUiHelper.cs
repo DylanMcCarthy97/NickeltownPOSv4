@@ -31,75 +31,29 @@ public static class AppUpdateUiHelper
         }
 
         var manifest = check.Manifest;
-        var notes = string.IsNullOrWhiteSpace(manifest.ReleaseNotes)
-            ? string.Empty
-            : manifest.ReleaseNotes.Trim() + "\n\n";
 
         if (!autoInstall)
         {
-            var dlg = new ContentDialog
-            {
-                XamlRoot = xamlRoot,
-                Title = "Update available",
-                Content = $"{notes}Version {manifest.Version} is ready (you have {AppVersionInfo.CurrentVersionString}).\n\nInstall now? The app will restart.",
-                PrimaryButtonText = "Install now",
-                CloseButtonText = manifest.Mandatory ? string.Empty : "Later",
-                DefaultButton = ContentDialogButton.Primary,
-            };
-
-            if (manifest.Mandatory)
-            {
-                dlg.CloseButtonText = string.Empty;
-            }
-
-            PosContentDialogHelper.ApplyPosStyle(dlg);
-            var choice = await dlg.ShowAsync();
+            var prompt = AppUpdateDialogFactory.CreateAvailableDialog(xamlRoot, manifest);
+            var choice = await prompt.ShowAsync();
             if (choice != ContentDialogResult.Primary)
             {
                 return false;
             }
         }
 
-        var progressDlg = new ContentDialog
-        {
-            XamlRoot = xamlRoot,
-            Title = "Installing update",
-            Content = new ProgressRing { IsActive = true, Width = 48, Height = 48 },
-            IsPrimaryButtonEnabled = false,
-            IsSecondaryButtonEnabled = false,
-            CloseButtonText = string.Empty,
-        };
+        var installDialog = AppUpdateDialogFactory.CreateInstallDialog(xamlRoot, manifest.Version);
+        _ = installDialog.Dialog.ShowAsync();
 
-        var progressText = new TextBlock { Text = "Downloading...", HorizontalAlignment = HorizontalAlignment.Center };
-        if (progressDlg.Content is ProgressRing ring)
-        {
-            progressDlg.Content = new StackPanel
-            {
-                Spacing = 12,
-                Children = { ring, progressText },
-            };
-        }
-
-        PosContentDialogHelper.ApplyPosStyle(progressDlg);
-        _ = progressDlg.ShowAsync();
-
-        var progress = new Progress<string>(msg =>
-            TcxLayoutDiagnostics.TryEnqueueNormal(() => progressText.Text = msg));
+        var progress = new Progress<AppUpdateProgress>(update =>
+            TcxLayoutDiagnostics.TryEnqueueNormal(() => installDialog.Report(update)));
 
         var install = await updates.InstallUpdateAsync(manifest, progress).ConfigureAwait(true);
-        progressDlg.Hide();
+        installDialog.Dialog.Hide();
 
         if (!install.Ok)
         {
-            var err = new ContentDialog
-            {
-                XamlRoot = xamlRoot,
-                Title = "Update failed",
-                Content = install.ErrorMessage ?? "Could not install the update.",
-                CloseButtonText = "OK",
-            };
-            PosContentDialogHelper.ApplyPosStyle(err);
-            await err.ShowAsync();
+            await AppUpdateDialogFactory.CreateFailedDialog(xamlRoot, install.ErrorMessage).ShowAsync();
             return false;
         }
 

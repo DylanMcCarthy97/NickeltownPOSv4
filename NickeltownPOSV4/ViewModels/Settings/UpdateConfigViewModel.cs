@@ -33,7 +33,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
 
     public IAsyncRelayCommand CheckNowCommand { get; }
 
-    public string CurrentVersionText => $"Installed: {AppVersionInfo.CurrentVersionString}";
+    public string CurrentBuildText => $"Current build: {AppVersionInfo.CurrentVersionString}";
 
     public string FeedBaseUrl
     {
@@ -102,7 +102,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
                 CheckOnStartup = CheckOnStartup,
                 AutoInstall = AutoInstall,
             }).ConfigureAwait(true);
-            StatusMessage = "Update settings saved.";
+            StatusMessage = "Garage settings saved.";
         }
         finally
         {
@@ -128,7 +128,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
             var check = await _updates.CheckForUpdateAsync().ConfigureAwait(true);
             if (check.UpdateAvailable)
             {
-                StatusMessage = $"Update {check.Manifest!.Version} is available.";
+                StatusMessage = $"Build {check.Manifest!.Version} is waiting in the pits.";
                 return;
             }
 
@@ -138,7 +138,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
                 return;
             }
 
-            StatusMessage = "You are on the latest version.";
+            StatusMessage = "You're on the latest build.";
         }
         finally
         {

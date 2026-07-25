@@ -10,6 +10,7 @@ namespace NickeltownPOSV4.Views.Settings;
 public sealed partial class UpdateConfigPage : Page
 {
     private UpdateConfigViewModel? _viewModel;
+    private double _chequerWidth;
 
     public UpdateConfigPage()
     {
@@ -27,6 +28,17 @@ public sealed partial class UpdateConfigPage : Page
             _viewModel.AttachXamlRoot(() => XamlRoot);
             await _viewModel.LoadAsync();
         }
+    }
+
+    private void OnHeroSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.NewSize.Width <= _chequerWidth)
+        {
+            return;
+        }
+
+        _chequerWidth = e.NewSize.Width;
+        HeroChequerHost.Content = AppUpdateDialogFactory.CreateChequeredStrip(_chequerWidth, cell: 10);
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)

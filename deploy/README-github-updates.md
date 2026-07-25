@@ -24,7 +24,7 @@ Or PowerShell from repo root:
 1. Copy the .msix to the bar (USB or download from GitHub).
 2. Double-click the .msix on the bar -> Install.
 3. Open Nickeltown POS.
-4. Admin -> Software updates.
+4. Admin -> Garage updates.
 5. Update feed (paste once):
    https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/deploy
 6. Check on startup ON. Auto install ON for kiosk.
