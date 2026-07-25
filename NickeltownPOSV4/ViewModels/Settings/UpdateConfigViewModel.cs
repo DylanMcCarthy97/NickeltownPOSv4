@@ -102,7 +102,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
                 CheckOnStartup = CheckOnStartup,
                 AutoInstall = AutoInstall,
             }).ConfigureAwait(true);
-            StatusMessage = "Garage settings saved.";
+            StatusMessage = "Update settings saved.";
         }
         finally
         {

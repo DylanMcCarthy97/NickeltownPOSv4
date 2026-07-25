@@ -25,7 +25,7 @@ public static class AppUpdateDialogFactory
     {
         var body = new StackPanel { Spacing = 16, Width = PanelWidth };
         body.Children.Add(BuildHero(
-            eyebrow: "Garage",
+            eyebrow: "Pit stop",
             title: "New build in the pits",
             blurb: $"Version {manifest.Version} is ready to fit. This till is running {AppVersionInfo.CurrentVersionString}.",
             animateChequer: false));
@@ -127,7 +127,7 @@ public static class AppUpdateDialogFactory
             ColorOf("PosBalanceNegativeBrush", Color.FromArgb(0xFF, 0xDC, 0x26, 0x26))));
 
         body.Children.Add(BuildFootnote(
-            "Try again from Admin → Garage updates. If it keeps failing, check the update feed and network."));
+            "Try again from Admin → Pit updates. If it keeps failing, check the update feed and network."));
 
         var dialog = new ContentDialog
         {

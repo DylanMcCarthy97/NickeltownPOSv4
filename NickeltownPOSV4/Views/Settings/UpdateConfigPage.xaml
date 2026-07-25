@@ -41,7 +41,7 @@
                     IsTabStop="False" />
 
                 <StackPanel Grid.Row="1" Padding="22,16,22,18">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Garage updates" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Pit updates" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"

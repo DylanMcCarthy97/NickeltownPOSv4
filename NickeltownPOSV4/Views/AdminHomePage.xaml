@@ -456,7 +456,7 @@
                 Grid.Row="3"
                 Grid.Column="0"
                 Grid.ColumnSpan="2"
-                AutomationProperties.Name="Garage updates"
+                AutomationProperties.Name="Pit updates"
                 Command="{Binding AppUpdatesCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
                 <StackPanel Spacing="6">
@@ -469,7 +469,7 @@
                         FontSize="15"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Garage updates" />
+                        Text="Pit updates" />
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
