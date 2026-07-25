@@ -105,7 +105,7 @@ public static class AppUpdateUiHelper
 
         if (install.AppShutdownRequested)
         {
-            AppUpdateRestartHelper.ScheduleRestartWithNotification(manifest.Version);
+            AppUpdateRestartHelper.FinishUpdateAndExit(manifest.Version);
         }
 
         return true;

@@ -27,7 +27,7 @@
                 <TextBlock
                     Margin="0,2,0,0"
                     Style="{StaticResource SettingsHeroSubtitleStyle}"
-                    Text="Kiosk checks your update server on startup and installs new MSIX packages automatically." />
+                    Text="Checks the update feed on startup, installs the MSIX, then restarts automatically." />
                 <TextBlock
                     Margin="0,8,0,0"
                     FontWeight="SemiBold"
@@ -46,7 +46,7 @@
                 <TextBlock
                     FontSize="13"
                     Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="First-time setup: install the app once from the .msix. Later releases only need a new package and update-manifest.json on the feed."
+                    Text="First-time setup: install once from the .msix. Later releases only need a new package and update-manifest.json on the feed. After Install, the app should restart on its own — if it does not, open it from the Start menu once."
                     TextWrapping="Wrap" />
                 <TextBlock
                     Foreground="#FFB91C1C"

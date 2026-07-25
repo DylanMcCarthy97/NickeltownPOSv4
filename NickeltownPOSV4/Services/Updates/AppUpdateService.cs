@@ -19,7 +19,8 @@ public sealed class AppUpdateService : IAppUpdateService
 
     private static readonly HttpClient Http = new()
     {
-        Timeout = TimeSpan.FromSeconds(30),
+        // MSIX packages are ~100MB; keep headroom for slow venue Wi‑Fi.
+        Timeout = TimeSpan.FromMinutes(10),
     };
 
     private readonly IAppUpdateConfigService _config;
@@ -94,6 +95,11 @@ public sealed class AppUpdateService : IAppUpdateService
             progress?.Report("Downloading update…");
             var localMsix = await DownloadPackageAsync(manifest.PackageUri, cancellationToken).ConfigureAwait(false);
 
+            // Arm out-of-process relaunch BEFORE AddPackageAsync. ForceApplicationShutdown may
+            // kill this process mid-deploy; the watchdog still relaunches after we exit.
+            progress?.Report("Preparing restart…");
+            AppUpdateRestartHelper.ArmRelaunchBeforeInstall(manifest.Version);
+
             progress?.Report("Installing update…");
             var pm = new PackageManager();
             var options = DeploymentOptions.ForceApplicationShutdown
@@ -107,13 +113,16 @@ public sealed class AppUpdateService : IAppUpdateService
             if (string.IsNullOrWhiteSpace(deployResult.ErrorText))
             {
                 _logger.LogInformation("Installed update {Version} from {Package}", manifest.Version, localMsix);
+                TryDeleteFile(localMsix);
                 return AppUpdateInstallResult.Success(shutdown: true);
             }
 
+            AppUpdateRestartHelper.CancelArmedRelaunch();
             return AppUpdateInstallResult.Fail(deployResult.ErrorText);
         }
         catch (Exception ex)
         {
+            AppUpdateRestartHelper.CancelArmedRelaunch();
             _logger.LogError(ex, "Update install failed.");
             return AppUpdateInstallResult.Fail("Update install failed. Check logs and try again.");
         }
@@ -200,5 +209,22 @@ public sealed class AppUpdateService : IAppUpdateService
 
         File.Copy(source, dest, overwrite: true);
         return dest;
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 }
