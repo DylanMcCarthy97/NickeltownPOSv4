@@ -612,7 +612,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
     public string SquareModeHelpText =>
         IsSquareManualMode
             ? "Manual: POS terminal from Pitstop / Square match. Enter combined Square card for the day — outside = combined − POS. Outside terminal is not imported."
-            : "Auto: card totals load from Square and match to Pitstop sales. Outside terminal (Flounderers02) is imported automatically.";
+            : "Auto: POS = Pitstop-matched sales only (0070). Outside = Flounderers02 only. Unmatched 0070 / other devices are excluded, not counted as outside.";
 
     public string OutsideSalesHelpText =>
         IsSquareManualMode

@@ -53,18 +53,43 @@ public sealed class SquarePaymentReconciliationMatcherTests
     }
 
     [Fact]
-    public void Match_FlagsMissingSquarePaymentForLocalSale()
+    public void Match_OnlyFlounderers02CountsAsOutside_UnknownDevicesExcluded()
     {
-        var square = new[] { Snap("pay-pos-1", 10.17m, SquarePaymentReconciliationMatcher.PosDeviceHint) };
-        var local = new[]
+        var square = new[]
         {
-            Local(1, "sale-1", 10.17m, "pay-pos-1"),
-            Local(2, "sale-2", 8.50m, "pay-missing"),
+            Snap("pay-unknown", 15.00m, "Some Other Device"),
+            Snap("pay-blank", 12.00m, null),
+            Snap("pay-merch", 40.00m, SquarePaymentReconciliationMatcher.OutsideDeviceHint),
+            Snap("pay-0070-short", 99.00m, "Terminal 0070"),
         };
+
+        var result = SquarePaymentReconciliationMatcher.Match(square, Array.Empty<PitstopCardSaleRefRow>(), 0m, 1.75m);
+
+        Assert.Equal(0m, result.PosSquareGross);
+        Assert.Equal(40.00m, result.OutsideSquareGross);
+        Assert.Equal(1, result.OutsideTransactionCount);
+        Assert.Equal(3, result.ExcludedNonPitstopTransactionCount);
+        Assert.Equal(126.00m, result.ExcludedNonPitstopGross);
+    }
+
+    [Fact]
+    public void Match_PosBucketOnlyIncludesPitstopMatchedSales()
+    {
+        var square = new[]
+        {
+            Snap("pay-pitstop", 10.17m, "Square Terminal 0070"),
+            Snap("pay-tab", 50.00m, "Square Terminal 0070"),
+        };
+        var local = new[] { Local(1, "sale-1", 10.17m, "pay-pitstop") };
 
         var result = SquarePaymentReconciliationMatcher.Match(square, local, 10.17m, 1.75m);
 
-        Assert.Single(result.MissingLocalPayments);
+        Assert.Equal(10.17m, result.PosSquareGross);
+        Assert.Equal(0m, result.OutsideSquareGross);
+        Assert.Equal(1, result.PosTransactionCount);
+        Assert.Equal(0, result.OutsideTransactionCount);
+        Assert.Equal(1, result.ExcludedNonPitstopTransactionCount);
+        Assert.Equal(50.00m, result.ExcludedNonPitstopGross);
     }
 
     private static SquarePaymentReconciliationMatcher.SquarePaymentSnapshot Snap(

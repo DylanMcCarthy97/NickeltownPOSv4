@@ -64,6 +64,7 @@ public enum SquarePaymentTerminalClass
 {
     PosTerminal,
     OutsideTerminal,
+    Unknown,
 }
 
 public sealed class SquareMissingLocalPaymentRow

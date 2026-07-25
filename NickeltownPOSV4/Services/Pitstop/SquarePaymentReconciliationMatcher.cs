@@ -82,11 +82,12 @@ public static class SquarePaymentReconciliationMatcher
                 continue;
             }
 
-            // Unmatched: only Flounderers02 (or unknown non-0070) counts as Pitstop outside merch.
-            // Unmatched 0070 payments are bar tabs / other POS card — not Pitstop outside.
-            if (IsPosDevice(payment.DeviceName))
+            // Outside = Flounderers02 only.
+            // Unmatched 0070 (bar tabs / other POS card) and unknown devices are excluded —
+            // never dumped into Pitstop outside merch.
+            if (IsOutsideDevice(payment.DeviceName))
             {
-                excludedRows.Add(new SquareReconciliationPaymentRow
+                unmatchedRows.Add(new SquareReconciliationPaymentRow
                 {
                     PaymentId = paymentId,
                     PaidAt = payment.PaidAt,
@@ -94,13 +95,14 @@ public static class SquarePaymentReconciliationMatcher
                     ReceiptNumber = payment.ReceiptNumber,
                     DeviceName = payment.DeviceName,
                     CardLast4 = payment.CardLast4,
-                    TerminalClass = SquarePaymentTerminalClass.PosTerminal,
+                    TerminalClass = SquarePaymentTerminalClass.OutsideTerminal,
                 });
-                excludedGross += payment.GrossAmount;
+                outsideGross += payment.GrossAmount;
+                AddFees(payment, ref feeTotal, ref hasFeeData);
                 continue;
             }
 
-            unmatchedRows.Add(new SquareReconciliationPaymentRow
+            excludedRows.Add(new SquareReconciliationPaymentRow
             {
                 PaymentId = paymentId,
                 PaidAt = payment.PaidAt,
@@ -108,16 +110,11 @@ public static class SquarePaymentReconciliationMatcher
                 ReceiptNumber = payment.ReceiptNumber,
                 DeviceName = payment.DeviceName,
                 CardLast4 = payment.CardLast4,
-                TerminalClass = SquarePaymentTerminalClass.OutsideTerminal,
+                TerminalClass = IsPosDevice(payment.DeviceName)
+                    ? SquarePaymentTerminalClass.PosTerminal
+                    : SquarePaymentTerminalClass.Unknown,
             });
-            outsideGross += payment.GrossAmount;
-            AddFees(payment, ref feeTotal, ref hasFeeData);
-
-            if (IsOutsideDevice(payment.DeviceName) == false
-                && !string.IsNullOrWhiteSpace(payment.DeviceName))
-            {
-                warnings.Add($"Payment {paymentId} counted as outside but device is {payment.DeviceName}.");
-            }
+            excludedGross += payment.GrossAmount;
         }
 
         var missingLocal = localCardSales
@@ -152,14 +149,26 @@ public static class SquarePaymentReconciliationMatcher
 
         if (excludedRows.Count > 0)
         {
-            warnings.Add(
-                $"Excluded {excludedRows.Count} Square payment(s) on {PosDeviceHint} that are not Pitstop sales "
-                + $"(e.g. bar tab top-ups), total {excludedGross:C2}.");
+            var posExcluded = excludedRows.Count(r => IsPosDevice(r.DeviceName));
+            var otherExcluded = excludedRows.Count - posExcluded;
+            if (posExcluded > 0)
+            {
+                warnings.Add(
+                    $"Excluded {posExcluded} Square payment(s) on {PosDeviceHint} that are not Pitstop sales "
+                    + $"(e.g. bar tab top-ups), total {Round(excludedRows.Where(r => IsPosDevice(r.DeviceName)).Sum(r => r.GrossAmount)):C2}.");
+            }
+
+            if (otherExcluded > 0)
+            {
+                warnings.Add(
+                    $"Excluded {otherExcluded} Square payment(s) not on {OutsideDeviceHint} and not matched to Pitstop "
+                    + "(not counted as outside merch).");
+            }
         }
 
         if (unmatchedRows.Count > 0)
         {
-            warnings.Add($"{unmatchedRows.Count} outside-terminal Square payment(s) were not created through ClubPOS Pitstop.");
+            warnings.Add($"{unmatchedRows.Count} {OutsideDeviceHint} Square payment(s) were not created through ClubPOS Pitstop.");
         }
 
         return new SquarePaymentReconciliationResult
@@ -182,9 +191,17 @@ public static class SquarePaymentReconciliationMatcher
         };
     }
 
-    internal static bool IsPosDevice(string? deviceName) =>
-        !string.IsNullOrWhiteSpace(deviceName)
-        && deviceName.Contains(PosDeviceHint, StringComparison.OrdinalIgnoreCase);
+    internal static bool IsPosDevice(string? deviceName)
+    {
+        if (string.IsNullOrWhiteSpace(deviceName))
+        {
+            return false;
+        }
+
+        // Prefer full name; also accept any device label containing 0070 (bar POS terminal).
+        return deviceName.Contains(PosDeviceHint, StringComparison.OrdinalIgnoreCase)
+            || deviceName.Contains("0070", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool IsOutsideDevice(string? deviceName) =>
         !string.IsNullOrWhiteSpace(deviceName)
