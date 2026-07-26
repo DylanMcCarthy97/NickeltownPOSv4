@@ -59,10 +59,12 @@ public sealed class SqlitePitstopCatalogQuery : IPitstopCatalogQuery
         ) AS REAL)
         """;
 
+    /// <summary>Explicit Pitstop price, Shared bar price fallback, or open-price (amount entered at sale).</summary>
     private static readonly string HasSellablePitstopPriceFilter =
         $"""
          AND (
-           EXISTS (
+           COALESCE(i.UsesOpenPrice, 0) != 0
+           OR EXISTS (
              SELECT 1
              FROM ItemPrices ipp
              WHERE ipp.ItemId = i.Id AND lower(trim(COALESCE(ipp.PriceKind, ''))) = 'pitstop'

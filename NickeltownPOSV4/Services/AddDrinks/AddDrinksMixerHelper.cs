@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NickeltownPOSV4.Services.CustomAmount;
 using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Services.AddDrinks;
@@ -52,6 +53,11 @@ internal static class AddDrinksMixerHelper
 
     public static bool IsShotMixerCandidate(DrinkCardItem item)
     {
+        if (CustomAmountCatalog.IsCustomAmountItem(item.Name, item.ItemType))
+        {
+            return false;
+        }
+
         if (IsMixerCategory(item.CategoryName))
         {
             return true;

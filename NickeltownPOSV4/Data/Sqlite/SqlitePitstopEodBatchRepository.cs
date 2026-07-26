@@ -126,6 +126,7 @@ public sealed class SqlitePitstopEodBatchRepository : IPitstopEodBatchRepository
                       CardSurchargeTotal, EstimatedSquareFees, NetTotal, SaleCount,
                       PdfPath, ReportDataJson, ReconciliationWarningsJson, CreatedAt,
                       Notes, StartingFloat, CashCounted, FloatRemoved, ExpectedCash, CashVariance,
+                      CashToDeposit, TotalCashVariance,
                       BackupBeforePath, BackupAfterPath)
                     VALUES (
                       @ArchivedAt, @OperatorName, @OperatorStaffId, @EventName,
@@ -134,6 +135,7 @@ public sealed class SqlitePitstopEodBatchRepository : IPitstopEodBatchRepository
                       @CardSurchargeTotal, @EstimatedSquareFees, @NetTotal, @SaleCount,
                       @PdfPath, @ReportDataJson, @ReconciliationWarningsJson, datetime('now'),
                       @Notes, @StartingFloat, @CashCounted, @FloatRemoved, @ExpectedCash, @CashVariance,
+                      @CashToDeposit, @TotalCashVariance,
                       @BackupBeforePath, @BackupAfterPath)
                     """,
                     new
@@ -161,6 +163,8 @@ public sealed class SqlitePitstopEodBatchRepository : IPitstopEodBatchRepository
                         request.FloatRemoved,
                         request.ExpectedCash,
                         request.CashVariance,
+                        CashToDeposit = request.ReportData?.CashToDeposit,
+                        TotalCashVariance = request.ReportData?.TotalCashVariance,
                         BackupBeforePath = string.IsNullOrWhiteSpace(request.BackupBeforePath) ? null : request.BackupBeforePath.Trim(),
                         BackupAfterPath = string.IsNullOrWhiteSpace(request.BackupAfterPath) ? null : request.BackupAfterPath.Trim(),
                     },
@@ -169,6 +173,36 @@ public sealed class SqlitePitstopEodBatchRepository : IPitstopEodBatchRepository
 
             var batchId = conn.QuerySingle<long>(
                 new CommandDefinition("SELECT last_insert_rowid()", transaction: tx, cancellationToken: cancellationToken));
+
+            foreach (var till in request.ReportData?.TillReconciliations ?? [])
+            {
+                conn.Execute(
+                    new CommandDefinition(
+                        """
+                        INSERT INTO PitstopEodTillCounts (
+                          BatchId, TillKey, TillLabel, FloatIn, CashSales, CashPaidOut,
+                          CashCounted, ExpectedCash, CashVariance, FloatKept, CashToBank)
+                        VALUES (
+                          @BatchId, @TillKey, @TillLabel, @FloatIn, @CashSales, @CashPaidOut,
+                          @Counted, @Expected, @Variance, @FloatKept, @CashToBank)
+                        """,
+                        new
+                        {
+                            BatchId = batchId,
+                            till.TillKey,
+                            till.TillLabel,
+                            till.FloatIn,
+                            till.CashSales,
+                            till.CashPaidOut,
+                            till.Counted,
+                            till.Expected,
+                            till.Variance,
+                            till.FloatKept,
+                            till.CashToBank,
+                        },
+                        tx,
+                        cancellationToken: cancellationToken));
+            }
 
             var updated = conn.Execute(
                 new CommandDefinition(

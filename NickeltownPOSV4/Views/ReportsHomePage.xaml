@@ -49,11 +49,11 @@
                         FontSize="20"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Pitstop end of event" />
+                        Text="Pitstop end of day" />
                     <TextBlock
                         FontSize="13"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="End-of-event Pitstop report (bar tabs excluded): Square, outside merch and raffle, prizes, and PDF."
+                        Text="Close out the night: check card sales, enter merch cash, save the report."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>

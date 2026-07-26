@@ -57,6 +57,40 @@ public sealed class EventExpenseRow
     public string Description { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
+
+    /// <summary>Where the money was physically paid from, when it was a cash payout.</summary>
+    public EventExpensePaymentSource PaidFrom { get; set; }
+}
+
+public enum EventExpensePaymentSource
+{
+    Other = 0,
+    InsideTill = 1,
+    OutsideTin = 2,
+}
+
+/// <summary>Cash reconciliation for one physical till or tin.</summary>
+public sealed class PitstopTillReconciliation
+{
+    public string TillKey { get; init; } = string.Empty;
+
+    public string TillLabel { get; init; } = string.Empty;
+
+    public decimal FloatIn { get; init; }
+
+    public decimal CashSales { get; init; }
+
+    public decimal CashPaidOut { get; init; }
+
+    public decimal? Counted { get; init; }
+
+    public decimal Expected { get; init; }
+
+    public decimal? Variance { get; init; }
+
+    public decimal FloatKept { get; init; }
+
+    public decimal? CashToBank { get; init; }
 }
 
 public sealed class MerchPrizeGiveawayRow
@@ -125,6 +159,8 @@ public sealed class PitstopReportInputs
     public List<string> Warnings { get; } = new();
 
     public decimal? CashCounted { get; set; }
+
+    public decimal? OutsideCashCounted { get; set; }
 
     public decimal? FloatRemoved { get; set; }
 
@@ -209,6 +245,8 @@ public sealed class PitstopReportData
 
     public decimal CashToDeposit { get; init; }
 
+    public decimal? TotalCashVariance { get; init; }
+
     public decimal NetEventProfit { get; init; }
 
     public decimal InsideFloat { get; init; }
@@ -262,6 +300,8 @@ public sealed class PitstopReportData
     public decimal? ExpectedCash { get; init; }
 
     public decimal? CashVariance { get; init; }
+
+    public IReadOnlyList<PitstopTillReconciliation> TillReconciliations { get; init; } = Array.Empty<PitstopTillReconciliation>();
 
     public bool IsTestReport { get; init; }
 }

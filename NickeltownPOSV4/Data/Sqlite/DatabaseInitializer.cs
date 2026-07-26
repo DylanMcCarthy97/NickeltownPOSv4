@@ -278,6 +278,8 @@ public sealed class DatabaseInitializer
         TryAddColumn(conn, "PitstopEodBatches", "FloatRemoved", "ALTER TABLE PitstopEodBatches ADD COLUMN FloatRemoved REAL");
         TryAddColumn(conn, "PitstopEodBatches", "ExpectedCash", "ALTER TABLE PitstopEodBatches ADD COLUMN ExpectedCash REAL");
         TryAddColumn(conn, "PitstopEodBatches", "CashVariance", "ALTER TABLE PitstopEodBatches ADD COLUMN CashVariance REAL");
+        TryAddColumn(conn, "PitstopEodBatches", "CashToDeposit", "ALTER TABLE PitstopEodBatches ADD COLUMN CashToDeposit REAL");
+        TryAddColumn(conn, "PitstopEodBatches", "TotalCashVariance", "ALTER TABLE PitstopEodBatches ADD COLUMN TotalCashVariance REAL");
         TryAddColumn(conn, "PitstopEodBatches", "BackupBeforePath", "ALTER TABLE PitstopEodBatches ADD COLUMN BackupBeforePath TEXT");
         TryAddColumn(conn, "PitstopEodBatches", "BackupAfterPath", "ALTER TABLE PitstopEodBatches ADD COLUMN BackupAfterPath TEXT");
 
@@ -658,6 +660,23 @@ public sealed class DatabaseInitializer
           ReportDataJson TEXT,
           ReconciliationWarningsJson TEXT,
           CreatedAt TEXT NOT NULL
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS PitstopEodTillCounts (
+          Id INTEGER PRIMARY KEY AUTOINCREMENT,
+          BatchId INTEGER NOT NULL REFERENCES PitstopEodBatches(Id) ON DELETE CASCADE,
+          TillKey TEXT NOT NULL,
+          TillLabel TEXT NOT NULL,
+          FloatIn REAL NOT NULL DEFAULT 0,
+          CashSales REAL NOT NULL DEFAULT 0,
+          CashPaidOut REAL NOT NULL DEFAULT 0,
+          CashCounted REAL,
+          ExpectedCash REAL NOT NULL DEFAULT 0,
+          CashVariance REAL,
+          FloatKept REAL NOT NULL DEFAULT 0,
+          CashToBank REAL,
+          UNIQUE(BatchId, TillKey)
         );
         """,
         """

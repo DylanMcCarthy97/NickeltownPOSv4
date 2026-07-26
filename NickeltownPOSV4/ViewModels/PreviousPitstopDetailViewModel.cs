@@ -316,6 +316,19 @@ public sealed class PreviousPitstopDetailViewModel : ObservableViewModel
 
     private static string BuildCashCountText(PitstopEodBatchDetail detail)
     {
+        if (detail.ReportData?.TillReconciliations is { Count: > 0 } tills)
+        {
+            var lines = tills.Select(till =>
+                $"{till.TillLabel}: float {till.FloatIn:C2}, sales {till.CashSales:C2}, "
+                + $"paid out {till.CashPaidOut:C2}, expected {till.Expected:C2}, "
+                + $"counted {(till.Counted is decimal counted ? counted.ToString("C2") : "—")}, "
+                + $"variance {(till.Variance is decimal variance ? variance.ToString("C2") : "—")}, "
+                + $"to bank {(till.CashToBank is decimal bank ? bank.ToString("C2") : "—")}");
+            return string.Join(Environment.NewLine, lines)
+                + Environment.NewLine
+                + $"Total cash to bank {detail.ReportData.CashToDeposit:C2}";
+        }
+
         var hasFloat = detail.StartingFloat > 0m;
         var hasCounted = detail.CashCounted is not null;
         var hasRemoved = detail.FloatRemoved is not null;

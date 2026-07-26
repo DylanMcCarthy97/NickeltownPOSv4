@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -25,6 +26,23 @@ public sealed class PitstopCashNumpadHostViewModel : ObservableViewModel
     public bool TryPeekCurrency(out decimal value) => _inner.TryPeekCurrency(out value);
 
     public void Reset(decimal initial) => _inner.ResetCurrencyDraft(initial);
+
+    /// <summary>Sets the received amount in one tap (Exact / note tender).</summary>
+    public void SetAmount(decimal amount) =>
+        _inner.ResetCurrencyDraft(decimal.Round(Math.Max(0m, amount), 2, MidpointRounding.AwayFromZero));
+
+    /// <summary>Adds a note denomination onto the current tender (multi-note payments).</summary>
+    public void AddAmount(decimal amount)
+    {
+        amount = decimal.Round(Math.Max(0m, amount), 2, MidpointRounding.AwayFromZero);
+        if (amount <= 0m)
+        {
+            return;
+        }
+
+        var current = _inner.TryPeekCurrency(out var received) ? received : 0m;
+        _inner.ResetCurrencyDraft(decimal.Round(current + amount, 2, MidpointRounding.AwayFromZero));
+    }
 
     private void OnInnerPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

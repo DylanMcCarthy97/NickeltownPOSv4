@@ -46,7 +46,7 @@ public static class PitstopReportTestDataBuilder
 
     public static IReadOnlyList<EventExpenseRow> BuildSampleExpenses() =>
     [
-        new() { Description = "Ice supply", Amount = 45m },
+        new() { Description = "Cash prize", Amount = 45m, PaidFrom = EventExpensePaymentSource.OutsideTin },
         new() { Description = "Generator fuel", Amount = 35m },
     ];
 

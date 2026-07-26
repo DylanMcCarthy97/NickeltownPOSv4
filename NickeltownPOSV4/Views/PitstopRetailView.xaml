@@ -116,6 +116,23 @@
             <Setter Property="MinHeight" Value="64" />
             <Setter Property="FontSize" Value="20" />
         </Style>
+
+        <Style x:Key="PitstopCashTenderButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="MinWidth" Value="64" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="Background" Value="{StaticResource NumpadActionBgBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource NumpadDigitBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+        </Style>
     </UserControl.Resources>
 
     <Grid
@@ -699,7 +716,7 @@
             Visibility="{Binding ShowCheckoutOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
             <Border
                 MinWidth="360"
-                MaxWidth="440"
+                MaxWidth="480"
                 Margin="16,8"
                 Padding="16,12,16,14"
                 HorizontalAlignment="Center"
@@ -752,10 +769,14 @@
                             UseSystemFocusVisuals="False" />
                     </StackPanel>
 
+                    <ScrollViewer
+                        HorizontalScrollMode="Disabled"
+                        VerticalScrollBarVisibility="Auto"
+                        VerticalScrollMode="Enabled"
+                        Visibility="{Binding IsCashSheetOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                     <StackPanel
                         HorizontalAlignment="Stretch"
-                        Spacing="8"
-                        Visibility="{Binding IsCashSheetOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        Spacing="6">
                         <TextBlock
                             HorizontalAlignment="Center"
                             FontSize="20"
@@ -763,45 +784,116 @@
                             Foreground="{StaticResource PosTextPrimaryBrush}"
                             Text="Cash"
                             TextAlignment="Center" />
-                        <Grid>
-                            <StackPanel Spacing="6">
-                                <TextBlock
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource PosTextSecondaryBrush}"
-                                    Text="{Binding CashSaleTotalCaption, Mode=OneWay}" />
-                                <Border
-                                    Padding="10,8"
-                                    Background="#FFF0F6FF"
-                                    BorderBrush="#FFC7DBFF"
-                                    BorderThickness="1"
-                                    CornerRadius="10">
-                                    <StackPanel Spacing="2">
-                                        <TextBlock
-                                            FontSize="11"
-                                            FontWeight="SemiBold"
-                                            Foreground="{StaticResource PosTextSecondaryBrush}"
-                                            Text="Amount received" />
-                                        <TextBlock
-                                            FontSize="28"
-                                            FontWeight="Bold"
-                                            Foreground="#FF123A7A"
-                                            Text="{Binding CashReceivedDisplay, Mode=OneWay}" />
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="{Binding CashSaleTotalCaption, Mode=OneWay}"
+                            TextAlignment="Center" />
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Padding="10,8"
+                                Background="#FFF0F6FF"
+                                BorderBrush="#FFC7DBFF"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                                <StackPanel Spacing="2">
+                                    <TextBlock
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                        Text="Received" />
+                                    <TextBlock
+                                        FontSize="26"
+                                        FontWeight="Bold"
+                                        Foreground="#FF123A7A"
+                                        Text="{Binding CashReceivedDisplay, Mode=OneWay}" />
+                                </StackPanel>
+                            </Border>
+                            <Border
+                                Grid.Column="1"
+                                Padding="10,8"
+                                Background="{StaticResource PosCanvasBrush}"
+                                BorderBrush="{StaticResource PosBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                                <StackPanel Spacing="2">
+                                    <TextBlock
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                        Text="Change" />
+                                    <TextBlock
+                                        FontSize="22"
+                                        FontWeight="Bold"
+                                        Foreground="{StaticResource PosAccentBrush}"
+                                        Text="{Binding CashChangePreviewText, Mode=OneWay}"
+                                        Visibility="{Binding CashChangePreviewIsReady, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                    <TextBlock
+                                        FontSize="16"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource PosBalanceNegativeBrush}"
+                                        Text="{Binding CashChangePreviewText, Mode=OneWay}"
+                                        Visibility="{Binding CashChangePreviewIsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                                </StackPanel>
+                            </Border>
                         </Grid>
                         <TextBlock
-                            FontSize="12"
+                            FontSize="11"
+                            FontWeight="SemiBold"
                             Foreground="{StaticResource PosTextSecondaryBrush}"
-                            Text="Enter what the customer gave you, then tap Complete sale to see change."
-                            TextWrapping="WrapWholeWords" />
+                            Text="Quick tender" />
+                        <ItemsControl ItemsSource="{Binding CashQuickTenders, Mode=OneWay}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid MaximumRowsOrColumns="5" Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PitstopCashTenderButtonViewModel">
+                                    <Button
+                                        MinWidth="72"
+                                        Command="{Binding DataContext.ApplyCashTenderCommand, ElementName=RootPitstop, Mode=OneWay}"
+                                        CommandParameter="{Binding}"
+                                        Content="{Binding Label, Mode=OneWay}"
+                                        Style="{StaticResource PitstopCashTenderButtonStyle}"
+                                        UseSystemFocusVisuals="False" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                         <TextBlock
                             FontSize="11"
-                            Foreground="{StaticResource PosBalanceNegativeBrush}"
-                            Text="Amount received is less than total."
-                            TextWrapping="WrapWholeWords"
-                            Visibility="{Binding CashShortWarning, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="Notes (tap to add)" />
+                        <ItemsControl ItemsSource="{Binding CashNoteTenders, Mode=OneWay}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid MaximumRowsOrColumns="5" Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PitstopCashTenderButtonViewModel">
+                                    <Button
+                                        MinWidth="72"
+                                        Command="{Binding DataContext.ApplyCashTenderCommand, ElementName=RootPitstop, Mode=OneWay}"
+                                        CommandParameter="{Binding}"
+                                        Content="{Binding Label, Mode=OneWay}"
+                                        Style="{StaticResource PitstopCashTenderButtonStyle}"
+                                        UseSystemFocusVisuals="False" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="Or type an amount below."
+                            TextWrapping="WrapWholeWords" />
                         <controls:TouchNumpad
                             HorizontalAlignment="Stretch"
                             DataContext="{Binding CashNumpad, Mode=OneWay}" />
@@ -845,6 +937,7 @@
                                 UseSystemFocusVisuals="False" />
                         </Grid>
                     </StackPanel>
+                    </ScrollViewer>
 
                     <StackPanel
                         HorizontalAlignment="Stretch"

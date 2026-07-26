@@ -25,6 +25,7 @@ publish/
 AppPackages/
 BundleArtifacts/
 *.pfx
+deploy/out/
 
 ## Logs and diagnostics
 logs/

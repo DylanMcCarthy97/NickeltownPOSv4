@@ -256,6 +256,15 @@ public interface IStockEditingService
         long? categoryId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deducts stock once for an archived Pitstop EOD batch. Repeating the same batch/item is a no-op.
+    /// </summary>
+    Task<bool> ApplyPitstopEodDeductionAsync(
+        long batchId,
+        long itemId,
+        int quantity,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Permanently removes the item and cascaded price/movement rows (SQLite FK).</summary>
     Task PermanentlyDeleteStockItemAsync(long itemId, CancellationToken cancellationToken = default);
 

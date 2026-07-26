@@ -34,14 +34,11 @@ public static class PitstopReportPdfExporter
             doc.Open();
 
             AddHeader(doc, d);
-            AddSummaryTable(doc, d);
-            AddOutsideTable(doc, d);
-            AddReconciliation(doc, d);
-            AddCategoryComparison(doc, d);
-            AddCashCount(doc, d);
-            AddExpensesAndFloats(doc, d);
-            AddPitstopSales(doc, d);
-            AddWarnings(doc, d);
+            AddBankToday(doc, d);
+            AddTillSummary(doc, d);
+            AddSquareSummary(doc, d);
+            AddExpenseSummary(doc, d);
+            AddConciseWarnings(doc, d);
             AddFooter(doc);
             doc.Close();
         }
@@ -112,6 +109,163 @@ public static class PitstopReportPdfExporter
 
         header.AddCell(titleCell);
         doc.Add(header);
+    }
+
+    private static void AddBankToday(Document doc, PitstopReportData d)
+    {
+        doc.Add(new Paragraph("Money to bank today", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary))
+        {
+            SpacingAfter = 4,
+        });
+        var t = NewKeyValueTable();
+        AddKv(t, "Cash to bank", d.CashToDeposit);
+        AddKv(t, "Square expected deposit (after fees)", d.ExpectedSquareDeposit);
+        AddKv(t, $"Estimated Square fees ({d.SquareFeePercent:0.##}%)", d.EstimatedSquareFees);
+        AddKv(t, "Net event profit", d.NetEventProfit);
+        doc.Add(t);
+        doc.Add(new Paragraph(" ") { SpacingAfter = 4 });
+    }
+
+    private static void AddTillSummary(Document doc, PitstopReportData d)
+    {
+        doc.Add(new Paragraph("Cash reconciliation", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary))
+        {
+            SpacingAfter = 4,
+        });
+
+        var table = new PdfPTable(8) { WidthPercentage = 100 };
+        table.SetWidths(new float[] { 2.1f, 0.8f, 0.9f, 0.8f, 0.9f, 0.9f, 0.8f, 0.9f });
+        AddH(table, "Cash area");
+        AddH(table, "Float");
+        AddH(table, "Sales");
+        AddH(table, "Paid out");
+        AddH(table, "Expected");
+        AddH(table, "Counted");
+        AddH(table, "Over/short");
+        AddH(table, "To bank");
+
+        var tills = d.TillReconciliations.Count > 0
+            ? d.TillReconciliations
+            : new[]
+            {
+                new PitstopTillReconciliation
+                {
+                    TillKey = "inside",
+                    TillLabel = "Inside till",
+                    FloatIn = d.InsideFloat,
+                    CashSales = d.PitstopRetailCash,
+                    Counted = d.CashCounted,
+                    Expected = d.ExpectedCash ?? d.InsideFloat + d.PitstopRetailCash,
+                    Variance = d.CashVariance,
+                    FloatKept = d.InsideFloat,
+                    CashToBank = d.CashCounted is decimal counted ? counted - d.InsideFloat : d.PitstopRetailCash,
+                },
+                new PitstopTillReconciliation
+                {
+                    TillKey = "outside",
+                    TillLabel = "Outside merch tin",
+                    FloatIn = d.OutsideFloat,
+                    CashSales = d.OutsideCashTotal,
+                    Expected = d.OutsideFloat + d.OutsideCashTotal,
+                    FloatKept = d.OutsideFloat,
+                    CashToBank = d.OutsideCashTotal,
+                },
+            };
+
+        foreach (var till in tills)
+        {
+            AddC(table, till.TillKey == "inside" ? "Inside till / 0070" : "Outside tin / Flounderers02");
+            AddC(table, till.FloatIn.ToString("0.00", Culture));
+            AddC(table, till.CashSales.ToString("0.00", Culture));
+            AddC(table, till.CashPaidOut.ToString("0.00", Culture));
+            AddC(table, till.Expected.ToString("0.00", Culture));
+            AddC(table, till.Counted?.ToString("0.00", Culture) ?? "—");
+            AddC(table, till.Variance?.ToString("+0.00;-0.00;0.00", Culture) ?? "—");
+            AddC(table, till.CashToBank?.ToString("0.00", Culture) ?? "—");
+        }
+
+        doc.Add(table);
+        doc.Add(new Paragraph("Cash counts exclude card sales. Terminal 0070 and Flounderers02 settle through Square.",
+            FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 8, Muted))
+        {
+            SpacingBefore = 3,
+            SpacingAfter = 6,
+        });
+    }
+
+    private static void AddSquareSummary(Document doc, PitstopReportData d)
+    {
+        doc.Add(new Paragraph("Square card summary", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary))
+        {
+            SpacingAfter = 4,
+        });
+        var t = NewKeyValueTable();
+        AddKv(t, "Inside Terminal 0070", d.PosSquareGross);
+        AddKv(t, "Outside Flounderers02", d.OutsideSquareGross);
+        AddKv(t, "Combined card gross", d.CombinedSquareCardGross);
+        AddKv(t, "Estimated fees", d.EstimatedSquareFees);
+        AddKv(t, "Expected Square deposit", d.ExpectedSquareDeposit);
+        doc.Add(t);
+        doc.Add(new Paragraph(" ") { SpacingAfter = 4 });
+    }
+
+    private static void AddExpenseSummary(Document doc, PitstopReportData d)
+    {
+        if (d.Expenses.Count == 0)
+        {
+            return;
+        }
+
+        doc.Add(new Paragraph("Money out / expenses", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary))
+        {
+            SpacingAfter = 4,
+        });
+        var t = new PdfPTable(3) { WidthPercentage = 100 };
+        t.SetWidths(new float[] { 2.5f, 1.4f, 0.8f });
+        AddH(t, "Description");
+        AddH(t, "Paid from");
+        AddH(t, "Amount");
+        foreach (var expense in d.Expenses.Where(x => x.Amount != 0m))
+        {
+            AddC(t, expense.Description);
+            AddC(t, expense.PaidFrom switch
+            {
+                EventExpensePaymentSource.InsideTill => "Inside till",
+                EventExpensePaymentSource.OutsideTin => "Outside tin",
+                _ => "Other",
+            });
+            AddC(t, expense.Amount.ToString("0.00", Culture));
+        }
+
+        doc.Add(t);
+        doc.Add(new Paragraph(" ") { SpacingAfter = 4 });
+    }
+
+    private static void AddConciseWarnings(Document doc, PitstopReportData d)
+    {
+        var tillWarnings = d.TillReconciliations
+            .Where(t => t.Variance is decimal v && Math.Abs(v) >= 0.01m)
+            .Select(t => $"{t.TillLabel}: {(t.Variance > 0 ? "over" : "short")} {Math.Abs(t.Variance!.Value):C2}.")
+            .ToList();
+        var warnings = tillWarnings
+            .Concat(d.Warnings.Where(w => !string.IsNullOrWhiteSpace(w)))
+            .Distinct()
+            .Take(4)
+            .ToList();
+        if (warnings.Count == 0)
+        {
+            return;
+        }
+
+        doc.Add(new Paragraph("Warnings", FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10, new BaseColor(180, 83, 9)))
+        {
+            SpacingAfter = 3,
+        });
+        var font = FontFactory.GetFont(FontFactory.HELVETICA, 8, new BaseColor(180, 83, 9));
+        foreach (var warning in warnings)
+        {
+            doc.Add(new Paragraph("• " + warning, font) { SpacingAfter = 1 });
+        }
     }
 
     private static void AddSummaryTable(Document doc, PitstopReportData d)

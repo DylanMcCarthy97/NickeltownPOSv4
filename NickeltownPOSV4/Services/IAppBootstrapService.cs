@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Services.AddDrinks;
+using NickeltownPOSV4.Services.CustomAmount;
 using NickeltownPOSV4.Services.Settings;
 
 namespace NickeltownPOSV4.Services;
@@ -31,6 +32,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
     private readonly IDefaultStaffBootstrapper _staffBootstrap;
     private readonly IStaffPinLookupCache _pinCache;
     private readonly IShotMixerBootstrapper _shotMixer;
+    private readonly ICustomAmountBootstrapper _customAmount;
     private readonly IBackupService _backup;
     private readonly Microsoft.Extensions.Logging.ILogger<AppBootstrapService> _logger;
 
@@ -40,6 +42,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
         IDefaultStaffBootstrapper staffBootstrap,
         IStaffPinLookupCache pinCache,
         IShotMixerBootstrapper shotMixer,
+        ICustomAmountBootstrapper customAmount,
         IBackupService backup,
         Microsoft.Extensions.Logging.ILogger<AppBootstrapService> logger)
     {
@@ -48,6 +51,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
         _staffBootstrap = staffBootstrap;
         _pinCache = pinCache;
         _shotMixer = shotMixer;
+        _customAmount = customAmount;
         _backup = backup;
         _logger = logger;
     }
@@ -70,6 +74,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
 
             progress?.Report("Loading bar configuration…");
             await _shotMixer.EnsureAsync(cancellationToken).ConfigureAwait(false);
+            await _customAmount.EnsureAsync(cancellationToken).ConfigureAwait(false);
 
             progress?.Report("Starting backup…");
             _ = _backup.CreateAutomaticBackupAsync("App startup");

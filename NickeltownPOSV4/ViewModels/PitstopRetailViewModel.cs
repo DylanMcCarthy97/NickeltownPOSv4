@@ -127,6 +127,8 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
+    private bool _awaitingOpenPriceEntry;
+
     private decimal _cardSurchargePercent = 1.7m;
 
     private decimal _pendingCardSubtotal;
@@ -178,6 +180,16 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         CategoryChips = new ObservableCollection<PitstopCategoryChipViewModel>();
         ProductTiles = new ObservableCollection<PitstopProductTileViewModel>();
         CartLines = new ObservableCollection<PitstopCartLineViewModel>();
+        CashQuickTenders = new ObservableCollection<PitstopCashTenderButtonViewModel>();
+        CashNoteTenders = new ObservableCollection<PitstopCashTenderButtonViewModel>();
+        foreach (var note in PitstopCashPaymentHelper.NoteDenominations)
+        {
+            CashNoteTenders.Add(new PitstopCashTenderButtonViewModel(
+                PitstopCashPaymentHelper.FormatTenderLabel(note),
+                note,
+                isExact: false,
+                addsToTender: true));
+        }
 
         RefreshCommand = new AsyncRelayCommand(LoadCatalogAsync, () => !IsBusy);
         ClearCartCommand = new RelayCommand(ClearCart, () => !IsBusy && CartLines.Count > 0);
@@ -195,6 +207,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         ConfirmCashSaleCommand = new AsyncRelayCommand(ConfirmCashSaleAsync, () => CanConfirmCash());
         CancelCashSheetCommand = new RelayCommand(CancelCashSheet, () => IsCashSheetOpen && !IsSendingSquare);
         DismissCashChangeCommand = new RelayCommand(DismissCashChangeSheet, () => IsCashChangeSheetOpen);
+        ApplyCashTenderCommand = new RelayCommand<PitstopCashTenderButtonViewModel>(ApplyCashTender, CanApplyCashTender);
         PrevProductPageCommand = new RelayCommand(() => ChangeProductPage(-1), () => !IsBusy && _currentProductPage > 1);
         NextProductPageCommand = new RelayCommand(() => ChangeProductPage(1), () => !IsBusy && _currentProductPage < _totalProductPages);
         RemoveSelectedCartItemCommand = new RelayCommand(RemoveSelectedCartItem, () => !IsBusy && SelectedCartLine is not null);
@@ -213,6 +226,12 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     public ObservableCollection<PitstopProductTileViewModel> ProductTiles { get; }
 
     public ObservableCollection<PitstopCartLineViewModel> CartLines { get; }
+
+    /// <summary>Exact + next note round-ups (sets the tendered amount).</summary>
+    public ObservableCollection<PitstopCashTenderButtonViewModel> CashQuickTenders { get; }
+
+    /// <summary>AUD note chips that add onto the current tender.</summary>
+    public ObservableCollection<PitstopCashTenderButtonViewModel> CashNoteTenders { get; }
 
     public IAsyncRelayCommand RefreshCommand { get; }
 
@@ -265,6 +284,8 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     public IRelayCommand CancelCashSheetCommand { get; }
 
     public IRelayCommand DismissCashChangeCommand { get; }
+
+    public IRelayCommand<PitstopCashTenderButtonViewModel> ApplyCashTenderCommand { get; }
 
     public IRelayCommand PrevProductPageCommand { get; }
 
@@ -506,7 +527,9 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     /// <summary>True while checkout or Square is in progress — blocks catalog edits and duplicate Pay.</summary>
     public bool IsPaymentLocked => IsBusy || IsSendingSquare || _paymentInFlight || ShowCheckoutOverlay;
 
-    public string CashReceivedDisplay => _cashNumpad.AmountDisplay;
+    public string CashReceivedDisplay =>
+        PitstopCashPaymentHelper.FormatMoneyLabel(
+            _cashNumpad.TryPeekCurrency(out var peeked) ? peeked : 0m);
 
     public string CashSaleTotalText => _cashSaleTotal.ToString("0.00", CultureInfo.InvariantCulture);
 
@@ -517,6 +540,25 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     public string CashChangeSummaryCaption =>
         $"Received ${_cashChangeReceived.ToString("0.00", CultureInfo.InvariantCulture)} for sale ${_cashChangeSaleTotal.ToString("0.00", CultureInfo.InvariantCulture)}.";
+
+    public string CashChangePreviewText
+    {
+        get
+        {
+            if (!IsCashSheetOpen)
+            {
+                return string.Empty;
+            }
+
+            var received = _cashNumpad.TryPeekCurrency(out var value) ? value : 0m;
+            return PitstopCashPaymentHelper.FormatChangePreview(received, _cashSaleTotal);
+        }
+    }
+
+    public bool CashChangePreviewIsReady =>
+        IsCashSheetOpen
+        && _cashNumpad.TryPeekCurrency(out var received)
+        && received >= _cashSaleTotal;
 
     public bool CashConfirmEnabled =>
         _cashNumpad.TryPeekCurrency(out var received)
@@ -977,11 +1019,25 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     {
         _cashSaleTotal = PitstopCartHelper.GetCartTotal(CartLines);
         _cashNumpad.Reset(0m);
+        RebuildCashQuickTenders();
         _cashNumpad.PropertyChanged -= OnCashNumpadPropertyChanged;
         _cashNumpad.PropertyChanged += OnCashNumpadPropertyChanged;
         IsPaySheetOpen = false;
         IsCashSheetOpen = true;
         RaiseCashUi();
+    }
+
+    private void RebuildCashQuickTenders()
+    {
+        CashQuickTenders.Clear();
+        foreach (var option in PitstopCashPaymentHelper.BuildQuickTenders(_cashSaleTotal))
+        {
+            CashQuickTenders.Add(new PitstopCashTenderButtonViewModel(
+                option.Label,
+                option.Amount,
+                option.IsExact,
+                addsToTender: false));
+        }
     }
 
     private void OnCashNumpadPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -998,7 +1054,32 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         OnPropertyChanged(nameof(CashConfirmEnabled));
         OnPropertyChanged(nameof(CashShortWarning));
         OnPropertyChanged(nameof(CashSaleTotalCaption));
+        OnPropertyChanged(nameof(CashChangePreviewText));
+        OnPropertyChanged(nameof(CashChangePreviewIsReady));
         ConfirmCashSaleCommand.NotifyCanExecuteChanged();
+        ApplyCashTenderCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanApplyCashTender(PitstopCashTenderButtonViewModel? tender) =>
+        tender is not null && IsCashSheetOpen && !IsBusy && !IsSendingSquare && !_paymentInFlight;
+
+    private void ApplyCashTender(PitstopCashTenderButtonViewModel? tender)
+    {
+        if (!CanApplyCashTender(tender) || tender is null)
+        {
+            return;
+        }
+
+        if (tender.AddsToTender)
+        {
+            _cashNumpad.AddAmount(tender.Amount);
+        }
+        else
+        {
+            _cashNumpad.SetAmount(tender.Amount);
+        }
+
+        RaiseCashUi();
     }
 
     private void CancelCashSheet()
@@ -1225,30 +1306,59 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     private void OnProductTap(PitstopProductTileViewModel tile)
     {
-        if (IsBusy || IsPaymentLocked)
+        if (IsBusy || IsPaymentLocked || _awaitingOpenPriceEntry)
         {
             return;
         }
 
-        TapProduct(tile.Source);
+        _ = TapProductAsync(tile.Source);
     }
 
     /// <summary>
-    /// Adds at the configured Pitstop retail price. <see cref="PitstopCatalogProductRow.UsesOpenPrice"/> applies to bar pours only
-    /// (complimentary $0 or open numpad), not Pitstop POS.
+    /// Adds at the configured Pitstop retail price, or prompts for an amount when
+    /// <see cref="PitstopCatalogProductRow.UsesOpenPrice"/> is set (e.g. Custom Amount).
     /// </summary>
-    private void TapProduct(PitstopCatalogProductRow row)
+    private async Task TapProductAsync(PitstopCatalogProductRow row)
     {
-        if (IsBusy)
+        if (IsBusy || _awaitingOpenPriceEntry)
         {
             return;
         }
 
-        var unit = decimal.Round((decimal)row.EffectivePitstopPrice, 2, MidpointRounding.AwayFromZero);
-        if (unit <= 0m)
+        decimal unit;
+        if (row.UsesOpenPrice != 0)
         {
-            StatusMessage = "No Pitstop price configured for this item.";
-            return;
+            _awaitingOpenPriceEntry = true;
+            try
+            {
+                var entered = await _input
+                    .ShowNumpadAsync(0m, $"Price: {row.Name}", allowSignedAmount: false)
+                    .ConfigureAwait(true);
+                if (entered is null)
+                {
+                    return;
+                }
+
+                unit = decimal.Round(entered.Value, 2, MidpointRounding.AwayFromZero);
+                if (unit <= 0m)
+                {
+                    StatusMessage = "Enter a price greater than zero.";
+                    return;
+                }
+            }
+            finally
+            {
+                _awaitingOpenPriceEntry = false;
+            }
+        }
+        else
+        {
+            unit = decimal.Round((decimal)row.EffectivePitstopPrice, 2, MidpointRounding.AwayFromZero);
+            if (unit <= 0m)
+            {
+                StatusMessage = "No Pitstop price configured for this item.";
+                return;
+            }
         }
 
         AddOrMergeLine(row, unit, 1);
@@ -1256,8 +1366,13 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     private void AddOrMergeLine(PitstopCatalogProductRow row, decimal unitPrice, int qtyToAdd)
     {
-        var existing = CartLines.FirstOrDefault(l => l.ItemId == row.ItemId);
-        var otherQty = CartLines.Where(l => l.ItemId == row.ItemId && !ReferenceEquals(l, existing)).Sum(l => l.Quantity);
+        var usesOpenPrice = row.UsesOpenPrice != 0;
+        var existing = CartLines.FirstOrDefault(l =>
+            l.ItemId == row.ItemId
+            && (!usesOpenPrice || l.UnitPrice == unitPrice));
+        var otherQty = CartLines
+            .Where(l => l.ItemId == row.ItemId && !ReferenceEquals(l, existing))
+            .Sum(l => l.Quantity);
 
         if (existing is not null)
         {
@@ -1380,7 +1495,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
             return;
         }
 
-        TapProduct(hit);
+        await TapProductAsync(hit).ConfigureAwait(true);
     }
 
     private async Task CompleteSaleAsync(decimal? cashTendered, decimal? cashChange)

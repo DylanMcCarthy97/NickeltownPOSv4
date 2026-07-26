@@ -581,6 +581,76 @@ public sealed class SqliteStockEditingService : IStockEditingService
         return Task.CompletedTask;
     }
 
+    public Task<bool> ApplyPitstopEodDeductionAsync(
+        long batchId,
+        long itemId,
+        int quantity,
+        CancellationToken cancellationToken = default)
+    {
+        if (batchId <= 0 || itemId <= 0 || quantity <= 0)
+        {
+            return Task.FromResult(false);
+        }
+
+        using var conn = _factory.OpenConnection();
+        using var tx = conn.BeginTransaction();
+        var reference = $"pitstop_eod:{batchId}";
+
+        var alreadyApplied = conn.ExecuteScalar<long>(
+            new CommandDefinition(
+                """
+                SELECT COUNT(*)
+                FROM StockMovements
+                WHERE ItemId = @itemId
+                  AND Reference = @reference
+                  AND Reason = 'PitstopEod'
+                """,
+                new { itemId, reference },
+                tx,
+                cancellationToken: cancellationToken)) > 0;
+        if (alreadyApplied)
+        {
+            tx.Commit();
+            return Task.FromResult(true);
+        }
+
+        var current = conn.QuerySingleOrDefault<int?>(
+            new CommandDefinition(
+                "SELECT StockQty FROM Items WHERE Id = @itemId AND COALESCE(IsActive, 1) != 0",
+                new { itemId },
+                tx,
+                cancellationToken: cancellationToken));
+        if (current is null || current.Value < quantity)
+        {
+            tx.Rollback();
+            return Task.FromResult(false);
+        }
+
+        conn.Execute(
+            new CommandDefinition(
+                """
+                UPDATE Items
+                SET StockQty = StockQty - @quantity,
+                    UpdatedAt = datetime('now')
+                WHERE Id = @itemId
+                """,
+                new { itemId, quantity },
+                tx,
+                cancellationToken: cancellationToken));
+        conn.Execute(
+            new CommandDefinition(
+                """
+                INSERT INTO StockMovements (ItemId, DeltaQty, Reason, Reference, CreatedAt)
+                VALUES (@itemId, @delta, 'PitstopEod', @reference, datetime('now'))
+                """,
+                new { itemId, delta = -quantity, reference },
+                tx,
+                cancellationToken: cancellationToken));
+
+        tx.Commit();
+        return Task.FromResult(true);
+    }
+
     public Task PermanentlyDeleteStockItemAsync(long itemId, CancellationToken cancellationToken = default)
     {
         using var conn = _factory.OpenConnection();

@@ -44,10 +44,12 @@ public sealed class PitstopProductTileViewModel : ObservableViewModel
         }
     }
 
-    public string PriceLine => $"${Source.EffectivePriceText}";
+    public string PriceLine =>
+        Source.UsesOpenPrice != 0 ? "Open price" : $"${Source.EffectivePriceText}";
 
     public bool ShowSpecialPricing =>
-        CatalogSpecialPricing.ShouldShowPitstopSpecialPrice(
+        Source.UsesOpenPrice == 0
+        && CatalogSpecialPricing.ShouldShowPitstopSpecialPrice(
             Source.IsOnSpecial,
             Source.PitstopPrice,
             Source.PitstopSpecialPrice,

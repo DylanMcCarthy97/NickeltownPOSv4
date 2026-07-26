@@ -88,11 +88,73 @@ public sealed class PitstopReportService
             ? decimal.Round(square.ExpectedSquareDeposit, 2, MidpointRounding.AwayFromZero)
             : decimal.Round(combinedSquare - fees, 2, MidpointRounding.AwayFromZero);
 
-        var cashFloat = decimal.Round(inputs.InsideFloat + inputs.OutsideFloat, 2, MidpointRounding.AwayFromZero);
         var totalCash = decimal.Round(pitCash + outsideCash, 2, MidpointRounding.AwayFromZero);
-        var cashToDeposit = decimal.Round(totalCash - cashFloat, 2, MidpointRounding.AwayFromZero);
-
         var totalExpenses = decimal.Round(inputs.Expenses.Sum(e => e.Amount), 2, MidpointRounding.AwayFromZero);
+        var insidePaidOut = decimal.Round(
+            inputs.Expenses
+                .Where(e => e.PaidFrom == EventExpensePaymentSource.InsideTill)
+                .Sum(e => e.Amount),
+            2,
+            MidpointRounding.AwayFromZero);
+        var outsidePaidOut = decimal.Round(
+            inputs.Expenses
+                .Where(e => e.PaidFrom == EventExpensePaymentSource.OutsideTin)
+                .Sum(e => e.Amount),
+            2,
+            MidpointRounding.AwayFromZero);
+
+        var insideExpected = decimal.Round(inputs.InsideFloat + pitCash - insidePaidOut, 2, MidpointRounding.AwayFromZero);
+        var outsideExpected = decimal.Round(inputs.OutsideFloat + outsideCash - outsidePaidOut, 2, MidpointRounding.AwayFromZero);
+        var insideVariance = inputs.CashCounted is decimal insideCounted
+            ? decimal.Round(insideCounted - insideExpected, 2, MidpointRounding.AwayFromZero)
+            : (decimal?)null;
+        var outsideVariance = inputs.OutsideCashCounted is decimal outsideCounted
+            ? decimal.Round(outsideCounted - outsideExpected, 2, MidpointRounding.AwayFromZero)
+            : (decimal?)null;
+
+        // A physical count is authoritative. Before a count is entered, show the sales-based
+        // estimate (cash sales less cash paid out); floats were never part of sales and must
+        // not be subtracted from that estimate.
+        var insideToBank = inputs.CashCounted is decimal insideCash
+            ? decimal.Round(insideCash - inputs.InsideFloat, 2, MidpointRounding.AwayFromZero)
+            : decimal.Round(pitCash - insidePaidOut, 2, MidpointRounding.AwayFromZero);
+        var outsideToBank = inputs.OutsideCashCounted is decimal outsideCashCount
+            ? decimal.Round(outsideCashCount - inputs.OutsideFloat, 2, MidpointRounding.AwayFromZero)
+            : decimal.Round(outsideCash - outsidePaidOut, 2, MidpointRounding.AwayFromZero);
+        var cashToDeposit = decimal.Round(insideToBank + outsideToBank, 2, MidpointRounding.AwayFromZero);
+        var totalCashVariance = insideVariance is null && outsideVariance is null
+            ? (decimal?)null
+            : decimal.Round((insideVariance ?? 0m) + (outsideVariance ?? 0m), 2, MidpointRounding.AwayFromZero);
+
+        var tillReconciliations = new List<PitstopTillReconciliation>
+        {
+            new()
+            {
+                TillKey = "inside",
+                TillLabel = "Inside till (ClubPOS / Terminal 0070)",
+                FloatIn = inputs.InsideFloat,
+                CashSales = decimal.Round(pitCash, 2, MidpointRounding.AwayFromZero),
+                CashPaidOut = insidePaidOut,
+                Counted = inputs.CashCounted,
+                Expected = insideExpected,
+                Variance = insideVariance,
+                FloatKept = inputs.InsideFloat,
+                CashToBank = insideToBank,
+            },
+            new()
+            {
+                TillKey = "outside",
+                TillLabel = "Outside merch tin (paper sheet / Flounderers02)",
+                FloatIn = inputs.OutsideFloat,
+                CashSales = decimal.Round(outsideCash, 2, MidpointRounding.AwayFromZero),
+                CashPaidOut = outsidePaidOut,
+                Counted = inputs.OutsideCashCounted,
+                Expected = outsideExpected,
+                Variance = outsideVariance,
+                FloatKept = inputs.OutsideFloat,
+                CashToBank = outsideToBank,
+            },
+        };
 
         var gross = decimal.Round(
             pitCash + outsideCash + combinedSquare,
@@ -238,6 +300,7 @@ public sealed class PitstopReportService
             TotalExpenses = totalExpenses,
             EstimatedSquareFees = fees,
             CashToDeposit = cashToDeposit,
+            TotalCashVariance = totalCashVariance,
             NetEventProfit = net,
             InsideFloat = inputs.InsideFloat,
             OutsideFloat = inputs.OutsideFloat,
@@ -258,12 +321,9 @@ public sealed class PitstopReportService
             Warnings = warnings,
             CashCounted = inputs.CashCounted,
             FloatRemoved = inputs.FloatRemoved,
-            ExpectedCash = inputs.CashCounted is null
-                ? null
-                : decimal.Round(inputs.InsideFloat + pitCash, 2, MidpointRounding.AwayFromZero),
-            CashVariance = inputs.CashCounted is decimal cc
-                ? cc - decimal.Round(inputs.InsideFloat + pitCash, 2, MidpointRounding.AwayFromZero)
-                : (decimal?)null,
+            ExpectedCash = inputs.CashCounted is null ? null : insideExpected,
+            CashVariance = insideVariance,
+            TillReconciliations = tillReconciliations,
             IsTestReport = inputs.UseTestPosData,
         };
     }
