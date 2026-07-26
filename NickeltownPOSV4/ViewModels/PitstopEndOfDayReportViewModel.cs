@@ -780,6 +780,20 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
     }
 
+    public bool HasPitstopProductSales => Preview?.PitstopProductSales.Count > 0;
+
+    public IReadOnlyList<PitstopProductAggregateRow> PitstopProductSales =>
+        Preview?.PitstopProductSales ?? Array.Empty<PitstopProductAggregateRow>();
+
+    public string PitstopItemsSoldCaption
+    {
+        get
+        {
+            var quantity = Preview?.PitstopProductSales.Sum(p => p.Quantity) ?? 0;
+            return quantity == 1 ? "1 item sold" : $"{quantity} items sold";
+        }
+    }
+
     public bool HasOutsideTerminalProductSales =>
         Preview?.OutsideTerminalProductSales.Count > 0;
 
@@ -1016,6 +1030,9 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
                 OnPropertyChanged(nameof(SquareFeesText));
                 OnPropertyChanged(nameof(ExpectedSquareDepositText));
                 OnPropertyChanged(nameof(SquareReconciliationStatusText));
+                OnPropertyChanged(nameof(HasPitstopProductSales));
+                OnPropertyChanged(nameof(PitstopProductSales));
+                OnPropertyChanged(nameof(PitstopItemsSoldCaption));
                 OnPropertyChanged(nameof(HasOutsideTerminalProductSales));
                 OnPropertyChanged(nameof(OutsideTerminalProductSales));
                 OnPropertyChanged(nameof(OutsideTerminalCategorySales));

@@ -181,15 +181,6 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         ProductTiles = new ObservableCollection<PitstopProductTileViewModel>();
         CartLines = new ObservableCollection<PitstopCartLineViewModel>();
         CashQuickTenders = new ObservableCollection<PitstopCashTenderButtonViewModel>();
-        CashNoteTenders = new ObservableCollection<PitstopCashTenderButtonViewModel>();
-        foreach (var note in PitstopCashPaymentHelper.NoteDenominations)
-        {
-            CashNoteTenders.Add(new PitstopCashTenderButtonViewModel(
-                PitstopCashPaymentHelper.FormatTenderLabel(note),
-                note,
-                isExact: false,
-                addsToTender: true));
-        }
 
         RefreshCommand = new AsyncRelayCommand(LoadCatalogAsync, () => !IsBusy);
         ClearCartCommand = new RelayCommand(ClearCart, () => !IsBusy && CartLines.Count > 0);
@@ -229,9 +220,6 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     /// <summary>Exact + next note round-ups (sets the tendered amount).</summary>
     public ObservableCollection<PitstopCashTenderButtonViewModel> CashQuickTenders { get; }
-
-    /// <summary>AUD note chips that add onto the current tender.</summary>
-    public ObservableCollection<PitstopCashTenderButtonViewModel> CashNoteTenders { get; }
 
     public IAsyncRelayCommand RefreshCommand { get; }
 
@@ -1035,8 +1023,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
             CashQuickTenders.Add(new PitstopCashTenderButtonViewModel(
                 option.Label,
                 option.Amount,
-                option.IsExact,
-                addsToTender: false));
+                option.IsExact));
         }
     }
 
@@ -1070,15 +1057,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
             return;
         }
 
-        if (tender.AddsToTender)
-        {
-            _cashNumpad.AddAmount(tender.Amount);
-        }
-        else
-        {
-            _cashNumpad.SetAmount(tender.Amount);
-        }
-
+        _cashNumpad.SetAmount(tender.Amount);
         RaiseCashUi();
     }
 

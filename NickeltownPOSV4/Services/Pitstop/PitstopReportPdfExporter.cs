@@ -37,6 +37,7 @@ public static class PitstopReportPdfExporter
             AddBankToday(doc, d);
             AddTillSummary(doc, d);
             AddSquareSummary(doc, d);
+            AddItemsSold(doc, d);
             AddExpenseSummary(doc, d);
             AddConciseWarnings(doc, d);
             AddFooter(doc);
@@ -207,6 +208,63 @@ public static class PitstopReportPdfExporter
         AddKv(t, "Expected Square deposit", d.ExpectedSquareDeposit);
         doc.Add(t);
         doc.Add(new Paragraph(" ") { SpacingAfter = 4 });
+    }
+
+    private static void AddItemsSold(Document doc, PitstopReportData d)
+    {
+        var inside = d.PitstopProductSales
+            .Where(p => p.Quantity > 0)
+            .OrderByDescending(p => p.Quantity)
+            .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var outside = d.CombinedOutsideSales
+            .Where(p => p.CombinedQuantity > 0)
+            .OrderByDescending(p => p.CombinedQuantity)
+            .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (inside.Count == 0 && outside.Count == 0)
+        {
+            return;
+        }
+
+        var totalQuantity = inside.Sum(p => p.Quantity) + outside.Sum(p => p.CombinedQuantity);
+        doc.Add(new Paragraph(
+            $"Items sold — {totalQuantity} total",
+            FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11, TextPrimary))
+        {
+            SpacingAfter = 4,
+        });
+
+        var table = new PdfPTable(4) { WidthPercentage = 100 };
+        table.SetWidths(new float[] { 2.5f, 1.25f, 0.65f, 0.9f });
+        AddH(table, "Item");
+        AddH(table, "Sold from");
+        AddH(table, "Qty");
+        AddH(table, "Sales");
+
+        foreach (var product in inside)
+        {
+            AddC(table, product.Name);
+            AddC(table, "Inside till");
+            AddC(table, product.Quantity.ToString(Culture));
+            AddC(table, product.LineTotal.ToString("0.00", Culture));
+        }
+
+        foreach (var product in outside)
+        {
+            AddC(table, product.Name);
+            AddC(table, "Outside merch");
+            AddC(table, product.CombinedQuantity.ToString(Culture));
+            AddC(table, product.CombinedTotal.ToString("0.00", Culture));
+        }
+
+        doc.Add(table);
+        doc.Add(new Paragraph("Quantities include cash and card sales.", FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 8, Muted))
+        {
+            SpacingBefore = 2,
+            SpacingAfter = 4,
+        });
     }
 
     private static void AddExpenseSummary(Document doc, PitstopReportData d)

@@ -463,6 +463,71 @@
                                     </StackPanel>
                                 </Border>
                             </Grid>
+                            <StackPanel Spacing="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        FontSize="15"
+                                        FontWeight="SemiBold"
+                                        Text="Items sold through the inside till" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                        Text="{Binding PitstopItemsSoldCaption, Mode=OneWay}" />
+                                </Grid>
+                                <TextBlock
+                                    Style="{StaticResource EodHelpTextStyle}"
+                                    Text="No item sales recorded for this period."
+                                    Visibility="{Binding HasPitstopProductSales, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                                <ListView
+                                    MaxHeight="260"
+                                    ItemsSource="{Binding PitstopProductSales, Mode=OneWay}"
+                                    SelectionMode="None"
+                                    Visibility="{Binding HasPitstopProductSales, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                    <ListView.Header>
+                                        <Grid Padding="4,4,4,2" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="70" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Item" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                HorizontalAlignment="Right"
+                                                Style="{StaticResource EodMetricLabelStyle}"
+                                                Text="Qty sold" />
+                                        </Grid>
+                                    </ListView.Header>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Padding="4,6" ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="70" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextWrapping="WrapWholeWords" />
+                                                    <TextBlock
+                                                        FontSize="11"
+                                                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                                                        Text="{Binding CategoryName}" />
+                                                </StackPanel>
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="16"
+                                                    FontWeight="Bold"
+                                                    Text="{Binding Quantity}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

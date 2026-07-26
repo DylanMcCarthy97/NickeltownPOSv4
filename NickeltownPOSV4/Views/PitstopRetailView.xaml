@@ -769,14 +769,10 @@
                             UseSystemFocusVisuals="False" />
                     </StackPanel>
 
-                    <ScrollViewer
-                        HorizontalScrollMode="Disabled"
-                        VerticalScrollBarVisibility="Auto"
-                        VerticalScrollMode="Enabled"
-                        Visibility="{Binding IsCashSheetOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                     <StackPanel
                         HorizontalAlignment="Stretch"
-                        Spacing="6">
+                        Spacing="6"
+                        Visibility="{Binding IsCashSheetOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                         <TextBlock
                             HorizontalAlignment="Center"
                             FontSize="20"
@@ -866,34 +862,6 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock
-                            FontSize="11"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource PosTextSecondaryBrush}"
-                            Text="Notes (tap to add)" />
-                        <ItemsControl ItemsSource="{Binding CashNoteTenders, Mode=OneWay}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <ItemsWrapGrid MaximumRowsOrColumns="5" Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:PitstopCashTenderButtonViewModel">
-                                    <Button
-                                        MinWidth="72"
-                                        Command="{Binding DataContext.ApplyCashTenderCommand, ElementName=RootPitstop, Mode=OneWay}"
-                                        CommandParameter="{Binding}"
-                                        Content="{Binding Label, Mode=OneWay}"
-                                        Style="{StaticResource PitstopCashTenderButtonStyle}"
-                                        UseSystemFocusVisuals="False" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock
-                            FontSize="11"
-                            Foreground="{StaticResource PosTextSecondaryBrush}"
-                            Text="Or type an amount below."
-                            TextWrapping="WrapWholeWords" />
                         <controls:TouchNumpad
                             HorizontalAlignment="Stretch"
                             DataContext="{Binding CashNumpad, Mode=OneWay}" />
@@ -937,7 +905,6 @@
                                 UseSystemFocusVisuals="False" />
                         </Grid>
                     </StackPanel>
-                    </ScrollViewer>
 
                     <StackPanel
                         HorizontalAlignment="Stretch"
