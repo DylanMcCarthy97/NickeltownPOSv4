@@ -4,6 +4,18 @@ on:
   push:
     tags:
       - 'v*.*.*.*'
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Create/update the GitHub release and point the update feed at it'
+        required: true
+        type: boolean
+        default: false
+      version:
+        description: 'Package version when running manually (e.g. 1.0.7.18). Ignored for tag pushes.'
+        required: false
+        type: string
+        default: ''
 
 env:
   PROJECT_PATH: NickeltownPOSV4/NickeltownPOSV4.csproj
@@ -11,153 +23,240 @@ env:
   CONFIGURATION: Release
   PLATFORM: x64
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: windows-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+      with:
+        # Needed so the update-manifest commit can push to main from a tag checkout.
+        fetch-depth: 0
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
-        
-    - name: Extract version from tag
+        global-json-file: global.json
+
+    - name: Resolve version
       id: get_version
       shell: pwsh
       run: |
-        $tag = "${{ github.ref_name }}"
-        $version = $tag -replace '^v', ''
-        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-        echo "Building version: $version"
-        
-    - name: Restore dependencies
-      run: dotnet restore ${{ env.PROJECT_PATH }}
-      
-    - name: Decode certificate
-      if: env.CERTIFICATE_BASE64 != ''
+        if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+          $version = "${{ inputs.version }}".Trim()
+          if (-not $version) {
+            [xml]$manifest = Get-Content "${{ env.MANIFEST_PATH }}"
+            $version = $manifest.Package.Identity.Version
+          }
+          $publish = '${{ inputs.publish_release }}' -eq 'true'
+        } else {
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $publish = $true
+        }
+
+        if ($version -notmatch '^\d+\.\d+\.\d+\.\d+$') {
+          Write-Error "Version must look like 1.0.7.18 (got '$version')"
+          exit 1
+        }
+
+        $tag = "v$version"
+        "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        "TAG=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        "PUBLISH=$($publish.ToString().ToLower())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        Write-Host "Building version $version (tag $tag, publish=$publish)"
+
+    - name: Require signing secrets
       shell: pwsh
       env:
         CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
         CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
       run: |
-        if ($env:CERTIFICATE_BASE64) {
-          $certBytes = [System.Convert]::FromBase64String($env:CERTIFICATE_BASE64)
-          $certPath = Join-Path $env:GITHUB_WORKSPACE "GitHubActionsWorkflow.pfx"
-          [IO.File]::WriteAllBytes($certPath, $certBytes)
-          echo "CERTIFICATE_PATH=$certPath" >> $env:GITHUB_ENV
+        if (-not $env:CERTIFICATE_BASE64 -or -not $env:CERTIFICATE_PASSWORD) {
+          Write-Error @"
+        Missing repository secrets CERTIFICATE_BASE64 and/or CERTIFICATE_PASSWORD.
+        Export the same PFX used for previous releases (CN=Dylan / thumbprint 4D961E01...),
+        base64-encode it, and set both secrets so existing tills can update in place.
+        "@
+          exit 1
         }
-    
-    - name: Build MSIX package
+
+    - name: Decode certificate
+      shell: pwsh
+      env:
+        CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
+      run: |
+        $certPath = Join-Path $env:GITHUB_WORKSPACE "signing.pfx"
+        [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERTIFICATE_BASE64))
+        "CERTIFICATE_PATH=$certPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+    - name: Locate MSBuild
+      shell: pwsh
+      run: |
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+        $msbuild = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" |
+          Select-Object -First 1
+        if (-not $msbuild) {
+          Write-Error "MSBuild not found on the runner"
+          exit 1
+        }
+        "MSBUILD_PATH=$msbuild" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+        Write-Host "Using MSBuild: $msbuild"
+
+    - name: Stamp package version
       shell: pwsh
       run: |
         $version = "${{ steps.get_version.outputs.VERSION }}"
-        
-        # Update manifest version
         [xml]$manifest = Get-Content "${{ env.MANIFEST_PATH }}"
         $manifest.Package.Identity.Version = $version
-        $manifest.Save("${{ env.MANIFEST_PATH }}")
-        
-        # Build arguments
-        $buildArgs = @(
-          'publish',
-          '${{ env.PROJECT_PATH }}',
-          '-c', '${{ env.CONFIGURATION }}',
-          '-p:Platform=${{ env.PLATFORM }}',
-          '-p:UapAppxPackageBuildMode=SideloadOnly',
-          '-p:AppxBundle=Never',
-          '-p:GenerateAppxPackageOnBuild=true'
-        )
-        
-        # Add certificate if available
-        if ($env:CERTIFICATE_PATH) {
-          $buildArgs += "-p:PackageCertificateKeyFile=$env:CERTIFICATE_PATH"
-          if ($env:CERTIFICATE_PASSWORD) {
-            $buildArgs += "-p:PackageCertificatePassword=$env:CERTIFICATE_PASSWORD"
-          }
+        $manifest.Save((Resolve-Path "${{ env.MANIFEST_PATH }}").Path)
+
+    - name: Build signed MSIX
+      shell: pwsh
+      env:
+        CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+      run: |
+        $outDir = Join-Path $env:GITHUB_WORKSPACE "AppPackages\"
+        New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+        & $env:MSBUILD_PATH "${{ env.PROJECT_PATH }}" `
+          /restore `
+          /t:Build `
+          /p:Configuration=${{ env.CONFIGURATION }} `
+          /p:Platform=${{ env.PLATFORM }} `
+          /p:UapAppxPackageBuildMode=SideloadOnly `
+          /p:AppxBundle=Never `
+          /p:GenerateAppxPackageOnBuild=true `
+          /p:AppxPackageSigningEnabled=true `
+          /p:AppxAutoIncrementPackageRevision=false `
+          /p:AppxPackageDir=$outDir `
+          /p:PackageCertificateThumbprint= `
+          /p:PackageCertificateKeyFile=$env:CERTIFICATE_PATH `
+          /p:PackageCertificatePassword=$env:CERTIFICATE_PASSWORD `
+          /v:minimal `
+          /nologo
+
+        if ($LASTEXITCODE -ne 0) {
+          exit $LASTEXITCODE
         }
-        
-        dotnet @buildArgs
-        
-    - name: Find MSIX package
+
+    - name: Collect MSIX
       id: find_msix
       shell: pwsh
       run: |
         $version = "${{ steps.get_version.outputs.VERSION }}"
         $msixName = "NickeltownPOSV4_${version}_${{ env.PLATFORM }}.msix"
-        
-        # Search for the built MSIX
-        $msixFiles = Get-ChildItem -Path . -Recurse -Filter "*.msix" | 
+        $msix = Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "AppPackages") -Recurse -Filter "*.msix" |
           Where-Object { $_.Name -like "*${{ env.PLATFORM }}*" } |
           Sort-Object LastWriteTime -Descending |
           Select-Object -First 1
-        
-        if (-not $msixFiles) {
-          Write-Error "No MSIX file found!"
+
+        if (-not $msix) {
+          Write-Error "No MSIX was produced under AppPackages/"
+          Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "AppPackages") -Recurse | ForEach-Object { $_.FullName }
           exit 1
         }
-        
-        $msixPath = $msixFiles.FullName
+
         $outputPath = Join-Path $env:GITHUB_WORKSPACE $msixName
-        
-        Copy-Item $msixPath $outputPath -Force
-        
-        echo "MSIX_PATH=$outputPath" >> $env:GITHUB_OUTPUT
-        echo "MSIX_NAME=$msixName" >> $env:GITHUB_OUTPUT
-        echo "Found MSIX: $msixName"
-        
-    - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
-        body: |
-          Release ${{ steps.get_version.outputs.VERSION }}
-          
-          ## Installation
-          Download the MSIX package and install on Windows.
-          
-          ## Changes
-          See commit history for details.
-        draft: false
-        prerelease: false
-        
-    - name: Upload MSIX to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.find_msix.outputs.MSIX_PATH }}
-        asset_name: ${{ steps.find_msix.outputs.MSIX_NAME }}
-        asset_content_type: application/octet-stream
-        
-    - name: Update manifest file
-      shell: pwsh
-      run: |
-        $version = "${{ steps.get_version.outputs.VERSION }}"
-        $msixName = "${{ steps.find_msix.outputs.MSIX_NAME }}"
-        $packageUri = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$msixName"
-        
-        $manifest = @{
-          version = $version
-          packageUri = $packageUri
-          releaseNotes = "Release $version - See GitHub release notes for details."
-          mandatory = $false
+        Copy-Item $msix.FullName $outputPath -Force
+
+        $sig = Get-AuthenticodeSignature $outputPath
+        Write-Host "Signature status: $($sig.Status)"
+        Write-Host "Signer: $($sig.SignerCertificate.Subject) / $($sig.SignerCertificate.Thumbprint)"
+        if ($sig.Status -ne 'Valid' -and $sig.Status -ne 'UnknownError') {
+          # UnknownError is common for self-signed certs that are not in Trusted Root on the runner.
+          # Require that we at least produced a signature with a certificate.
+          if (-not $sig.SignerCertificate) {
+            Write-Error "MSIX is not signed"
+            exit 1
+          }
         }
-        
-        $manifest | ConvertTo-Json | Set-Content "deploy/update-manifest.json" -Encoding UTF8
-        
-    - name: Commit and push manifest
+        if (-not $sig.SignerCertificate) {
+          Write-Error "MSIX is not signed"
+          exit 1
+        }
+
+        "MSIX_PATH=$outputPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        "MSIX_NAME=$msixName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        Write-Host "Collected $($msix.Name) as $msixName ($([math]::Round($msix.Length/1MB,1)) MB)"
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.find_msix.outputs.MSIX_NAME }}
+        path: ${{ steps.find_msix.outputs.MSIX_PATH }}
+        if-no-files-found: error
+
+    - name: Publish GitHub Release
+      if: steps.get_version.outputs.PUBLISH == 'true'
       shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        $tag = "${{ steps.get_version.outputs.TAG }}"
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $msix = "${{ steps.find_msix.outputs.MSIX_PATH }}"
+        $title = "v$version"
+        $notes = @"
+        ## Release $version
+
+        Automated MSIX build from tag ``$tag``.
+
+        ### Install
+        Download the ``.msix`` below and open it. Existing installs update in place when signed with the same certificate.
+        "@
+
+        $existing = gh release view $tag 2>$null
+        if ($LASTEXITCODE -eq 0) {
+          Write-Host "Release $tag already exists — uploading/replacing MSIX asset"
+          gh release upload $tag $msix --clobber
+        } else {
+          gh release create $tag $msix --title $title --notes $notes
+        }
+
+    - name: Commit and push update feed
+      if: steps.get_version.outputs.PUBLISH == 'true'
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        git fetch origin main
+        git checkout -B main origin/main
+
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $tag = "${{ steps.get_version.outputs.TAG }}"
+        $msixName = "${{ steps.find_msix.outputs.MSIX_NAME }}"
+        $packageUri = "https://github.com/${{ github.repository }}/releases/download/$tag/$msixName"
+        $manifestPath = "deploy/update-manifest.json"
+
+        $existingNotes = $null
+        if (Test-Path $manifestPath) {
+          try { $existingNotes = (Get-Content $manifestPath -Raw | ConvertFrom-Json).releaseNotes } catch { }
+        }
+        $releaseNotes = if ($existingNotes -and $existingNotes -notmatch '^Release \d') {
+          $existingNotes
+        } else {
+          "Release $version"
+        }
+
+        $json = [ordered]@{
+          version = $version
+          packageUri = $packageUri
+          releaseNotes = $releaseNotes
+          mandatory = $false
+        } | ConvertTo-Json
+        [System.IO.File]::WriteAllText((Resolve-Path $manifestPath).Path, $json + "`n", [System.Text.UTF8Encoding]::new($false))
+        Get-Content $manifestPath
+
         git add deploy/update-manifest.json
-        git diff --staged --quiet || git commit -m "Update manifest for ${{ github.ref_name }}"
-        git push origin HEAD:main
+        if (git diff --staged --quiet) {
+          Write-Host "update-manifest.json already up to date"
+        } else {
+          git commit -m "Point update feed at $tag"
+          git push origin main
+        }
