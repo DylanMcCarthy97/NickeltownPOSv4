@@ -46,8 +46,8 @@ public static class PitstopReportTestDataBuilder
 
     public static IReadOnlyList<EventExpenseRow> BuildSampleExpenses() =>
     [
-        new() { Description = "Cash prize", Amount = 45m, PaidFrom = EventExpensePaymentSource.OutsideTin },
-        new() { Description = "Generator fuel", Amount = 35m },
+        new() { Description = "Money Wheel", Amount = 45m, Kind = EventExpenseKind.CashPrize, PaidFrom = EventExpensePaymentSource.OutsideTin },
+        new() { Description = "Generator fuel", Amount = 35m, Kind = EventExpenseKind.Expense, PaidFrom = EventExpensePaymentSource.Other },
     ];
 
     public static void ApplyOutsideLineSamples(IList<OutsideItemSaleRow> lines)
@@ -62,14 +62,17 @@ public static class PitstopReportTestDataBuilder
             switch (i % 3)
             {
                 case 0:
+                    line.SoldQty = 5;
                     line.CashQty = 5;
                     ApplySuggestedDollars(line);
                     break;
                 case 1:
+                    line.SoldQty = 2;
                     line.CashQty = 2;
                     ApplySuggestedDollars(line);
                     break;
                 case 2:
+                    line.SoldQty = 3;
                     line.CashQty = 3;
                     ApplySuggestedDollars(line);
                     break;
@@ -80,6 +83,7 @@ public static class PitstopReportTestDataBuilder
             string.Equals(l.OutsideLineKind, PitstopOutsideLineCatalogBuilder.LineKindRaffle, StringComparison.Ordinal));
         if (raffle is not null)
         {
+            raffle.SoldQty = 30;
             raffle.CashQty = 30;
             raffle.CashDollars = 60m;
         }

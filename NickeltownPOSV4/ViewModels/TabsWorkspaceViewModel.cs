@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Controls;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Complimentary;
 using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.Views;
 using NickeltownPOSV4.Views.Panels;
@@ -67,6 +68,20 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     private readonly IAuthenticationService _authentication;
 
+    private readonly IWindowHandleProvider _windowHandle;
+
+    private readonly IComplimentaryItemService _complimentary;
+
+    private readonly ComplimentaryItemTapGuard _freeItemTapGuard = new();
+
+    private int _freeItemToastGeneration;
+
+    private string _freeItemToastMessage = string.Empty;
+
+    private bool _freeItemToastVisible;
+
+    private string? _freeItemToastIssueGuid;
+
     private string? _lastSelectedTabId;
 
     private string _dataStatusHint = string.Empty;
@@ -108,6 +123,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private readonly List<TabCardModel> _archivedTabCards = new();
 
     private bool _isAddDrinksWorkspaceOpen;
+    private readonly MoneyActionLock _moneyLock = new();
 
     private AddDrinksPanelViewModel? _addDrinksWorkspaceViewModel;
 
@@ -131,7 +147,9 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         IGuestCloseoutOpenBus guestCloseoutOpen,
         IInputOverlayService inputOverlay,
         IAuthenticationService authentication,
-        IAuthSignOutService signOut)
+        IAuthSignOutService signOut,
+        IWindowHandleProvider windowHandle,
+        IComplimentaryItemService complimentary)
     {
         _tabQuery = tabQuery;
         _refreshBus = refreshBus;
@@ -153,6 +171,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         _guestCloseoutOpen = guestCloseoutOpen;
         _inputOverlay = inputOverlay;
         _authentication = authentication;
+        _windowHandle = windowHandle;
+        _complimentary = complimentary;
         _guestCloseoutOpen.OpenRequested += OnGuestCloseoutOpenRequested;
 
         _session.PropertyChanged += OnShellSessionPropertyChanged;
@@ -183,11 +203,13 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         CancelArchiveCommand = new RelayCommand(CancelArchiveOverlay, () => _archiveOverlayVisible);
         ConfirmPermanentDeleteCommand = new AsyncRelayCommand(ConfirmPermanentDeleteAsync, () => _deleteOverlayVisible && _session.IsAdmin);
         CancelDeleteCommand = new RelayCommand(CancelDeleteOverlay, () => _deleteOverlayVisible);
-        UndoLastCommand = new AsyncRelayCommand(UndoLastAsync, () => _undo.CanUndo);
+        UndoLastCommand = new AsyncRelayCommand(UndoLastAsync, () => _undo.CanUndo && !_moneyLock.IsInFlight);
         _undo.Changed += (_, _) =>
         {
             UndoLastCommand.NotifyCanExecuteChanged();
             OnPropertyChanged(nameof(UndoToolTip));
+            OnPropertyChanged(nameof(FreeItemToastCanUndo));
+            UndoComplimentaryToastCommand.NotifyCanExecuteChanged();
         };
         InfoCommand = new RelayCommand(OpenInfoPanel, () => ToolbarActionsEnabled);
         SettingsCommand = new RelayCommand(OpenStoreSettings, () => ToolbarActionsEnabled);
@@ -200,6 +222,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         CloseOutGuestTabCommand = new RelayCommand(OpenGuestTabCloseoutPanel, CanCloseOutGuestTab);
         CloseSlidePanelCommand = new RelayCommand(CloseSlideAndAddDrinksOverlay);
         SignOutCommand = new RelayCommand(SignOutFromTabs);
+        RecordQuickFreeItemCommand = new AsyncRelayCommand<QuickFreeItemButtonViewModel>(RecordQuickFreeItemAsync);
+        UndoComplimentaryToastCommand = new AsyncRelayCommand(UndoComplimentaryToastAsync, () => FreeItemToastCanUndo);
 
         _addDrinksWorkspaceNavigator.SetHandler(OnAddDrinksWorkspaceCloseRequested);
     }
@@ -218,8 +242,26 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public bool ShowStockManagementEntry => _session.IsAdmin;
 
-    public string UndoToolTip =>
-        _undo.CanUndo ? (_undo.UndoDescription ?? "Undo last tab action") : "Nothing to undo";
+    public string UndoToolTip
+    {
+        get
+        {
+            if (!_undo.CanUndo)
+            {
+                return "Nothing to undo";
+            }
+
+            var preview = _undo.Preview;
+            if (preview is null)
+            {
+                return _undo.UndoDescription ?? "Undo last transaction";
+            }
+
+            var parts = new[] { preview.Headline.Replace("\n", ", ", StringComparison.Ordinal), preview.AmountText, preview.DetailLine }
+                .Where(s => !string.IsNullOrWhiteSpace(s));
+            return string.Join(" · ", parts);
+        }
+    }
 
     public bool ArchiveOverlayVisible
     {
@@ -388,6 +430,39 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public IRelayCommand SignOutCommand { get; }
 
+    public IAsyncRelayCommand<QuickFreeItemButtonViewModel> RecordQuickFreeItemCommand { get; }
+
+    public IAsyncRelayCommand UndoComplimentaryToastCommand { get; }
+
+    public ObservableCollection<QuickFreeItemButtonViewModel> QuickFreeItems { get; } = new();
+
+    public bool ShowQuickFreeItems => !IsArchivedMode && QuickFreeItems.Count > 0;
+
+    public string FreeItemToastMessage
+    {
+        get => _freeItemToastMessage;
+        private set => SetProperty(ref _freeItemToastMessage, value ?? string.Empty);
+    }
+
+    public bool FreeItemToastVisible
+    {
+        get => _freeItemToastVisible;
+        private set
+        {
+            if (SetProperty(ref _freeItemToastVisible, value))
+            {
+                OnPropertyChanged(nameof(FreeItemToastCanUndo));
+                UndoComplimentaryToastCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool FreeItemToastCanUndo =>
+        FreeItemToastVisible
+        && !string.IsNullOrWhiteSpace(_freeItemToastIssueGuid)
+        && _undo.CanUndo
+        && string.Equals(_undo.Preview?.ActionKind, TabUndoPreview.ComplimentaryActionKind, StringComparison.Ordinal);
+
     public async Task RefreshTabsFromDatabaseAsync()
     {
         try
@@ -414,6 +489,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
         RaiseToolbarHeaderHints();
         RaiseActionBarProperties();
+        await LoadQuickFreeItemsAsync().ConfigureAwait(true);
     }
 
     private async Task LoadArchivedTabCardsAsync()
@@ -482,6 +558,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
                 OnPropertyChanged(nameof(IsOpenMode));
                 OnPropertyChanged(nameof(IsGuestMode));
                 OnPropertyChanged(nameof(IsArchivedMode));
+                OnPropertyChanged(nameof(ShowQuickFreeItems));
                 OnPropertyChanged(nameof(ArchiveOrRestoreButtonLabel));
                 ArchiveSelectedCommand.NotifyCanExecuteChanged();
                 RestoreSelectedCommand.NotifyCanExecuteChanged();
@@ -608,6 +685,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         OnPropertyChanged(nameof(SelectedBalanceTier));
         OnPropertyChanged(nameof(ShowGuestTabActions));
         OnPropertyChanged(nameof(ShowMemberTabActions));
+        OnPropertyChanged(nameof(ShowQuickFreeItems));
         CloseOutGuestTabCommand.NotifyCanExecuteChanged();
     }
 
@@ -1213,7 +1291,15 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     private async Task UndoLastAsync()
     {
-        ShellCloseSlideAndAddDrinks();
+        if (!_moneyLock.TryBegin())
+        {
+            return;
+        }
+
+        try
+        {
+            ShellCloseSlideAndAddDrinks();
+            UndoLastCommand.NotifyCanExecuteChanged();
         if (!_undo.CanUndo)
         {
             OperatorHint = TabsUndoUiHelper.NothingToUndoMessage;
@@ -1225,6 +1311,16 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         {
             OperatorHint = "Sign in to undo.";
             RaiseToolbarHeaderHints();
+            return;
+        }
+
+        var preview = _undo.Preview
+            ?? TabUndoPreview.FromDescription(_undo.UndoDescription ?? "Undo last tab action");
+        var confirmed = await TabsUndoConfirmDialog
+            .ShowAsync(_windowHandle.GetXamlRoot(), preview)
+            .ConfigureAwait(true);
+        if (!confirmed)
+        {
             return;
         }
 
@@ -1260,10 +1356,107 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         await RefreshTabsFromDatabaseAsync().ConfigureAwait(true);
         UndoLastCommand.NotifyCanExecuteChanged();
         RaiseToolbarHeaderHints();
+        }
+        finally
+        {
+            _moneyLock.End();
+            UndoLastCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private void OpenInfoPanel()
     {
         OpenSlidePanel(_services.GetRequiredService<BarModeHelpPanel>());
+    }
+
+    private async Task LoadQuickFreeItemsAsync()
+    {
+        try
+        {
+            var rows = await _complimentary.GetButtonsAsync().ConfigureAwait(true);
+            QuickFreeItems.Clear();
+            foreach (var row in rows)
+            {
+                QuickFreeItems.Add(new QuickFreeItemButtonViewModel(row, RecordQuickFreeItemCommand));
+            }
+        }
+        catch
+        {
+            QuickFreeItems.Clear();
+        }
+
+        OnPropertyChanged(nameof(ShowQuickFreeItems));
+    }
+
+    private async Task RecordQuickFreeItemAsync(QuickFreeItemButtonViewModel? button)
+    {
+        if (button is null || !button.CanRecord)
+        {
+            return;
+        }
+
+        if (!_freeItemTapGuard.TryBegin(button.ItemId))
+        {
+            return;
+        }
+
+        try
+        {
+            var idempotencyKey = Guid.NewGuid().ToString("N");
+            var result = await _complimentary
+                .RecordAsync(button.ItemId, 1, idempotencyKey)
+                .ConfigureAwait(true);
+            if (!result.Ok)
+            {
+                OperatorHint = result.ErrorMessage ?? "Could not record free item.";
+                RaiseToolbarHeaderHints();
+                return;
+            }
+
+            if (result.AlreadyRecorded)
+            {
+                return;
+            }
+
+            var label = string.IsNullOrWhiteSpace(button.DisplayLabel) ? result.ItemName : button.DisplayLabel;
+            _freeItemToastIssueGuid = result.IssueGuid;
+            FreeItemToastMessage = $"{label} recorded as FREE ✓";
+            FreeItemToastVisible = true;
+            UndoComplimentaryToastCommand.NotifyCanExecuteChanged();
+            _ = HideFreeItemToastAfterDelayAsync();
+            await LoadQuickFreeItemsAsync().ConfigureAwait(true);
+        }
+        finally
+        {
+            _freeItemTapGuard.End(button.ItemId);
+        }
+    }
+
+    private async Task HideFreeItemToastAfterDelayAsync()
+    {
+        var generation = Interlocked.Increment(ref _freeItemToastGeneration);
+        await Task.Delay(3200).ConfigureAwait(true);
+        if (generation == _freeItemToastGeneration)
+        {
+            FreeItemToastVisible = false;
+        }
+    }
+
+    private async Task UndoComplimentaryToastAsync()
+    {
+        if (!FreeItemToastCanUndo)
+        {
+            return;
+        }
+
+        var ok = await _undo.TryUndoAsync().ConfigureAwait(true);
+        FreeItemToastVisible = false;
+        _freeItemToastIssueGuid = null;
+        OperatorHint = ok
+            ? TabsUndoUiHelper.FormatUndoResult(true, "free member item")
+            : "Could not undo that free item.";
+        RaiseToolbarHeaderHints();
+        UndoLastCommand.NotifyCanExecuteChanged();
+        await LoadQuickFreeItemsAsync().ConfigureAwait(true);
     }
 }

@@ -58,10 +58,9 @@ public sealed class SquareOutsideSalesAggregatorTests
                 DisplayLabel = "Club shirt",
                 OutsideLineKind = PitstopOutsideLineCatalogBuilder.LineKindMerchSku,
                 PitstopItemId = 42,
+                SoldQty = 3,
                 CashQty = 3,
                 CashDollars = 105m,
-                CardQty = 99,
-                CardDollars = 999m,
             },
         };
         var square = new List<PitstopProductAggregateRow>
@@ -80,9 +79,9 @@ public sealed class SquareOutsideSalesAggregatorTests
 
         Assert.Equal(3, row.CashQuantity);
         Assert.Equal(105m, row.CashTotal);
-        Assert.Equal(2, row.CardQuantity);
-        Assert.Equal(70m, row.CardTotal);
-        Assert.Equal(5, row.CombinedQuantity);
-        Assert.Equal(175m, row.CombinedTotal);
+        Assert.Equal(0, row.CardQuantity);
+        Assert.Equal(0m, row.CardTotal);
+        Assert.Equal(3, row.CombinedQuantity);
+        Assert.Equal(105m, row.CombinedTotal);
     }
 }

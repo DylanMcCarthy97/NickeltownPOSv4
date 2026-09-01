@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Data.Sqlite;
+using NickeltownPOSV4.Models.Audit;
+using NickeltownPOSV4.Services;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -14,13 +16,16 @@ public sealed class SqliteTabFundsService : ITabFundsService
 {
     private readonly SqliteConnectionFactory _factory;
     private readonly ISquarePaymentAttemptRepository _paymentAttempts;
+    private readonly IAuditLogService? _audit;
 
     public SqliteTabFundsService(
         SqliteConnectionFactory factory,
-        ISquarePaymentAttemptRepository paymentAttempts)
+        ISquarePaymentAttemptRepository paymentAttempts,
+        IAuditLogService? audit = null)
     {
         _factory = factory;
         _paymentAttempts = paymentAttempts;
+        _audit = audit;
     }
 
     public Task<TabFundsCommitResult> CommitFundMovementAsync(
@@ -28,7 +33,8 @@ public sealed class SqliteTabFundsService : ITabFundsService
         string movementUiKey,
         decimal amount,
         string? note,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? idempotencyKey = null)
     {
         if (string.IsNullOrWhiteSpace(tabLegacyId))
         {
@@ -71,7 +77,27 @@ public sealed class SqliteTabFundsService : ITabFundsService
             }
 
             var tabPkValue = tabPk.Value;
-            var fundCommitBatchId = Guid.NewGuid().ToString("N");
+            var hasClientKey = !string.IsNullOrWhiteSpace(idempotencyKey);
+            var fundCommitBatchId = hasClientKey
+                ? idempotencyKey!.Trim()
+                : Guid.NewGuid().ToString("N");
+
+            if (hasClientKey)
+            {
+                var claim = MoneyIdempotencyStore.TryClaim(
+                    conn,
+                    tx,
+                    fundCommitBatchId,
+                    MoneyIdempotencyStore.KindFundMovement,
+                    cancellationToken);
+                if (claim.AlreadyExists)
+                {
+                    tx.Commit();
+                    return Task.FromResult(
+                        TabFundsCommitResult.Success(claim.ResultRef ?? fundCommitBatchId));
+                }
+            }
+
             var delta = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
             var stamp = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
             var trimmedNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
@@ -136,8 +162,31 @@ public sealed class SqliteTabFundsService : ITabFundsService
                 fundCommitBatchId,
                 cancellationToken);
 
+            if (hasClientKey)
+            {
+                MoneyIdempotencyStore.SetResultRef(
+                    conn,
+                    tx,
+                    fundCommitBatchId,
+                    fundCommitBatchId,
+                    cancellationToken);
+            }
+
             tx.Commit();
+            var tabLabel = SqliteActivityAudit.LoadTabLabel(conn, tx: null, tabPkValue, CancellationToken.None);
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabFundsAdded,
+                AuditEntityTypes.Tab,
+                tabLegacyId,
+                delta,
+                ActivityLogText.FundsAdded(key, delta, tabLabel));
             return Task.FromResult(TabFundsCommitResult.Success(fundCommitBatchId));
+        }
+        catch (Exception ex) when (SqliteConstraint.IsUniqueViolation(ex)
+            && !string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            return Task.FromResult(TabFundsCommitResult.Success(idempotencyKey.Trim()));
         }
         catch (Exception ex)
         {
@@ -325,6 +374,18 @@ public sealed class SqliteTabFundsService : ITabFundsService
             tx.Commit();
             localPaymentIdForAttempt = localPaymentId;
             committedFundBatchId = fundCommitBatchId;
+            var tabLabel = SqliteActivityAudit.LoadTabLabel(conn, tx: null, tabPkValue, CancellationToken.None);
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabFundsAdded,
+                AuditEntityTypes.Tab,
+                tabLegacyId,
+                delta,
+                ActivityLogText.FundsAdded("square", delta, tabLabel));
+        }
+        catch (Exception ex) when (SqliteConstraint.IsUniqueViolation(ex))
+        {
+            return TabFundsCommitResult.Success();
         }
         catch (Exception ex)
         {
@@ -395,10 +456,10 @@ public sealed class SqliteTabFundsService : ITabFundsService
 
             var tabPkValue = tabPk.Value;
 
-            var mmRows = conn.Query<(long Id, double Amount)>(
+            var mmRows = conn.Query<(long Id, double Amount, string? MovementType)>(
                     new CommandDefinition(
                         """
-                        SELECT mm.Id, mm.Amount
+                        SELECT mm.Id, mm.Amount, mm.MovementType
                         FROM MoneyMovements mm
                         WHERE mm.TabId = @tabId AND mm.CommitBatchId = @batch
                         """,
@@ -505,6 +566,14 @@ public sealed class SqliteTabFundsService : ITabFundsService
                     cancellationToken: cancellationToken));
 
             tx.Commit();
+            var tabLabel = SqliteActivityAudit.LoadTabLabel(conn, tx: null, tabPkValue, CancellationToken.None);
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabFundsUndone,
+                AuditEntityTypes.Tab,
+                tabLegacyId,
+                delta,
+                ActivityLogText.FundsUndone(delta, tabLabel, MapUiKeyFromMovementType(mmRows[0].MovementType)));
             return Task.FromResult(TabFundsCommitResult.Success());
         }
         catch (Exception ex)
@@ -545,6 +614,18 @@ public sealed class SqliteTabFundsService : ITabFundsService
             "reimburse" => "Reimbursement",
             "manual" => "ManualAdjustment",
             "correction" => "Correction",
+            _ => null,
+        };
+
+    private static string? MapUiKeyFromMovementType(string? movementType) =>
+        (movementType ?? string.Empty).Trim() switch
+        {
+            "CashTopUp" => "cash",
+            "SquareCardTopUp" => "square",
+            "RaffleWinnings" => "raffle",
+            "Reimbursement" => "reimburse",
+            "ManualAdjustment" => "manual",
+            "Correction" => "correction",
             _ => null,
         };
 

@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Tabs;
 
 namespace NickeltownPOSV4.ViewModels;
 
@@ -227,7 +228,7 @@ public sealed class GuestTabPanelViewModel : ObservableViewModel
             }
 
             _undo.PushUndo(
-                "Undo guest tab (soft-remove)",
+                TabUndoPreview.ForTabAction("Guest tab", "Created " + label, "Undo guest tab (soft-remove)"),
                 async () =>
                 {
                     if (string.IsNullOrEmpty(r.CreatedLegacyId))

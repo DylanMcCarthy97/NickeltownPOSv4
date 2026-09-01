@@ -79,6 +79,14 @@
             <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
         </Style>
 
+        <Style x:Key="QuickFreeItemTileStyle" TargetType="Button" BasedOn="{StaticResource TabsActionPrimaryStyle}">
+            <Setter Property="MinHeight" Value="78" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="4,6" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="FontSize" Value="10" />
+        </Style>
+
         <Style x:Key="TabsConfirmOverlayButtonStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
             <Setter Property="MinHeight" Value="44" />
             <Setter Property="MinWidth" Value="0" />
@@ -353,9 +361,15 @@
             </ItemsControl>
                 </Border>
 
-                <!-- Board footer: undo (PIN required) + pagination -->
+                <!-- Board footer: undo last transaction (confirm + PIN) + pagination -->
                 <Grid Grid.Row="1" Height="40" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <Button
+                        Grid.Column="0"
                         MinWidth="108"
                         Padding="10,4"
                         HorizontalAlignment="Left"
@@ -365,10 +379,12 @@
                         ToolTipService.ToolTip="{Binding UndoToolTip, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE7A7;" />
-                            <TextBlock FontWeight="SemiBold" Text="Undo last" />
+                            <TextBlock FontWeight="SemiBold" Text="Undo Last Transaction" />
                         </StackPanel>
                     </Button>
                     <controls:CatalogPagePager
+                        Grid.Column="1"
+                        HorizontalAlignment="Center"
                         VerticalAlignment="Top"
                         NextCommand="{Binding NextPageCommand}"
                         PageLabel="{Binding PageInfo, Mode=OneWay}"
@@ -387,11 +403,61 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Spacing="4">
+                    <StackPanel
+                        Grid.Row="0"
+                        Margin="0,0,0,8"
+                        Spacing="4"
+                        Visibility="{Binding ShowQuickFreeItems, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <TextBlock
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosAccentBrush}"
+                            Text="FREE ITEMS" />
+                        <ItemsRepeater ItemsSource="{Binding QuickFreeItems, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <UniformGridLayout
+                                    ItemsJustification="Start"
+                                    ItemsStretch="Fill"
+                                    MinColumnSpacing="6"
+                                    MinItemHeight="78"
+                                    MinItemWidth="72"
+                                    MinRowSpacing="6" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding RecordCommand}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding CanRecord, Mode=OneWay}"
+                                        Style="{StaticResource QuickFreeItemTileStyle}">
+                                            <StackPanel HorizontalAlignment="Center" Spacing="2">
+                                            <TextBlock
+                                                FontSize="11"
+                                                FontWeight="Bold"
+                                                MaxLines="2"
+                                                Text="{Binding TitleText, Mode=OneWay}"
+                                                TextAlignment="Center"
+                                                TextTrimming="CharacterEllipsis"
+                                                TextWrapping="WrapWholeWords" />
+                                            <TextBlock
+                                                FontSize="9"
+                                                Opacity="0.9"
+                                                Text="{Binding TodayText, Mode=OneWay}"
+                                                TextAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Spacing="4">
                         <TextBlock
                             FontSize="10"
                             FontWeight="SemiBold"
@@ -413,7 +479,7 @@
                     </StackPanel>
 
                     <StackPanel
-                        Grid.Row="1"
+                        Grid.Row="2"
                         Margin="0,8,0,8"
                         Spacing="6"
                         Visibility="{Binding HasSelectedTab, Converter={StaticResource BoolToVis}, Mode=OneWay}">
@@ -452,7 +518,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Row="3">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -591,6 +657,46 @@
                             </StackPanel>
                         </Button>
                     </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="3"
+            Padding="0,0,0,16"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Canvas.ZIndex="20"
+            Visibility="{Binding FreeItemToastVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border
+                MinWidth="280"
+                MaxWidth="460"
+                Padding="12,10"
+                Background="{StaticResource PosButtonSuccessBrush}"
+                CornerRadius="12">
+                <Grid ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosOnAccentForegroundBrush}"
+                        Text="{Binding FreeItemToastMessage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Button
+                        Grid.Column="1"
+                        MinHeight="40"
+                        MinWidth="84"
+                        Padding="10,4"
+                        VerticalAlignment="Center"
+                        Command="{Binding UndoComplimentaryToastCommand}"
+                        Content="UNDO"
+                        FontWeight="Bold"
+                        Visibility="{Binding FreeItemToastCanUndo, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 </Grid>
             </Border>
         </Grid>

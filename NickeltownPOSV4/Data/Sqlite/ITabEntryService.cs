@@ -39,7 +39,8 @@ public interface ITabEntryService
     Task<TabDrinkCommitResult> CommitDrinkSaleAsync(
         string tabLegacyId,
         IReadOnlyList<TabDrinkSaleLine> lines,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string? idempotencyKey = null);
 
     /// <summary>
     /// Removes drink <c>TabEntries</c> for <paramref name="commitBatchId"/>, refunds tab balance, restores stock and removes matching <c>StockMovements</c> when applicable.

@@ -9,7 +9,10 @@ public interface IAuditLogRepository
 {
     Task<long> InsertAsync(AuditLogEntry entry, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(int maxEntries, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(
+        int maxEntries,
+        IReadOnlyList<string>? actionTypes = null,
+        CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<AuditLogEntry>> GetForEntityAsync(
         string entityType,

@@ -89,6 +89,7 @@ public sealed class SettingsPageViewModel : ObservableViewModel
         ViewPreviousPitstopsCommand = new RelayCommand(() => NavigateAdmin(typeof(PreviousPitstopsPage)));
         SquareRecoveryCommand = new RelayCommand(() => NavigateAdmin(typeof(SquareRecoveryPage)));
         SystemCheckCommand = new RelayCommand(() => NavigateAdmin(typeof(SystemCheckPage)));
+        ActivityLogCommand = new RelayCommand(() => NavigateAdmin(typeof(ActivityLogPage)));
         KickCashDrawerCommand = new AsyncRelayCommand(KickCashDrawerAsync);
         StockManagementCommand = new RelayCommand(OpenStockManagement);
         EmailConfigCommand = new RelayCommand(() => NavigateAdmin(typeof(EmailConfigPage)));
@@ -97,6 +98,7 @@ public sealed class SettingsPageViewModel : ObservableViewModel
         DataImportExportCommand = new RelayCommand(OpenDataImportExport);
         UserManagementCommand = new RelayCommand(() => NavigateAdmin(typeof(UserManagementPage)));
         AppUpdatesCommand = new RelayCommand(() => NavigateAdmin(typeof(UpdateConfigPage)));
+        QuickFreeItemsCommand = new RelayCommand(() => NavigateAdmin(typeof(QuickFreeItemsConfigPage)));
         // MEMBERSHIP MODULE DISABLED - re-enable in ServiceCollection/App/AdminHome
         // MembershipCommand = new RelayCommand(() => NavigateAdmin(typeof(MembershipHomePage)));
 
@@ -126,6 +128,8 @@ public sealed class SettingsPageViewModel : ObservableViewModel
 
     public IRelayCommand SystemCheckCommand { get; }
 
+    public IRelayCommand ActivityLogCommand { get; }
+
     public IAsyncRelayCommand KickCashDrawerCommand { get; }
 
     public IRelayCommand StockManagementCommand { get; }
@@ -141,6 +145,8 @@ public sealed class SettingsPageViewModel : ObservableViewModel
     public IRelayCommand UserManagementCommand { get; }
 
     public IRelayCommand AppUpdatesCommand { get; }
+
+    public IRelayCommand QuickFreeItemsCommand { get; }
 
     // MEMBERSHIP MODULE DISABLED - re-enable in ServiceCollection/App/AdminHome
     // public IRelayCommand MembershipCommand { get; }

@@ -298,7 +298,7 @@ public sealed class EditTabPanelViewModel : ObservableViewModel
             ClosePanel();
 
             _undo.PushUndo(
-                "Undo last tab edit",
+                TabUndoPreview.ForTabAction("Tab edit", oldName, "Undo last tab edit"),
                 async () =>
                 {
                     var revert = await _tabs

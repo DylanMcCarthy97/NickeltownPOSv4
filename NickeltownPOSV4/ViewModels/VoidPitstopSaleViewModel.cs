@@ -16,7 +16,7 @@ public sealed class VoidableSaleRowVm
 {
     private static readonly CultureInfo Cult = CultureInfo.CurrentCulture;
 
-    public VoidableSaleRowVm(PitstopActiveSaleRow row, Action<long> requestVoid)
+    public VoidableSaleRowVm(PitstopActiveSaleRow row, Action<long> requestVoid, Func<bool> canVoid)
     {
         SaleId = row.SaleId;
         SoldAtText = row.SoldAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", Cult);
@@ -27,7 +27,7 @@ public sealed class VoidableSaleRowVm
             || row.PaymentMethod.Equals("Square", StringComparison.OrdinalIgnoreCase)
             || row.PaymentMethod.Equals("Card", StringComparison.OrdinalIgnoreCase);
         StockNote = row.StockWasDeducted ? "Stock will be restored" : "No stock to restore";
-        VoidCommand = new RelayCommand(() => requestVoid(SaleId));
+        VoidCommand = new RelayCommand(() => requestVoid(SaleId), () => canVoid());
     }
 
     public long SaleId { get; }
@@ -58,6 +58,7 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
 
     private string _statusMessage = string.Empty;
     private bool _isBusy;
+    private readonly MoneyActionLock _moneyLock = new();
 
     public VoidPitstopSaleViewModel(
         IPitstopRetailSaleRepository sales,
@@ -94,7 +95,16 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
     public bool IsBusy
     {
         get => _isBusy;
-        private set => SetProperty(ref _isBusy, value);
+        private set
+        {
+            if (SetProperty(ref _isBusy, value))
+            {
+                foreach (var row in Rows)
+                {
+                    row.VoidCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
     }
 
     public async Task InitializeAsync()
@@ -136,7 +146,7 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
             Rows.Clear();
             foreach (var row in data)
             {
-                Rows.Add(new VoidableSaleRowVm(row, RequestVoid));
+                Rows.Add(new VoidableSaleRowVm(row, RequestVoid, () => !IsBusy && !_moneyLock.IsInFlight));
             }
 
             StatusMessage = Rows.Count == 0
@@ -155,33 +165,40 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
 
     private async void RequestVoid(long saleId)
     {
+        if (!_moneyLock.TryBegin())
+        {
+            return;
+        }
+
         var row = Rows.FirstOrDefault(r => r.SaleId == saleId);
         if (row is null)
         {
+            _moneyLock.End();
             return;
         }
 
         if (!_session.IsManager)
         {
+            _moneyLock.End();
             return;
         }
 
-        var proceed = await ConfirmVoidAsync(row).ConfigureAwait(true);
-        if (!proceed)
-        {
-            return;
-        }
-
-        var reason = await _input.ShowKeyboardAsync(string.Empty, "Reason for voiding this sale", CancellationToken.None).ConfigureAwait(true);
-        if (string.IsNullOrWhiteSpace(reason))
-        {
-            StatusMessage = "Void cancelled: a reason is required.";
-            return;
-        }
-
+        IsBusy = true;
         try
         {
-            IsBusy = true;
+            var proceed = await ConfirmVoidAsync(row).ConfigureAwait(true);
+            if (!proceed)
+            {
+                return;
+            }
+
+            var reason = await _input.ShowKeyboardAsync(string.Empty, "Reason for voiding this sale", CancellationToken.None).ConfigureAwait(true);
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                StatusMessage = "Void cancelled: a reason is required.";
+                return;
+            }
+
             var result = await _sales.VoidPitstopSaleAsync(new PitstopVoidSaleRequest
             {
                 SaleId = saleId,
@@ -217,7 +234,7 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
                     AuditEntityTypes.PitstopSale,
                     entityId: saleId.ToString(CultureInfo.InvariantCulture),
                     amount: result.AmountVoided,
-                    reason: reason.Trim()).ConfigureAwait(true);
+                    reason: $"Voided Pitstop sale — {reason.Trim()}").ConfigureAwait(true);
 
                 if (result.StockRestored)
                 {
@@ -253,6 +270,7 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
         finally
         {
             IsBusy = false;
+            _moneyLock.End();
         }
     }
 

@@ -23,7 +23,7 @@ public sealed class TabsManagementUndoService : ITabsManagementUndoService
     public void RegisterArchiveUndo(string tabLegacyId, string label)
     {
         _undo.PushUndo(
-            $"Undo archive ({label})",
+            TabUndoPreview.ForTabAction("Archived tab", label, $"Undo archive ({label})"),
             async () =>
             {
                 var back = await _tabManagement.SetTabArchivedAsync(tabLegacyId, false).ConfigureAwait(false);
@@ -40,7 +40,7 @@ public sealed class TabsManagementUndoService : ITabsManagementUndoService
     public void RegisterSoftDeleteUndo(string tabLegacyId, string label)
     {
         _undo.PushUndo(
-            $"Undo remove ({label})",
+            TabUndoPreview.ForTabAction("Removed tab", label, $"Undo remove ({label})"),
             async () =>
             {
                 var back = await _tabManagement.RestoreSoftDeletedTabAsync(tabLegacyId).ConfigureAwait(false);

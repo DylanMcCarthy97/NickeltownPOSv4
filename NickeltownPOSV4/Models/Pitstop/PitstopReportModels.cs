@@ -19,6 +19,9 @@ public sealed class OutsideItemSaleRow
     /// <summary>Optional Pitstop unit price hint (V2 computed columns); raffle uses $2 when not in catalog.</summary>
     public decimal? SuggestedUnitPrice { get; init; }
 
+    /// <summary>Total quantity sold (cash + card). Preferred over the legacy cash/card qty split.</summary>
+    public int SoldQty { get; set; }
+
     public int CashQty { get; set; }
 
     public decimal CashDollars { get; set; }
@@ -60,6 +63,14 @@ public sealed class EventExpenseRow
 
     /// <summary>Where the money was physically paid from, when it was a cash payout.</summary>
     public EventExpensePaymentSource PaidFrom { get; set; }
+
+    public EventExpenseKind Kind { get; set; }
+}
+
+public enum EventExpenseKind
+{
+    Expense = 0,
+    CashPrize = 1,
 }
 
 public enum EventExpensePaymentSource
@@ -127,6 +138,15 @@ public sealed class PitstopReportInputs
 
     /// <summary>Processor fee percent used when Square does not return fees, e.g. 1.75 means 1.75%.</summary>
     public decimal SquareFeePercent { get; set; } = 1.75m;
+
+    /// <summary>
+    /// Customer card surcharge % currently configured for Pitstop. 0 means the surcharge
+    /// feature is disabled and Square gross equals actual card sales.
+    /// </summary>
+    public decimal CardSurchargePercent { get; set; }
+
+    /// <summary>Known inventory unit costs keyed by item id. Missing/null/non-positive values are unknown.</summary>
+    public Dictionary<long, decimal?> ItemUnitCosts { get; } = new();
 
     public decimal InsideFloat { get; set; }
 
@@ -233,6 +253,12 @@ public sealed class PitstopReportData
 
     public decimal OutsideCashTotal { get; init; }
 
+    public decimal OutsideItemSalesTotal { get; init; }
+
+    public decimal OutsideCardSales { get; init; }
+
+    public decimal OutsideCardSurchargeCollected { get; init; }
+
     public decimal TotalCashGross { get; init; }
 
     public decimal TotalCardGross { get; init; }
@@ -240,6 +266,12 @@ public sealed class PitstopReportData
     public decimal GrossSales { get; init; }
 
     public decimal TotalExpenses { get; init; }
+
+    public decimal TotalCashPrizes { get; init; }
+
+    public decimal KnownStockCosts { get; init; }
+
+    public bool HasUnknownStockCosts { get; init; }
 
     public decimal EstimatedSquareFees { get; init; }
 

@@ -27,8 +27,8 @@
         </Style>
 
         <Style x:Key="EodSecondaryButtonStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="48" />
-            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Padding" Value="14,8" />
             <Setter Property="Background" Value="{StaticResource PosSurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource PosBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
@@ -40,23 +40,31 @@
         </Style>
 
         <Style x:Key="EodValueButtonStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="60" />
-            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="MinHeight" Value="56" />
+            <Setter Property="Padding" Value="14,10" />
             <Setter Property="Background" Value="#FFF8FAFC" />
             <Setter Property="BorderBrush" Value="{StaticResource PosBorderBrush}" />
             <Setter Property="BorderThickness" Value="1.5" />
             <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
             <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontSize" Value="20" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="UseSystemFocusVisuals" Value="False" />
         </Style>
 
-        <Style x:Key="EodCompactValueButtonStyle" BasedOn="{StaticResource EodValueButtonStyle}" TargetType="Button">
-            <Setter Property="MinHeight" Value="54" />
-            <Setter Property="FontSize" Value="18" />
+        <Style x:Key="EodQtyButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="52" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="{StaticResource PosAccentBrush}" />
+            <Setter Property="Foreground" Value="#FFFFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
         </Style>
 
         <Style x:Key="EodMetricLabelStyle" TargetType="TextBlock">
@@ -71,24 +79,23 @@
         </Style>
 
         <Style x:Key="EodSectionTitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontSize" Value="18" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
         </Style>
 
         <Style x:Key="EodHelpTextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{StaticResource PosTextSecondaryBrush}" />
             <Setter Property="TextWrapping" Value="WrapWholeWords" />
         </Style>
 
-        <Style x:Key="EodStepPillStyle" TargetType="Button">
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Height" Value="40" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="CornerRadius" Value="20" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="Bold" />
+        <Style x:Key="EodStageButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Background" Value="#FFF3F5FA" />
             <Setter Property="Foreground" Value="#FF6B7280" />
@@ -99,793 +106,411 @@
             <Setter Property="Background" Value="#FFF8FAFC" />
             <Setter Property="BorderBrush" Value="{StaticResource PosBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
-            <Setter Property="Padding" Value="16" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="12" />
         </Style>
 
-        <DataTemplate x:Key="OutsideLineRowTemplate">
+        <DataTemplate x:Key="OutsideQtyRowTemplate">
             <Border
-                Margin="0,6"
-                Padding="14,12"
+                Margin="0,4"
+                Padding="10,8"
                 Background="#FFF8FAFC"
                 BorderBrush="{StaticResource PosBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="14">
-                <StackPanel Spacing="10">
-                    <Grid ColumnSpacing="10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Spacing="3">
-                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding DisplayLabel, Mode=OneWay}" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{StaticResource PosTextSecondaryBrush}"
-                                Text="{Binding SuggestedPriceText, Mode=OneWay}" />
-                        </StackPanel>
-                        <Border
-                            Grid.Column="1"
-                            Padding="12,8"
-                            VerticalAlignment="Center"
-                            Background="#FFEFF6FF"
-                            CornerRadius="10">
-                            <TextBlock
-                                FontSize="16"
-                                FontWeight="Bold"
-                                Foreground="{StaticResource PosAccentBrush}"
-                                Text="{Binding RowTotalText, Mode=OneWay}" />
-                        </Border>
-                    </Grid>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Spacing="4">
-                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash qty" />
-                            <Button
-                                Command="{Binding BeginCashQtyCommand}"
-                                Content="{Binding CashQtyText, Mode=OneWay}"
-                                Style="{StaticResource EodCompactValueButtonStyle}" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="4">
-                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash $" />
-                            <Button
-                                Command="{Binding BeginCashDollarsCommand}"
-                                Content="{Binding CashDollarsText, Mode=OneWay}"
-                                Style="{StaticResource EodCompactValueButtonStyle}" />
-                        </StackPanel>
-                        <StackPanel
-                            Grid.Column="2"
-                            Spacing="4"
-                            Visibility="{Binding DataContext.IsSquareManualMode, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card qty" />
-                            <Button
-                                Command="{Binding BeginCardQtyCommand}"
-                                Content="{Binding CardQtyText, Mode=OneWay}"
-                                Style="{StaticResource EodCompactValueButtonStyle}" />
-                        </StackPanel>
-                        <StackPanel
-                            Grid.Column="3"
-                            Spacing="4"
-                            Visibility="{Binding DataContext.IsSquareManualMode, ElementName=RootReportPage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card $" />
-                            <Button
-                                Command="{Binding BeginCardDollarsCommand}"
-                                Content="{Binding CardDollarsText, Mode=OneWay}"
-                                Style="{StaticResource EodCompactValueButtonStyle}" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
+                CornerRadius="12">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="70" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="72" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Text="{Binding DisplayLabel, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        FontSize="15"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="{Binding SuggestedPriceText, Mode=OneWay}" />
+                    <Button
+                        Grid.Column="2"
+                        Command="{Binding DecrementQtyCommand}"
+                        Content="−"
+                        Style="{StaticResource EodQtyButtonStyle}" />
+                    <Button
+                        Grid.Column="3"
+                        Command="{Binding BeginQtyCommand}"
+                        Content="{Binding SoldQtyText, Mode=OneWay}"
+                        Style="{StaticResource EodValueButtonStyle}"
+                        MinHeight="52"
+                        FontSize="20" />
+                    <Button
+                        Grid.Column="4"
+                        Command="{Binding IncrementQtyCommand}"
+                        Content="+"
+                        Style="{StaticResource EodQtyButtonStyle}" />
+                </Grid>
             </Border>
         </DataTemplate>
     </Page.Resources>
 
-    <Grid Padding="16,12">
+    <Grid Padding="12,8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top bar -->
         <Border
             Grid.Row="0"
-            Margin="0,0,0,12"
-            Padding="16,14"
+            Margin="0,0,0,8"
+            Padding="14,10"
             Background="{StaticResource PosSurfaceBrush}"
             BorderBrush="{StaticResource PosBorderBrush}"
             BorderThickness="1"
-            CornerRadius="18">
-            <StackPanel Spacing="12">
-                <Grid ColumnSpacing="12">
+            CornerRadius="16">
+            <StackPanel Spacing="8">
+                <Grid ColumnSpacing="10">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-
                     <Button
-                        Grid.Column="0"
-                        MinWidth="96"
+                        MinWidth="88"
                         Click="Back_Click"
                         Content="Reports"
                         Style="{StaticResource EodSecondaryButtonStyle}" />
-
-                    <Border
-                        Grid.Column="1"
-                        Width="48"
-                        Height="48"
-                        Background="#FFEFF6FF"
-                        CornerRadius="14">
-                        <FontIcon
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontSize="22"
-                            Foreground="{StaticResource PosAccentBrush}"
-                            Glyph="&#xE9D2;" />
-                    </Border>
-
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="0">
                         <TextBlock
-                            FontSize="20"
+                            FontSize="18"
                             FontWeight="SemiBold"
-                            Foreground="{StaticResource PosTextPrimaryBrush}"
-                            Text="Pitstop end of day" />
-                        <TextBlock
-                            FontSize="12"
-                            Foreground="{StaticResource PosTextSecondaryBrush}"
-                            Text="Guided closeout · till + merch · bar tabs excluded" />
-                    </StackPanel>
-
-                    <StackPanel
-                        Grid.Column="3"
-                        Orientation="Horizontal"
-                        Spacing="8"
-                        VerticalAlignment="Center">
+                            Text="Pitstop End of Day" />
                         <Button
-                            MinWidth="120"
-                            Command="{Binding LoadTestReportCommand}"
-                            Content="Test data"
-                            Style="{StaticResource EodSecondaryButtonStyle}"
-                            Visibility="{Binding CanRunTestReport, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                        <Button
-                            MinWidth="120"
-                            Command="{Binding ClearTestReportCommand}"
-                            Content="Clear test"
-                            Style="{StaticResource EodSecondaryButtonStyle}"
-                            Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                            Padding="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding BeginReportDateCommand}"
+                            HorizontalAlignment="Left"
+                            HorizontalContentAlignment="Left">
+                            <TextBlock
+                                FontSize="13"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding HeaderSubtitle, Mode=OneWay}" />
+                        </Button>
                     </StackPanel>
+                    <Button
+                        Grid.Column="2"
+                        MinWidth="72"
+                        Command="{Binding BeginEventNameCommand}"
+                        Content="Edit"
+                        Style="{StaticResource EodSecondaryButtonStyle}" />
                 </Grid>
 
-                <Grid ColumnSpacing="10">
+                <Grid ColumnSpacing="6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Spacing="6">
-                        <TextBlock
-                            x:Name="WizardStepTitle"
-                            FontSize="16"
-                            FontWeight="SemiBold"
-                            Text="Step 1 — Today’s event" />
-                        <TextBlock
-                            x:Name="WizardStepHint"
-                            Style="{StaticResource EodHelpTextStyle}"
-                            Text="Check the event name and the date are right, then tap Next." />
-                    </StackPanel>
-                    <Border
-                        Grid.Column="1"
-                        Padding="12,8"
-                        VerticalAlignment="Center"
-                        Background="#FFF3F5FA"
-                        CornerRadius="999">
-                        <TextBlock
-                            x:Name="WizardStepCounter"
-                            FontSize="13"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource PosTextSecondaryBrush}"
-                            Text="1 / 7" />
-                    </Border>
+                    <Button x:Name="StageSales" Click="Stage_Click" Content="1  Sales" Style="{StaticResource EodStageButtonStyle}" Tag="0" />
+                    <Button x:Name="StagePrizes" Grid.Column="1" Click="Stage_Click" Content="2  Prizes &amp; Expenses" Style="{StaticResource EodStageButtonStyle}" Tag="1" />
+                    <Button x:Name="StageCount" Grid.Column="2" Click="Stage_Click" Content="3  Count &amp; Close" Style="{StaticResource EodStageButtonStyle}" Tag="2" />
                 </Grid>
 
-                <ProgressBar
-                    x:Name="WizardProgressBar"
-                    Height="8"
-                    Maximum="100"
-                    Value="14.3"
-                    Foreground="{StaticResource PosAccentBrush}"
-                    Background="#FFE5E7EB" />
-
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button x:Name="StepPill0" Click="StepPill_Click" Content="1" Style="{StaticResource EodStepPillStyle}" Tag="0" ToolTipService.ToolTip="Event details" />
-                        <Button x:Name="StepPill1" Click="StepPill_Click" Content="2" Style="{StaticResource EodStepPillStyle}" Tag="1" ToolTipService.ToolTip="Inside till" />
-                        <Button x:Name="StepPill2" Click="StepPill_Click" Content="3" Style="{StaticResource EodStepPillStyle}" Tag="2" ToolTipService.ToolTip="Outside merch" />
-                        <Button x:Name="StepPill3" Click="StepPill_Click" Content="4" Style="{StaticResource EodStepPillStyle}" Tag="3" ToolTipService.ToolTip="Floats &amp; money out" />
-                        <Button x:Name="StepPill4" Click="StepPill_Click" Content="5" Style="{StaticResource EodStepPillStyle}" Tag="4" ToolTipService.ToolTip="Prizes" />
-                        <Button x:Name="StepPill5" Click="StepPill_Click" Content="6" Style="{StaticResource EodStepPillStyle}" Tag="5" ToolTipService.ToolTip="Cash count" />
-                        <Button x:Name="StepPill6" Click="StepPill_Click" Content="7" Style="{StaticResource EodStepPillStyle}" Tag="6" ToolTipService.ToolTip="Review" />
-                    </StackPanel>
-                </ScrollViewer>
-
                 <Border
-                    Padding="12,10"
+                    Padding="10,8"
                     Background="#1A1D4ED8"
                     BorderBrush="#FF2563EB"
                     BorderThickness="1"
-                    CornerRadius="12"
+                    CornerRadius="10"
                     Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                    <TextBlock
-                        FontSize="12"
-                        FontWeight="SemiBold"
-                        Foreground="#FF2563EB"
-                        Text="{Binding TestModeBannerText, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords" />
+                    <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#FF2563EB" Text="{Binding TestModeBannerText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                 </Border>
-
                 <Border
-                    Padding="12,10"
+                    Padding="10,8"
                     Background="#1A7F1D1D"
                     BorderBrush="#FFB91C1C"
                     BorderThickness="1"
-                    CornerRadius="12"
+                    CornerRadius="10"
                     Visibility="{Binding HasCardMismatch, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                    <TextBlock
-                        FontSize="12"
-                        FontWeight="SemiBold"
-                        Foreground="#FFB91C1C"
-                        Text="{Binding MismatchBannerText, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords" />
+                    <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#FFB91C1C" Text="{Binding MismatchBannerText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                 </Border>
             </StackPanel>
         </Border>
 
-        <!-- Body -->
-        <Grid Grid.Row="1" ColumnSpacing="14" MaxWidth="1280" HorizontalAlignment="Stretch">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="300" />
-            </Grid.ColumnDefinitions>
+        <ScrollViewer
+            x:Name="MainScrollViewer"
+            Grid.Row="1"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="10" Padding="0,0,2,6">
 
-            <ScrollViewer
-                x:Name="MainScrollViewer"
-                Grid.Column="0"
-                VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="14" Padding="0,0,4,8">
-
-                    <Border
-                        x:Name="EodSectionSummary"
-                        Padding="18,16"
-                        Background="{StaticResource PosSurfaceBrush}"
-                        BorderBrush="{StaticResource PosBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="18">
+                <!-- STEP 1 SALES -->
+                <StackPanel x:Name="EodSectionSales" Spacing="10">
+                    <Border Style="{StaticResource SettingsCardStyle}">
                         <StackPanel Spacing="10">
-                            <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="What you need to do" />
-                            <TextBlock
-                                FontSize="14"
-                                Foreground="{StaticResource PosTextPrimaryBrush}"
-                                Text="{Binding CloseoutChecklistText, Mode=OneWay}"
-                                TextWrapping="WrapWholeWords" />
-                            <TextBlock
-                                Style="{StaticResource EodHelpTextStyle}"
-                                Text="{Binding StatusMessage, Mode=OneWay}"
-                                Visibility="{Binding StatusMessage, Converter={StaticResource BoolToVis}, ConverterParameter=NotEmpty, Mode=OneWay}" />
-                            <TextBlock
-                                FontSize="13"
-                                FontWeight="SemiBold"
-                                Text="{Binding ReconciliationSummaryText, Mode=OneWay}"
-                                TextWrapping="WrapWholeWords"
-                                Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                            <ItemsControl
-                                ItemsSource="{Binding ReconciliationWarnings, Mode=OneWay}"
-                                Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock
-                                            Margin="0,2,0,0"
-                                            FontSize="12"
-                                            Foreground="#FFB45309"
-                                            Text="{Binding}"
-                                            TextWrapping="WrapWholeWords" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource EodMetricLabelStyle}"
-                                    Text="{Binding LastRefreshedText, Mode=OneWay}" />
+                            <Grid>
+                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Inside Pitstop sales" />
                                 <Button
-                                    Grid.Column="1"
-                                    Command="{Binding ToggleAdvancedDetailsCommand}"
-                                    Content="{Binding ShowAdvancedDetailsLabel, Mode=OneWay}"
+                                    HorizontalAlignment="Right"
+                                    Command="{Binding ToggleInsideItemsCommand}"
+                                    Content="{Binding InsideItemsToggleLabel, Mode=OneWay}"
                                     Style="{StaticResource EodSecondaryButtonStyle}" />
                             </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <Border x:Name="EodSectionEvent" Style="{StaticResource SettingsCardStyle}">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Event details" />
-                                <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="This is what appears on the saved report." />
-                            </StackPanel>
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Event name" />
-                            <Button
-                                Command="{Binding BeginEventNameCommand}"
-                                Content="{Binding EventName, Mode=OneWay}"
-                                Style="{StaticResource EodValueButtonStyle}" />
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Date" />
-                            <Button
-                                Command="{Binding BeginReportDateCommand}"
-                                Content="{Binding ReportPeriodCaption, Mode=OneWay}"
-                                Style="{StaticResource EodValueButtonStyle}" />
-                            <Border Style="{StaticResource EodTillCardStyle}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Staff on this closeout" />
-                                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding StaffDisplay, Mode=OneWay}" />
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <Border x:Name="EodSectionPos" Style="{StaticResource SettingsCardStyle}">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Inside till sales" />
-                                <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="Food and drink rung on the Pitstop screen. No need to retype these." />
-                            </StackPanel>
-                            <Grid ColumnSpacing="12">
+                            <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash (ClubPOS)" />
-                                        <TextBlock FontSize="28" FontWeight="Bold" Text="{Binding PitstopCashText, Mode=OneWay}" />
+                                <Border Style="{StaticResource EodTillCardStyle}">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash sales" />
+                                        <TextBlock FontSize="24" FontWeight="Bold" Text="{Binding PitstopCashText, Mode=OneWay}" />
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Column="1" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card (Terminal 0070)" />
-                                        <TextBlock FontSize="28" FontWeight="Bold" Text="{Binding PitstopCardText, Mode=OneWay}" />
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card sales" />
+                                        <TextBlock FontSize="24" FontWeight="Bold" Text="{Binding PitstopCardText, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Style="{StaticResource EodTillCardStyle}">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Total sales" />
+                                        <TextBlock FontSize="24" FontWeight="Bold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding InsideTotalSalesText, Mode=OneWay}" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
-                            <StackPanel Spacing="8">
-                                <Grid ColumnSpacing="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock
-                                        FontSize="15"
-                                        FontWeight="SemiBold"
-                                        Text="Items sold through the inside till" />
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                                        Text="{Binding PitstopItemsSoldCaption, Mode=OneWay}" />
-                                </Grid>
-                                <TextBlock
-                                    Style="{StaticResource EodHelpTextStyle}"
-                                    Text="No item sales recorded for this period."
-                                    Visibility="{Binding HasPitstopProductSales, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
-                                <ListView
-                                    MaxHeight="260"
-                                    ItemsSource="{Binding PitstopProductSales, Mode=OneWay}"
-                                    SelectionMode="None"
-                                    Visibility="{Binding HasPitstopProductSales, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                    <ListView.Header>
-                                        <Grid Padding="4,4,4,2" ColumnSpacing="12">
+                            <ListView
+                                MaxHeight="180"
+                                ItemsSource="{Binding PitstopProductSales, Mode=OneWay}"
+                                SelectionMode="None"
+                                Visibility="{Binding ShowInsideItems, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="4,4" ColumnSpacing="8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="70" />
+                                                <ColumnDefinition Width="56" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Item" />
-                                            <TextBlock
-                                                Grid.Column="1"
-                                                HorizontalAlignment="Right"
-                                                Style="{StaticResource EodMetricLabelStyle}"
-                                                Text="Qty sold" />
+                                            <TextBlock Text="{Binding Name}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock Grid.Column="1" HorizontalAlignment="Right" FontWeight="Bold" Text="{Binding Quantity}" />
                                         </Grid>
-                                    </ListView.Header>
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Padding="4,6" ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="70" />
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextWrapping="WrapWholeWords" />
-                                                    <TextBlock
-                                                        FontSize="11"
-                                                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                                                        Text="{Binding CategoryName}" />
-                                                </StackPanel>
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"
-                                                    FontSize="16"
-                                                    FontWeight="Bold"
-                                                    Text="{Binding Quantity}" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </StackPanel>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
                         </StackPanel>
                     </Border>
 
-                    <Border x:Name="EodSectionSquare" Style="{StaticResource SettingsCardStyle}">
-                        <StackPanel Spacing="14">
-                            <Grid ColumnSpacing="12">
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Outside merch / raffle" />
+                            <ItemsControl ItemTemplate="{StaticResource OutsideQtyRowTemplate}" ItemsSource="{Binding MerchOutsideLines, Mode=OneWay}" />
+                            <ItemsControl ItemTemplate="{StaticResource OutsideQtyRowTemplate}" ItemsSource="{Binding RaffleOutsideLines, Mode=OneWay}" />
+
+                            <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Spacing="4">
-                                    <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Square card sales" />
-                                    <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="{Binding SquareModeHelpText, Mode=OneWay}" />
-                                </StackPanel>
-                                <Button
-                                    Grid.Column="1"
-                                    VerticalAlignment="Top"
-                                    Command="{Binding RefreshSquareCommand}"
-                                    Content="{Binding RefreshSquareButtonLabel, Mode=OneWay}"
-                                    Style="{StaticResource EodPrimaryButtonStyle}"
-                                    MinWidth="160" />
+                                <Border Style="{StaticResource EodTillCardStyle}">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Outside sales" />
+                                        <TextBlock FontSize="20" FontWeight="Bold" Text="{Binding OutsideItemSalesText, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Style="{StaticResource EodTillCardStyle}">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card sales" />
+                                        <TextBlock FontSize="20" FontWeight="Bold" Text="{Binding OutsideCardSalesText, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Style="{StaticResource EodTillCardStyle}">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash sales" />
+                                        <TextBlock FontSize="20" FontWeight="Bold" Text="{Binding OutsideCashSalesText, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
                             </Grid>
-                            <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="{Binding SquareReconciliationStatusText, Mode=OneWay}" />
 
                             <StackPanel
-                                Spacing="8"
-                                Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="If Square won’t load, switch to Manual" />
+                                Orientation="Horizontal"
+                                Spacing="16"
+                                Visibility="{Binding HasOutsideSurcharge, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card surcharge" />
+                                <TextBlock FontWeight="SemiBold" Text="{Binding OutsideSurchargeText, Mode=OneWay}" />
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Square received" />
+                                <TextBlock FontWeight="SemiBold" Text="{Binding OutsideSquareReceivedText, Mode=OneWay}" />
+                            </StackPanel>
+
+                            <Button
+                                Command="{Binding BeginManualCombinedSquareCommand}"
+                                Content="{Binding EnterCardManuallyLabel, Mode=OneWay}"
+                                Style="{StaticResource EodSecondaryButtonStyle}"
+                                Visibility="{Binding NeedsManualOutsideCard, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+
+                            <Button
+                                Command="{Binding ToggleAdvancedDetailsCommand}"
+                                Content="{Binding ShowAdvancedDetailsLabel, Mode=OneWay}"
+                                Style="{StaticResource EodSecondaryButtonStyle}" />
+
+                            <StackPanel Spacing="8" Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="{Binding SquareReconciliationStatusText, Mode=OneWay}" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Command="{Binding SetSquareAutoModeCommand}" Content="Automatic Square" Style="{StaticResource EodSecondaryButtonStyle}" />
+                                    <Button Grid.Column="1" Command="{Binding SetSquareManualModeCommand}" Content="Manual Square" Style="{StaticResource EodSecondaryButtonStyle}" />
+                                    <Button Grid.Column="2" Command="{Binding RefreshSquareCommand}" Content="{Binding RefreshSquareButtonLabel, Mode=OneWay}" Style="{StaticResource EodSecondaryButtonStyle}" />
+                                </Grid>
                                 <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Grid Grid.Column="0">
-                                        <Border
-                                            Background="#1A2563EB"
-                                            BorderBrush="{StaticResource PosAccentBrush}"
-                                            BorderThickness="2"
-                                            CornerRadius="12"
-                                            Visibility="{Binding IsSquareAutoMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                                        <Button
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding SetSquareAutoModeCommand}"
-                                            Content="Automatic"
-                                            Style="{StaticResource EodSecondaryButtonStyle}" />
-                                    </Grid>
-                                    <Grid Grid.Column="1">
-                                        <Border
-                                            Background="#1A2563EB"
-                                            BorderBrush="{StaticResource PosAccentBrush}"
-                                            BorderThickness="2"
-                                            CornerRadius="12"
-                                            Visibility="{Binding IsSquareManualMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                                        <Button
-                                            HorizontalAlignment="Stretch"
-                                            Command="{Binding SetSquareManualModeCommand}"
-                                            Content="Manual"
-                                            Style="{StaticResource EodSecondaryButtonStyle}" />
-                                    </Grid>
+                                    <Button Command="{Binding ShowPosSquareTransactionsCommand}" Content="{Binding PosSquareGrossText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" />
+                                    <Button Grid.Column="1" Command="{Binding ShowOutsideSquareTransactionsCommand}" Content="{Binding OutsideSquareGrossText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" />
                                 </Grid>
-                            </StackPanel>
-
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="6">
-                                    <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Till card reader (0070)" />
-                                    <Button
-                                        Command="{Binding ShowPosSquareTransactionsCommand}"
-                                        Content="{Binding PosSquareGrossText, Mode=OneWay}"
-                                        Style="{StaticResource EodValueButtonStyle}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="6">
-                                    <TextBlock
-                                        Style="{StaticResource SettingsFieldLabelStyle}"
-                                        Text="Merch card reader (Flounderers02)"
-                                        Visibility="{Binding IsSquareAutoMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                                    <TextBlock
-                                        Style="{StaticResource SettingsFieldLabelStyle}"
-                                        Text="Merch card (calculated)"
-                                        Visibility="{Binding IsSquareManualMode, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                                    <Button
-                                        Command="{Binding ShowOutsideSquareTransactionsCommand}"
-                                        Content="{Binding OutsideSquareGrossText, Mode=OneWay}"
-                                        Style="{StaticResource EodValueButtonStyle}" />
-                                </StackPanel>
-                            </Grid>
-
-                            <StackPanel Spacing="8" Visibility="{Binding IsSquareManualMode, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Total card sales for the day (from Square)" />
+                                <Button Command="{Binding BeginSquareFeeCommand}" Content="{Binding SquareFeePercentText, Mode=OneWay}" Style="{StaticResource EodSecondaryButtonStyle}" />
+                                <Button Command="{Binding ReloadOutsideLinesFromCatalogCommand}" Content="Reload outside catalogue" Style="{StaticResource EodSecondaryButtonStyle}" />
+                                <Button Command="{Binding ToggleHideZeroOutsideLinesCommand}" Content="{Binding HideZeroOutsideLinesLabel, Mode=OneWay}" Style="{StaticResource EodSecondaryButtonStyle}" />
                                 <Button
-                                    Command="{Binding BeginManualCombinedSquareCommand}"
-                                    Content="{Binding ManualCombinedSquareCardGrossText, Mode=OneWay}"
-                                    Style="{StaticResource EodValueButtonStyle}" />
-                                <Grid ColumnSpacing="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Merch card (calculated)" />
-                                        <TextBlock Style="{StaticResource EodMetricValueStyle}" Text="{Binding ManualOutsideDerivedText, Mode=OneWay}" />
-                                    </StackPanel>
-                                    <Button
-                                        Grid.Column="1"
-                                        VerticalAlignment="Bottom"
-                                        Command="{Binding ClearManualCombinedSquareCommand}"
-                                        Content="Clear"
-                                        Style="{StaticResource EodSecondaryButtonStyle}" />
-                                </Grid>
-                                <TextBlock
-                                    FontSize="12"
-                                    Foreground="{StaticResource PosAccentBrush}"
-                                    Text="{Binding ManualCardFallbackStatusText, Mode=OneWay}"
-                                    TextWrapping="WrapWholeWords" />
-                            </StackPanel>
-
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Total card" />
-                                        <TextBlock Style="{StaticResource EodMetricValueStyle}" Text="{Binding CombinedSquareGrossText, Mode=OneWay}" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="1" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Square fees" />
-                                        <TextBlock Style="{StaticResource EodMetricValueStyle}" Text="{Binding SquareFeesText, Mode=OneWay}" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="2" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Expected deposit" />
-                                        <TextBlock FontSize="16" FontWeight="Bold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding ExpectedSquareDepositText, Mode=OneWay}" />
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <StackPanel
-                                Spacing="8"
-                                Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Estimated fee % (only if Square fees missing)" />
-                                <Button
-                                    Command="{Binding BeginSquareFeeCommand}"
-                                    Content="{Binding SquareFeePercentText, Mode=OneWay}"
-                                    Style="{StaticResource EodValueButtonStyle}" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Border x:Name="EodSectionOutsideTerminalSales" Style="{StaticResource SettingsCardStyle}">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Merch &amp; raffle cash" />
-                                <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="{Binding OutsideSalesHelpText, Mode=OneWay}" />
-                            </StackPanel>
-
-                            <StackPanel
-                                Spacing="8"
-                                Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                <TextBlock
-                                    Style="{StaticResource EodHelpTextStyle}"
-                                    Text="No merch cash or card items loaded yet."
-                                    Visibility="{Binding HasCombinedOutsideSales, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
-                                <ListView
-                                    MaxHeight="220"
-                                    ItemsSource="{Binding CombinedOutsideSales, Mode=OneWay}"
-                                    SelectionMode="None"
-                                    Visibility="{Binding HasCombinedOutsideSales, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Padding="4,6" ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="2*" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Name}" TextWrapping="WrapWholeWords" />
-                                                <StackPanel Grid.Column="1">
-                                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Cash" />
-                                                    <TextBlock Text="{Binding CashQuantity}" />
-                                                    <TextBlock FontSize="11" Text="{Binding CashTotal}" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="2">
-                                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Card" />
-                                                    <TextBlock Text="{Binding CardQuantity}" />
-                                                    <TextBlock FontSize="11" Text="{Binding CardTotal}" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="3">
-                                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Total" />
-                                                    <TextBlock Text="{Binding CombinedQuantity}" />
-                                                    <TextBlock FontWeight="SemiBold" Text="{Binding CombinedTotal}" />
-                                                </StackPanel>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </StackPanel>
-
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="15"
-                                    FontWeight="SemiBold"
-                                    Text="From the paper sheet" />
-                                <Button
-                                    Grid.Column="1"
-                                    Command="{Binding ToggleHideZeroOutsideLinesCommand}"
-                                    Content="{Binding HideZeroOutsideLinesLabel, Mode=OneWay}"
-                                    Style="{StaticResource EodSecondaryButtonStyle}" />
-                                <Button
-                                    Grid.Column="2"
-                                    Command="{Binding ReloadOutsideLinesFromCatalogCommand}"
-                                    Content="Reload list"
+                                    Command="{Binding LoadTestReportCommand}"
+                                    Content="Test data"
                                     Style="{StaticResource EodSecondaryButtonStyle}"
-                                    Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                            </Grid>
-
-                            <TextBlock FontSize="14" FontWeight="SemiBold" Text="Merch" />
-                            <ItemsControl
-                                ItemTemplate="{StaticResource OutsideLineRowTemplate}"
-                                ItemsSource="{Binding MerchOutsideLines, Mode=OneWay}" />
-                            <TextBlock Margin="0,4,0,0" FontSize="14" FontWeight="SemiBold" Text="Raffle" />
-                            <ItemsControl
-                                ItemTemplate="{StaticResource OutsideLineRowTemplate}"
-                                ItemsSource="{Binding RaffleOutsideLines, Mode=OneWay}" />
-
-                            <StackPanel
-                                Spacing="8"
-                                Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Sales by category (audit)" />
-                                <ListView
-                                    MaxHeight="180"
-                                    ItemsSource="{Binding EventCategoryComparison, Mode=OneWay}"
-                                    SelectionMode="None">
-                                    <ListView.ItemTemplate>
+                                    Visibility="{Binding CanRunTestReport, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                <Button
+                                    Command="{Binding ClearTestReportCommand}"
+                                    Content="Clear test"
+                                    Style="{StaticResource EodSecondaryButtonStyle}"
+                                    Visibility="{Binding IsTestModeBannerVisible, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                <ItemsControl ItemsSource="{Binding ReconciliationWarnings, Mode=OneWay}">
+                                    <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid Padding="4,6" ColumnSpacing="8">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="1.2*" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding CategoryName}" />
-                                                <StackPanel Grid.Column="1">
-                                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Till" />
-                                                    <TextBlock Text="{Binding ClubPosQuantity}" />
-                                                    <TextBlock FontSize="11" Text="{Binding ClubPosLineTotal}" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="2">
-                                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Merch" />
-                                                    <TextBlock Text="{Binding OutsideTerminalQuantity}" />
-                                                    <TextBlock FontSize="11" Text="{Binding OutsideTerminalLineTotal}" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="3">
-                                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Total" />
-                                                    <TextBlock Text="{Binding CombinedQuantity}" />
-                                                    <TextBlock FontWeight="SemiBold" Text="{Binding CombinedLineTotal}" />
-                                                </StackPanel>
-                                            </Grid>
+                                            <TextBlock Margin="0,2,0,0" FontSize="12" Foreground="#FFB45309" Text="{Binding}" TextWrapping="WrapWholeWords" />
                                         </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                </StackPanel>
 
-                    <Border x:Name="EodSectionCosts" Style="{StaticResource SettingsCardStyle}">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Floats &amp; money out" />
-                                <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="A float is the cash you started with. For every expense or cash prize, tap the grey button until it shows where the cash came from." />
-                            </StackPanel>
-
-                            <Grid ColumnSpacing="12">
+                <!-- STEP 2 PRIZES -->
+                <StackPanel x:Name="EodSectionPrizes" Spacing="10" Visibility="Collapsed">
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Prizes &amp; expenses" />
+                            <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock FontWeight="SemiBold" Text="Inside till float" />
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Starting cash in Terminal 0070 till" />
-                                        <Button
-                                            Command="{Binding BeginInsideFloatCommand}"
-                                            Content="{Binding InsideFloatText, Mode=OneWay}"
-                                            Style="{StaticResource EodValueButtonStyle}" />
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="1" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock FontWeight="SemiBold" Text="Outside tin float" />
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Starting cash in merch table tin" />
-                                        <Button
-                                            Command="{Binding BeginOutsideFloatCommand}"
-                                            Content="{Binding OutsideFloatText, Mode=OneWay}"
-                                            Style="{StaticResource EodValueButtonStyle}" />
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold" Text="Expenses / cash prizes" />
-                                <Button
-                                    Grid.Column="1"
-                                    Command="{Binding AddExpenseCommand}"
-                                    Content="+ Add"
-                                    Style="{StaticResource EodPrimaryButtonStyle}"
-                                    MinWidth="120" />
+                                <Button Command="{Binding AddCashPrizeCommand}" Content="+ Cash prize" Style="{StaticResource EodPrimaryButtonStyle}" />
+                                <Button Grid.Column="1" Command="{Binding AddStockPrizeCommand}" Content="+ Stock prize" Style="{StaticResource EodPrimaryButtonStyle}" />
+                                <Button Grid.Column="2" Command="{Binding AddExpenseCommand}" Content="+ Expense" Style="{StaticResource EodPrimaryButtonStyle}" />
                             </Grid>
 
-                            <ItemsControl ItemsSource="{Binding Expenses, Mode=OneWay}">
+                            <ItemsControl ItemsSource="{Binding CashPrizes, Mode=OneWay}" Visibility="{Binding HasCashPrizes, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Margin="0,0,0,10" Style="{StaticResource EodTillCardStyle}">
-                                            <Grid ColumnSpacing="10">
+                                        <Border Margin="0,0,0,8" Style="{StaticResource EodTillCardStyle}">
+                                            <Grid ColumnSpacing="8">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="110" />
                                                     <ColumnDefinition Width="120" />
-                                                    <ColumnDefinition Width="190" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
+                                                <Button Command="{Binding BeginDescriptionCommand}" Content="{Binding Description, Mode=OneWay}" Style="{StaticResource EodSecondaryButtonStyle}" />
+                                                <Button Grid.Column="1" Command="{Binding BeginAmountCommand}" Content="{Binding AmountText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" MinHeight="48" FontSize="18" />
+                                                <Button Grid.Column="2" Command="{Binding CyclePaidFromCommand}" Content="{Binding PaidFromText, Mode=OneWay}" Style="{StaticResource EodSecondaryButtonStyle}" />
                                                 <Button
-                                                    Command="{Binding BeginDescriptionCommand}"
-                                                    Content="{Binding Description, Mode=OneWay}"
+                                                    Grid.Column="3"
+                                                    MinWidth="48"
+                                                    MinHeight="48"
+                                                    Command="{Binding ElementName=RootReportPage, Path=DataContext.RemoveCashPrizeCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="✕"
                                                     Style="{StaticResource EodSecondaryButtonStyle}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <ItemsControl ItemsSource="{Binding Prizes, Mode=OneWay}" Visibility="{Binding HasStockPrizes, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,8" Style="{StaticResource EodTillCardStyle}">
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="72" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock VerticalAlignment="Center" FontSize="15" Text="{Binding ItemName, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                                                <Button Grid.Column="1" Command="{Binding DecrementQtyCommand}" Content="−" Style="{StaticResource EodQtyButtonStyle}" />
+                                                <Button Grid.Column="2" Command="{Binding BeginQtyCommand}" Content="{Binding QuantityText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" MinHeight="52" />
+                                                <Button Grid.Column="3" Command="{Binding IncrementQtyCommand}" Content="+" Style="{StaticResource EodQtyButtonStyle}" />
                                                 <Button
-                                                    Grid.Column="1"
-                                                    Command="{Binding BeginAmountCommand}"
-                                                    Content="{Binding AmountText, Mode=OneWay}"
-                                                    Style="{StaticResource EodCompactValueButtonStyle}" />
+                                                    Grid.Column="4"
+                                                    MinWidth="48"
+                                                    MinHeight="48"
+                                                    Command="{Binding ElementName=RootReportPage, Path=DataContext.RemovePrizeCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="✕"
+                                                    Style="{StaticResource EodSecondaryButtonStyle}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <ItemsControl ItemsSource="{Binding Expenses, Mode=OneWay}" Visibility="{Binding HasExpenses, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,8" Style="{StaticResource EodTillCardStyle}">
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="110" />
+                                                    <ColumnDefinition Width="140" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Button Command="{Binding BeginDescriptionCommand}" Content="{Binding Description, Mode=OneWay}" Style="{StaticResource EodSecondaryButtonStyle}" />
+                                                <Button Grid.Column="1" Command="{Binding BeginAmountCommand}" Content="{Binding AmountText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" MinHeight="48" FontSize="18" />
                                                 <Button
                                                     Grid.Column="2"
                                                     Command="{Binding CyclePaidFromCommand}"
                                                     Content="{Binding PaidFromText, Mode=OneWay}"
-                                                    Style="{StaticResource EodSecondaryButtonStyle}" />
+                                                    Style="{StaticResource EodSecondaryButtonStyle}"
+                                                    Visibility="{Binding ElementName=RootReportPage, Path=DataContext.ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                                <TextBlock
+                                                    Grid.Column="2"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="13"
+                                                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                                                    Text="Paid from bank"
+                                                    Visibility="{Binding ElementName=RootReportPage, Path=DataContext.ShowAdvancedDetails, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
                                                 <Button
                                                     Grid.Column="3"
-                                                    MinWidth="52"
-                                                    MinHeight="52"
+                                                    MinWidth="48"
+                                                    MinHeight="48"
                                                     Command="{Binding ElementName=RootReportPage, Path=DataContext.RemoveExpenseCommand}"
                                                     CommandParameter="{Binding}"
                                                     Content="✕"
@@ -897,262 +522,183 @@
                             </ItemsControl>
                         </StackPanel>
                     </Border>
-
-                    <Border x:Name="EodSectionPrizes" Style="{StaticResource SettingsCardStyle}">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Stock prizes" />
-                                <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="Only if you gave merch away. This does not change any cash — stock comes off when a manager finishes the day." />
-                            </StackPanel>
-                            <ListView ItemsSource="{Binding Prizes, Mode=OneWay}" MaxHeight="320" SelectionMode="None">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Margin="0,0,0,8" Style="{StaticResource EodTillCardStyle}">
-                                            <Grid ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="140" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock
-                                                    VerticalAlignment="Center"
-                                                    FontSize="15"
-                                                    Text="{Binding ItemName, Mode=OneWay}"
-                                                    TextWrapping="WrapWholeWords" />
-                                                <Button
-                                                    Grid.Column="1"
-                                                    Command="{Binding BeginQtyCommand}"
-                                                    Content="{Binding QuantityText, Mode=OneWay}"
-                                                    Style="{StaticResource EodCompactValueButtonStyle}" />
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </StackPanel>
-                    </Border>
-
-                    <Border x:Name="EodSectionCashCount" Style="{StaticResource SettingsCardStyle}">
-                        <StackPanel Spacing="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Count both cash areas" />
-                                <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="Inside is checked against ClubPOS cash. Outside is checked against the paper sheet. Card never goes in these counts." />
-                            </StackPanel>
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="10">
-                                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Inside till" />
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Terminal 0070 cash drawer" />
-                                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Cash counted now" />
-                                        <Button Command="{Binding BeginCashCountedCommand}" Content="{Binding CashCountedText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Spacing="2">
-                                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Expected" />
-                                                <TextBlock Style="{StaticResource EodMetricValueStyle}" Text="{Binding ExpectedCashText, Mode=OneWay}" />
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Spacing="2">
-                                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Over / short" />
-                                                <TextBlock FontSize="18" FontWeight="Bold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding CashVarianceText, Mode=OneWay}" />
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-                                <Border Grid.Column="1" Style="{StaticResource EodTillCardStyle}">
-                                    <StackPanel Spacing="10">
-                                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Outside tin" />
-                                        <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Merch table / Flounderers02 cash" />
-                                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Cash counted now" />
-                                        <Button Command="{Binding BeginOutsideCashCountedCommand}" Content="{Binding OutsideCashCountedText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Spacing="2">
-                                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Expected" />
-                                                <TextBlock Style="{StaticResource EodMetricValueStyle}" Text="{Binding OutsideExpectedCashText, Mode=OneWay}" />
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Spacing="2">
-                                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Over / short" />
-                                                <TextBlock FontSize="18" FontWeight="Bold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding OutsideCashVarianceText, Mode=OneWay}" />
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Notes (optional)" />
-                            <Button
-                                Command="{Binding BeginArchiveNotesCommand}"
-                                Content="{Binding ArchiveNotesDisplay, Mode=OneWay}"
-                                Style="{StaticResource EodSecondaryButtonStyle}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border
-                        x:Name="EodReviewActions"
-                        Padding="18,16"
-                        Background="#FFEFF6FF"
-                        BorderBrush="#FFBFDBFE"
-                        BorderThickness="1"
-                        CornerRadius="18"
-                        Visibility="Collapsed">
-                        <StackPanel Spacing="12">
-                            <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Ready to finish" />
-                            <TextBlock Style="{StaticResource EodHelpTextStyle}" Text="This saves a one-page PDF with the money to bank, both cash counts, Square fees, and what Square will pay in. After that, tap Finish day so the sales are filed and the stock comes off." />
-                            <Button
-                                Command="{Binding ExportPdfCommand}"
-                                Content="Save report"
-                                Style="{StaticResource EodPrimaryButtonStyle}" />
-                        </StackPanel>
-                    </Border>
                 </StackPanel>
-            </ScrollViewer>
 
-            <!-- Summary rail -->
-            <Border
-                Grid.Column="1"
-                Padding="16"
-                VerticalAlignment="Stretch"
-                Background="{StaticResource PosSurfaceBrush}"
-                BorderBrush="{StaticResource PosBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="18">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Spacing="14">
-                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Money to bank today" />
+                <!-- STEP 3 COUNT -->
+                <StackPanel x:Name="EodSectionCount" Spacing="10" Visibility="Collapsed">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                        <Border
-                            Padding="14"
-                            Background="#FFEFF6FF"
-                            CornerRadius="14">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash to bank" />
-                                <TextBlock FontSize="28" FontWeight="Bold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding CashToDepositText, Mode=OneWay}" />
+                        <Border Style="{StaticResource SettingsCardStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Inside till" />
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Starting float" />
+                                <Button Command="{Binding BeginInsideFloatCommand}" Content="{Binding InsideFloatText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" />
+                                <Grid>
+                                    <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="+ Cash sales" />
+                                    <TextBlock HorizontalAlignment="Right" Text="{Binding InsideCashSalesText, Mode=OneWay}" />
+                                </Grid>
+                                <Grid>
+                                    <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="− Cash prizes / till paid" />
+                                    <TextBlock HorizontalAlignment="Right" Text="{Binding InsidePaidOutText, Mode=OneWay}" />
+                                </Grid>
+                                <Grid>
+                                    <TextBlock FontWeight="SemiBold" Text="Expected cash" />
+                                    <TextBlock HorizontalAlignment="Right" FontWeight="Bold" Text="{Binding ExpectedCashText, Mode=OneWay}" />
+                                </Grid>
+                                <Button Command="{Binding BeginCashCountedCommand}" Content="{Binding InsideCountedButtonText, Mode=OneWay}" Style="{StaticResource EodPrimaryButtonStyle}" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource PosBalanceGoodBrush}"
+                                    Text="{Binding InsideVarianceStatusText, Mode=OneWay}"
+                                    Visibility="{Binding InsideIsBalanced, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource PosBalanceNegativeBrush}"
+                                    Text="{Binding InsideVarianceStatusText, Mode=OneWay}"
+                                    Visibility="{Binding HasInsideVariance, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource EodTillCardStyle}">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Square deposit (after fees)" />
-                                <TextBlock FontSize="20" FontWeight="Bold" Text="{Binding ExpectedSquareDepositText, Mode=OneWay}" />
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="{Binding SquareFeesText, Mode=OneWay}" />
+                        <Border Grid.Column="1" Style="{StaticResource SettingsCardStyle}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Style="{StaticResource EodSectionTitleStyle}" Text="Outside tin" />
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Starting float" />
+                                <Button Command="{Binding BeginOutsideFloatCommand}" Content="{Binding OutsideFloatText, Mode=OneWay}" Style="{StaticResource EodValueButtonStyle}" />
+                                <Grid>
+                                    <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="+ Cash sales" />
+                                    <TextBlock HorizontalAlignment="Right" Text="{Binding OutsideCashSalesText, Mode=OneWay}" />
+                                </Grid>
+                                <Grid>
+                                    <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="− Cash prizes / paid out" />
+                                    <TextBlock HorizontalAlignment="Right" Text="{Binding OutsidePaidOutText, Mode=OneWay}" />
+                                </Grid>
+                                <Grid>
+                                    <TextBlock FontWeight="SemiBold" Text="Expected cash" />
+                                    <TextBlock HorizontalAlignment="Right" FontWeight="Bold" Text="{Binding OutsideExpectedCashText, Mode=OneWay}" />
+                                </Grid>
+                                <Button Command="{Binding BeginOutsideCashCountedCommand}" Content="{Binding OutsideCountedButtonText, Mode=OneWay}" Style="{StaticResource EodPrimaryButtonStyle}" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource PosBalanceGoodBrush}"
+                                    Text="{Binding OutsideVarianceStatusText, Mode=OneWay}"
+                                    Visibility="{Binding OutsideIsBalanced, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource PosBalanceNegativeBrush}"
+                                    Text="{Binding OutsideVarianceStatusText, Mode=OneWay}"
+                                    Visibility="{Binding HasOutsideVariance, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                             </StackPanel>
                         </Border>
+                    </Grid>
 
-                        <Border Style="{StaticResource EodTillCardStyle}">
-                            <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Profit" />
-                                <TextBlock FontSize="20" FontWeight="Bold" Text="{Binding NetProfitText, Mode=OneWay}" />
-                            </StackPanel>
-                        </Border>
+                    <Button
+                        Command="{Binding BeginArchiveNotesCommand}"
+                        Content="Add note"
+                        Style="{StaticResource EodSecondaryButtonStyle}"
+                        Visibility="{Binding ShowInsideNoteAction, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
 
-                        <Border Height="1" Background="{StaticResource PosBorderBrush}" />
-
-                        <StackPanel Spacing="8">
-                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="Sales mix" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel Spacing="6">
                             <Grid>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Total sales" />
-                                <TextBlock HorizontalAlignment="Right" Style="{StaticResource EodMetricValueStyle}" Text="{Binding GrossSalesText, Mode=OneWay}" />
+                                <TextBlock FontSize="13" FontWeight="SemiBold" Text="TOTAL SALES" />
+                                <TextBlock HorizontalAlignment="Right" FontSize="22" FontWeight="Bold" Text="{Binding GrossSalesText, Mode=OneWay}" />
                             </Grid>
                             <Grid>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Till cash" />
-                                <TextBlock HorizontalAlignment="Right" Style="{StaticResource EodMetricValueStyle}" Text="{Binding PitstopCashText, Mode=OneWay}" />
-                            </Grid>
-                            <Grid>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Merch cash" />
-                                <TextBlock HorizontalAlignment="Right" Style="{StaticResource EodMetricValueStyle}" Text="{Binding OutsideCashText, Mode=OneWay}" />
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash sales" />
+                                <TextBlock HorizontalAlignment="Right" Text="{Binding TotalCashSalesText, Mode=OneWay}" />
                             </Grid>
                             <Grid>
                                 <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Card sales" />
-                                <TextBlock HorizontalAlignment="Right" Style="{StaticResource EodMetricValueStyle}" Text="{Binding CombinedSquareGrossText, Mode=OneWay}" />
+                                <TextBlock HorizontalAlignment="Right" Text="{Binding TotalCardSalesText, Mode=OneWay}" />
                             </Grid>
+                            <Grid>
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash to bank" />
+                                <TextBlock HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource PosAccentBrush}" Text="{Binding CashToDepositText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid>
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Expected Square deposit" />
+                                <TextBlock HorizontalAlignment="Right" Text="{Binding ExpectedSquareDepositText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid>
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Expenses" />
+                                <TextBlock HorizontalAlignment="Right" Text="{Binding ExpensesText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid>
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Cash prizes" />
+                                <TextBlock HorizontalAlignment="Right" Text="{Binding CashPrizesText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid>
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Known stock/product costs" />
+                                <TextBlock HorizontalAlignment="Right" Text="{Binding KnownStockCostsText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid>
+                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Square processing fees" />
+                                <TextBlock HorizontalAlignment="Right" Text="{Binding SquareFeesText, Mode=OneWay}" />
+                            </Grid>
+                            <Grid Margin="0,4,0,0">
+                                <TextBlock FontSize="15" FontWeight="Bold" Text="ESTIMATED PROFIT" />
+                                <TextBlock HorizontalAlignment="Right" FontSize="22" FontWeight="Bold" Text="{Binding NetProfitText, Mode=OneWay}" />
+                            </Grid>
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding UnknownStockCostsNote, Mode=OneWay}"
+                                Visibility="{Binding HasUnknownStockCosts, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="{Binding StatusMessage, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords"
+                                Visibility="{Binding StatusMessage, Converter={StaticResource BoolToVis}, ConverterParameter=NotEmpty, Mode=OneWay}" />
                         </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
 
-                        <StackPanel
-                            Spacing="8"
-                            Visibility="{Binding ShowAdvancedDetails, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                            <Border Height="1" Background="{StaticResource PosBorderBrush}" />
-                            <Grid>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Till card (POS)" />
-                                <TextBlock HorizontalAlignment="Right" Style="{StaticResource EodMetricValueStyle}" Text="{Binding PitstopCardText, Mode=OneWay}" />
-                            </Grid>
-                            <Grid>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Till card (Square)" />
-                                <TextBlock HorizontalAlignment="Right" Style="{StaticResource EodMetricValueStyle}" Text="{Binding PosSquareGrossText, Mode=OneWay}" />
-                            </Grid>
-                            <Grid>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Merch card" />
-                                <TextBlock HorizontalAlignment="Right" Style="{StaticResource EodMetricValueStyle}" Text="{Binding OutsideSquareGrossText, Mode=OneWay}" />
-                            </Grid>
-                            <Grid>
-                                <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Square vs till" />
-                                <TextBlock
-                                    HorizontalAlignment="Right"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource PosAccentBrush}"
-                                    Text="{Binding SquareTerminalDiffText, Mode=OneWay}" />
-                            </Grid>
-                        </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
-        </Grid>
-
-        <!-- Sticky footer -->
         <Border
             Grid.Row="2"
-            Margin="0,12,0,0"
-            Padding="14,12"
+            Margin="0,8,0,0"
+            Padding="12,10"
             Background="{StaticResource PosSurfaceBrush}"
             BorderBrush="{StaticResource PosBorderBrush}"
             BorderThickness="1"
-            CornerRadius="18">
-            <Grid ColumnSpacing="12">
+            CornerRadius="16">
+            <Grid ColumnSpacing="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="220" />
                 </Grid.ColumnDefinitions>
-
                 <Button
                     x:Name="WizardPreviousButton"
-                    MinWidth="132"
+                    MinWidth="120"
                     Click="PreviousStep_Click"
-                    Content="Previous"
+                    Content="Back"
                     Style="{StaticResource EodSecondaryButtonStyle}" />
-
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                    <TextBlock Style="{StaticResource EodMetricLabelStyle}" Text="Live totals" />
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Cash to bank" />
-                        <TextBlock FontSize="13" FontWeight="Bold" Text="{Binding CashToDepositText, Mode=OneWay}" />
-                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="·" />
-                        <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Square" />
-                        <TextBlock FontSize="13" FontWeight="Bold" Text="{Binding ExpectedSquareDepositText, Mode=OneWay}" />
-                    </StackPanel>
-                </StackPanel>
-
                 <Button
                     x:Name="WizardNextButton"
-                    Grid.Column="2"
-                    MinWidth="148"
+                    Grid.Column="1"
                     Click="NextStep_Click"
                     Content="Next"
                     Style="{StaticResource EodPrimaryButtonStyle}" />
-
                 <Button
                     x:Name="WizardSaveButton"
-                    Grid.Column="3"
-                    Command="{Binding ExportPdfCommand}"
-                    Content="Save report"
+                    Grid.Column="1"
+                    Command="{Binding ClosePitstopCommand}"
+                    Content="CLOSE PITSTOP &amp; SAVE REPORT"
+                    FontSize="14"
                     Style="{StaticResource EodPrimaryButtonStyle}"
                     Visibility="Collapsed" />
             </Grid>

@@ -424,6 +424,88 @@ public sealed class DatabaseInitializer
 
         conn.Execute(
             """
+            CREATE TABLE IF NOT EXISTS MoneyIdempotencyKeys (
+              IdempotencyKey TEXT PRIMARY KEY NOT NULL,
+              OperationKind TEXT NOT NULL,
+              ResultRef TEXT,
+              CreatedAt TEXT NOT NULL
+            );
+            """);
+
+        conn.Execute(
+            """
+            CREATE TABLE IF NOT EXISTS ComplimentaryItemIssues (
+              Id INTEGER PRIMARY KEY AUTOINCREMENT,
+              IssueGuid TEXT NOT NULL UNIQUE,
+              ItemId INTEGER NOT NULL REFERENCES Items(Id),
+              ItemName TEXT NOT NULL,
+              Quantity INTEGER NOT NULL,
+              UnitRetailPrice REAL NOT NULL DEFAULT 0,
+              TransactionType TEXT NOT NULL DEFAULT 'ComplimentaryItem',
+              Status TEXT NOT NULL DEFAULT 'Active',
+              StaffId INTEGER,
+              StaffName TEXT,
+              OccurredAtUtc TEXT NOT NULL,
+              LocalDate TEXT NOT NULL,
+              IdempotencyKey TEXT UNIQUE,
+              ReversedAtUtc TEXT,
+              ReversedByStaffId INTEGER,
+              ReversedByStaffName TEXT,
+              CreatedAt TEXT NOT NULL
+            );
+            """);
+        conn.Execute(
+            """
+            CREATE INDEX IF NOT EXISTS IX_ComplimentaryItemIssues_LocalDate_Status
+            ON ComplimentaryItemIssues(LocalDate, Status);
+            """);
+        conn.Execute(
+            """
+            CREATE INDEX IF NOT EXISTS IX_ComplimentaryItemIssues_ItemId
+            ON ComplimentaryItemIssues(ItemId);
+            """);
+        conn.Execute(
+            """
+            CREATE TABLE IF NOT EXISTS QuickFreeItemConfig (
+              Id INTEGER PRIMARY KEY AUTOINCREMENT,
+              ItemId INTEGER NOT NULL UNIQUE REFERENCES Items(Id) ON DELETE CASCADE,
+              DisplayLabel TEXT,
+              Icon TEXT,
+              SortOrder INTEGER NOT NULL DEFAULT 0,
+              CreatedAt TEXT NOT NULL,
+              UpdatedAt TEXT NOT NULL
+            );
+            """);
+
+        TryCreateUniqueIndex(
+            conn,
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_Payments_SquarePaymentId
+            ON Payments(SquarePaymentId)
+            WHERE SquarePaymentId IS NOT NULL AND trim(SquarePaymentId) != '';
+            """);
+        TryCreateUniqueIndex(
+            conn,
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_PitstopSales_SquareExternalRef
+            ON PitstopSales(SquareExternalRef)
+            WHERE SquareExternalRef IS NOT NULL AND trim(SquareExternalRef) != '';
+            """);
+        TryCreateUniqueIndex(
+            conn,
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_MoneyMovements_CommitBatchId
+            ON MoneyMovements(CommitBatchId)
+            WHERE CommitBatchId IS NOT NULL AND trim(CommitBatchId) != '';
+            """);
+        conn.Execute(
+            """
+            CREATE INDEX IF NOT EXISTS IX_TabEntries_CommitBatchId
+            ON TabEntries(CommitBatchId);
+            """);
+
+        conn.Execute(
+            """
             UPDATE Tabs
             SET TabType = 'Guest'
             WHERE (TabType IS NULL OR trim(TabType) = '')
@@ -477,6 +559,19 @@ public sealed class DatabaseInitializer
         if (n == 0)
         {
             conn.Execute(alterSql);
+        }
+    }
+
+    private static void TryCreateUniqueIndex(SqliteConnection conn, string sql)
+    {
+        try
+        {
+            conn.Execute(sql);
+        }
+        catch (SqliteException)
+        {
+            // Duplicate historical rows can block a unique index; commits still
+            // look up existing keys before insert.
         }
     }
 
@@ -793,6 +888,46 @@ public sealed class DatabaseInitializer
           Success INTEGER NOT NULL DEFAULT 1,
           DetailsJson TEXT,
           CreatedAt TEXT NOT NULL
+        );
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS ComplimentaryItemIssues (
+          Id INTEGER PRIMARY KEY AUTOINCREMENT,
+          IssueGuid TEXT NOT NULL UNIQUE,
+          ItemId INTEGER NOT NULL REFERENCES Items(Id),
+          ItemName TEXT NOT NULL,
+          Quantity INTEGER NOT NULL,
+          UnitRetailPrice REAL NOT NULL DEFAULT 0,
+          TransactionType TEXT NOT NULL DEFAULT 'ComplimentaryItem',
+          Status TEXT NOT NULL DEFAULT 'Active',
+          StaffId INTEGER,
+          StaffName TEXT,
+          OccurredAtUtc TEXT NOT NULL,
+          LocalDate TEXT NOT NULL,
+          IdempotencyKey TEXT UNIQUE,
+          ReversedAtUtc TEXT,
+          ReversedByStaffId INTEGER,
+          ReversedByStaffName TEXT,
+          CreatedAt TEXT NOT NULL
+        );
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS IX_ComplimentaryItemIssues_LocalDate_Status
+        ON ComplimentaryItemIssues(LocalDate, Status);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS IX_ComplimentaryItemIssues_ItemId
+        ON ComplimentaryItemIssues(ItemId);
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS QuickFreeItemConfig (
+          Id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ItemId INTEGER NOT NULL UNIQUE REFERENCES Items(Id) ON DELETE CASCADE,
+          DisplayLabel TEXT,
+          Icon TEXT,
+          SortOrder INTEGER NOT NULL DEFAULT 0,
+          CreatedAt TEXT NOT NULL,
+          UpdatedAt TEXT NOT NULL
         );
         """,
         """

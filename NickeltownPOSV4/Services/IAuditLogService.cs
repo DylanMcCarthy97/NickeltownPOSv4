@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NickeltownPOSV4.Models.Audit;
@@ -16,5 +17,11 @@ public interface IAuditLogService
         string? reason = null,
         bool success = true,
         string? detailsJson = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Newest-first activity rows for Admin. When <paramref name="staffFacingOnly"/> is true, routine sale/payment noise is omitted.</summary>
+    Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(
+        int maxEntries = 400,
+        bool staffFacingOnly = true,
         CancellationToken cancellationToken = default);
 }

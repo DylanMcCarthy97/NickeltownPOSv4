@@ -12,8 +12,6 @@ namespace NickeltownPOSV4.Services.Pitstop;
 /// <summary>Pitstop-only end-of-day figures (terminal retail + outside merch/raffle). Bar tabs are excluded.</summary>
 public sealed class PitstopReportService
 {
-    private const decimal MismatchTolerance = 0.05m;
-
     private readonly IPitstopRetailSaleRepository _pitstopSales;
 
     public PitstopReportService(IPitstopRetailSaleRepository pitstopSales) => _pitstopSales = pitstopSales;
@@ -39,8 +37,6 @@ public sealed class PitstopReportService
         var pitCardBase = pitstopTotals.CardBaseProductTotal;
         var pitCardSurcharge = pitstopTotals.CardSurchargeCollected;
 
-        var outsideCash = inputs.OutsideLines.Sum(r => r.CashDollars);
-
         var square = inputs.SquareReconciliation ?? SquarePaymentReconciliationResult.Empty("Square reconciliation has not been loaded.");
         var manualCombined = inputs.ManualCombinedSquareCardGross;
         var usingManualMode = inputs.UseManualSquareCardMode;
@@ -51,80 +47,63 @@ public sealed class PitstopReportService
         decimal outsideSquare;
         if (usingManualMode)
         {
-            posSquare = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero);
+            posSquare = PitstopEodCalculator.RoundMoney(pitCardCharged);
             if (usingManualFallback)
             {
-                combinedSquare = decimal.Round(manualCombined!.Value, 2, MidpointRounding.AwayFromZero);
-                outsideSquare = decimal.Round(Math.Max(0m, combinedSquare - pitCardCharged), 2, MidpointRounding.AwayFromZero);
+                combinedSquare = PitstopEodCalculator.RoundMoney(manualCombined!.Value);
+                outsideSquare = PitstopEodCalculator.RoundMoney(Math.Max(0m, combinedSquare - pitCardCharged));
             }
             else
             {
-                // Manual mode before a combined total is entered: POS only, no outside Square.
                 combinedSquare = posSquare;
                 outsideSquare = 0m;
             }
         }
         else
         {
-            combinedSquare = decimal.Round(square.CombinedSquareGross, 2, MidpointRounding.AwayFromZero);
-            posSquare = decimal.Round(square.PosSquareGross, 2, MidpointRounding.AwayFromZero);
-            outsideSquare = decimal.Round(square.OutsideSquareGross, 2, MidpointRounding.AwayFromZero);
+            combinedSquare = PitstopEodCalculator.RoundMoney(square.CombinedSquareGross);
+            posSquare = PitstopEodCalculator.RoundMoney(square.PosSquareGross);
+            outsideSquare = PitstopEodCalculator.RoundMoney(square.OutsideSquareGross);
         }
 
-        var squareVsTerminalDiff = decimal.Round(combinedSquare - pitCardCharged, 2, MidpointRounding.AwayFromZero);
-        // Red mismatch banner is amount-only. Square warnings (e.g. excluded bar-terminal
-        // payments, outside sales) stay in Warnings / ReconciliationWarnings separately.
+        var outsideItemSales = PitstopEodCalculator.OutsideItemSalesTotal(inputs.OutsideLines);
+        var (outsideCardSales, outsideCardSurcharge) = PitstopEodCalculator.ActualOutsideCardSales(
+            outsideSquare,
+            inputs.CardSurchargePercent);
+        var outsideCash = PitstopEodCalculator.OutsideCashSales(outsideItemSales, outsideCardSales);
+        var outsideTenderMismatch = PitstopEodCalculator.IsOutsideTenderMismatch(outsideItemSales, outsideCardSales);
+
+        var squareVsTerminalDiff = PitstopEodCalculator.RoundMoney(combinedSquare - pitCardCharged);
         var squareMismatch = usingManualFallback
-            ? combinedSquare < pitCardCharged - MismatchTolerance
-            : !usingManualMode && Math.Abs(posSquare - pitCardCharged) > MismatchTolerance;
+            ? combinedSquare < pitCardCharged - PitstopEodCalculator.MismatchTolerance
+            : !usingManualMode && Math.Abs(posSquare - pitCardCharged) > PitstopEodCalculator.MismatchTolerance;
 
         var feePct = inputs.SquareFeePercent;
-        // In manual mode fees are estimated from the combined total — do not use Square day fees
-        // that may include outside-terminal volume we intentionally ignored.
         var fees = !usingManualMode && square.ActualSquareFees is decimal actualFees
-            ? decimal.Round(actualFees, 2, MidpointRounding.AwayFromZero)
-            : decimal.Round(combinedSquare * (feePct / 100m), 2, MidpointRounding.AwayFromZero);
+            ? PitstopEodCalculator.RoundMoney(actualFees)
+            : PitstopEodCalculator.RoundMoney(combinedSquare * (feePct / 100m));
         var expectedDeposit = !usingManualMode && square.LoadedFromSquare
-            ? decimal.Round(square.ExpectedSquareDeposit, 2, MidpointRounding.AwayFromZero)
-            : decimal.Round(combinedSquare - fees, 2, MidpointRounding.AwayFromZero);
+            ? PitstopEodCalculator.RoundMoney(square.ExpectedSquareDeposit)
+            : PitstopEodCalculator.RoundMoney(combinedSquare - fees);
 
-        var totalCash = decimal.Round(pitCash + outsideCash, 2, MidpointRounding.AwayFromZero);
-        var totalExpenses = decimal.Round(inputs.Expenses.Sum(e => e.Amount), 2, MidpointRounding.AwayFromZero);
-        var insidePaidOut = decimal.Round(
-            inputs.Expenses
-                .Where(e => e.PaidFrom == EventExpensePaymentSource.InsideTill)
-                .Sum(e => e.Amount),
-            2,
-            MidpointRounding.AwayFromZero);
-        var outsidePaidOut = decimal.Round(
-            inputs.Expenses
-                .Where(e => e.PaidFrom == EventExpensePaymentSource.OutsideTin)
-                .Sum(e => e.Amount),
-            2,
-            MidpointRounding.AwayFromZero);
+        var totalCashPrizes = PitstopEodCalculator.TotalCashPrizes(inputs.Expenses);
+        var totalExpenses = PitstopEodCalculator.TotalExpenses(inputs.Expenses);
+        var insidePaidOut = PitstopEodCalculator.CashPaidOut(inputs.Expenses, EventExpensePaymentSource.InsideTill);
+        var outsidePaidOut = PitstopEodCalculator.CashPaidOut(inputs.Expenses, EventExpensePaymentSource.OutsideTin);
 
-        var insideExpected = decimal.Round(inputs.InsideFloat + pitCash - insidePaidOut, 2, MidpointRounding.AwayFromZero);
-        var outsideExpected = decimal.Round(inputs.OutsideFloat + outsideCash - outsidePaidOut, 2, MidpointRounding.AwayFromZero);
-        var insideVariance = inputs.CashCounted is decimal insideCounted
-            ? decimal.Round(insideCounted - insideExpected, 2, MidpointRounding.AwayFromZero)
-            : (decimal?)null;
-        var outsideVariance = inputs.OutsideCashCounted is decimal outsideCounted
-            ? decimal.Round(outsideCounted - outsideExpected, 2, MidpointRounding.AwayFromZero)
-            : (decimal?)null;
+        var insideExpected = PitstopEodCalculator.ExpectedCash(inputs.InsideFloat, pitCash, insidePaidOut);
+        var outsideExpected = PitstopEodCalculator.ExpectedCash(inputs.OutsideFloat, outsideCash, outsidePaidOut);
+        var insideVariance = PitstopEodCalculator.CashVariance(inputs.CashCounted, insideExpected);
+        var outsideVariance = PitstopEodCalculator.CashVariance(inputs.OutsideCashCounted, outsideExpected);
 
-        // A physical count is authoritative. Before a count is entered, show the sales-based
-        // estimate (cash sales less cash paid out); floats were never part of sales and must
-        // not be subtracted from that estimate.
-        var insideToBank = inputs.CashCounted is decimal insideCash
-            ? decimal.Round(insideCash - inputs.InsideFloat, 2, MidpointRounding.AwayFromZero)
-            : decimal.Round(pitCash - insidePaidOut, 2, MidpointRounding.AwayFromZero);
-        var outsideToBank = inputs.OutsideCashCounted is decimal outsideCashCount
-            ? decimal.Round(outsideCashCount - inputs.OutsideFloat, 2, MidpointRounding.AwayFromZero)
-            : decimal.Round(outsideCash - outsidePaidOut, 2, MidpointRounding.AwayFromZero);
-        var cashToDeposit = decimal.Round(insideToBank + outsideToBank, 2, MidpointRounding.AwayFromZero);
+        var insideToBank = PitstopEodCalculator.TillCashToBank(
+            inputs.CashCounted, inputs.InsideFloat, pitCash, insidePaidOut);
+        var outsideToBank = PitstopEodCalculator.TillCashToBank(
+            inputs.OutsideCashCounted, inputs.OutsideFloat, outsideCash, outsidePaidOut);
+        var cashToDeposit = PitstopEodCalculator.RoundMoney(insideToBank + outsideToBank);
         var totalCashVariance = insideVariance is null && outsideVariance is null
             ? (decimal?)null
-            : decimal.Round((insideVariance ?? 0m) + (outsideVariance ?? 0m), 2, MidpointRounding.AwayFromZero);
+            : PitstopEodCalculator.RoundMoney((insideVariance ?? 0m) + (outsideVariance ?? 0m));
 
         var tillReconciliations = new List<PitstopTillReconciliation>
         {
@@ -133,7 +112,7 @@ public sealed class PitstopReportService
                 TillKey = "inside",
                 TillLabel = "Inside till (ClubPOS / Terminal 0070)",
                 FloatIn = inputs.InsideFloat,
-                CashSales = decimal.Round(pitCash, 2, MidpointRounding.AwayFromZero),
+                CashSales = PitstopEodCalculator.RoundMoney(pitCash),
                 CashPaidOut = insidePaidOut,
                 Counted = inputs.CashCounted,
                 Expected = insideExpected,
@@ -146,7 +125,7 @@ public sealed class PitstopReportService
                 TillKey = "outside",
                 TillLabel = "Outside merch tin (paper sheet / Flounderers02)",
                 FloatIn = inputs.OutsideFloat,
-                CashSales = decimal.Round(outsideCash, 2, MidpointRounding.AwayFromZero),
+                CashSales = PitstopEodCalculator.RoundMoney(outsideCash),
                 CashPaidOut = outsidePaidOut,
                 Counted = inputs.OutsideCashCounted,
                 Expected = outsideExpected,
@@ -156,11 +135,17 @@ public sealed class PitstopReportService
             },
         };
 
-        var gross = decimal.Round(
-            pitCash + outsideCash + combinedSquare,
-            2,
-            MidpointRounding.AwayFromZero);
-        var net = decimal.Round(gross - totalExpenses - fees, 2, MidpointRounding.AwayFromZero);
+        var totalCash = PitstopEodCalculator.TotalCashSales(pitCash, outsideCash);
+        var totalCardProduct = PitstopEodCalculator.TotalCardSales(pitCardBase, outsideCardSales);
+        var gross = PitstopEodCalculator.TotalSales(pitCash, pitCardBase, outsideItemSales);
+        var stockCostLines = BuildStockCostLines(inputs, lines);
+        var (knownStockCosts, hasUnknownStockCosts) = PitstopEodCalculator.KnownStockCosts(stockCostLines);
+        var net = PitstopEodCalculator.EstimatedProfit(
+            gross,
+            totalExpenses,
+            totalCashPrizes,
+            knownStockCosts,
+            fees);
 
         var periodCaption =
             $"{start.LocalDateTime:dddd d MMMM yyyy} → {end.LocalDateTime:dddd d MMMM yyyy} (end exclusive)";
@@ -249,7 +234,7 @@ public sealed class PitstopReportService
                 warnings.Add(
                     $"Manual Square mode — combined {combinedSquare:C2}, outside derived {outsideSquare:C2} "
                     + $"(combined minus POS card {pitCardCharged:C2}). Outside terminal not imported.");
-                if (combinedSquare < pitCardCharged - MismatchTolerance)
+                if (combinedSquare < pitCardCharged - PitstopEodCalculator.MismatchTolerance)
                 {
                     warnings.Add(
                         $"Manual Square total {combinedSquare:C2} is less than Pitstop terminal card {pitCardCharged:C2}.");
@@ -262,6 +247,18 @@ public sealed class PitstopReportService
             }
         }
 
+        if (outsideTenderMismatch)
+        {
+            warnings.Add(
+                $"Outside card sales {outsideCardSales:C2} are higher than outside item sales {outsideItemSales:C2}. Check quantities or the card total.");
+        }
+
+        if (outsideCardSurcharge > 0m)
+        {
+            warnings.Add(
+                $"Outside Square received {outsideSquare:C2} includes {outsideCardSurcharge:C2} customer card surcharge, which is not counted as merchandise sales.");
+        }
+
         return new PitstopReportData
         {
             EventName = inputs.EventName.Trim(),
@@ -269,11 +266,11 @@ public sealed class PitstopReportService
             StaffName = string.IsNullOrWhiteSpace(inputs.StaffName) ? null : inputs.StaffName.Trim(),
             InsideCashFromPos = 0m,
             InsideCardFromPos = 0m,
-            PitstopRetailCash = decimal.Round(pitCash, 2, MidpointRounding.AwayFromZero),
-            PitstopRetailCard = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero),
-            PitstopCardBaseProductTotal = decimal.Round(pitCardBase, 2, MidpointRounding.AwayFromZero),
-            PitstopCardSurchargeCollected = decimal.Round(pitCardSurcharge, 2, MidpointRounding.AwayFromZero),
-            InsidePosCardTotalForReconciliation = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero),
+            PitstopRetailCash = PitstopEodCalculator.RoundMoney(pitCash),
+            PitstopRetailCard = PitstopEodCalculator.RoundMoney(pitCardCharged),
+            PitstopCardBaseProductTotal = PitstopEodCalculator.RoundMoney(pitCardBase),
+            PitstopCardSurchargeCollected = PitstopEodCalculator.RoundMoney(pitCardSurcharge),
+            InsidePosCardTotalForReconciliation = PitstopEodCalculator.RoundMoney(pitCardCharged),
             CombinedSquareCardGross = combinedSquare,
             PosSquareGross = posSquare,
             OutsideSquareGross = outsideSquare,
@@ -289,15 +286,21 @@ public sealed class PitstopReportService
                 ? new List<SquareReconciliationPaymentRow>()
                 : square.UnmatchedSquarePayments.ToList(),
             SquareMissingLocalPayments = square.MissingLocalPayments.ToList(),
-            OutsideCardDerived = outsideSquare,
-            OutsideCardItemisedBase = decimal.Round(pitCardCharged, 2, MidpointRounding.AwayFromZero),
+            OutsideCardDerived = outsideCardSales,
+            OutsideCardItemisedBase = PitstopEodCalculator.RoundMoney(pitCardCharged),
             OutsideCardDifference = squareVsTerminalDiff,
-            OutsideCardMismatch = squareMismatch,
-            OutsideCashTotal = decimal.Round(outsideCash, 2, MidpointRounding.AwayFromZero),
+            OutsideCardMismatch = squareMismatch || outsideTenderMismatch,
+            OutsideCashTotal = PitstopEodCalculator.RoundMoney(outsideCash),
+            OutsideItemSalesTotal = outsideItemSales,
+            OutsideCardSales = outsideCardSales,
+            OutsideCardSurchargeCollected = outsideCardSurcharge,
             TotalCashGross = totalCash,
-            TotalCardGross = combinedSquare,
+            TotalCardGross = totalCardProduct,
             GrossSales = gross,
             TotalExpenses = totalExpenses,
+            TotalCashPrizes = totalCashPrizes,
+            KnownStockCosts = knownStockCosts,
+            HasUnknownStockCosts = hasUnknownStockCosts,
             EstimatedSquareFees = fees,
             CashToDeposit = cashToDeposit,
             TotalCashVariance = totalCashVariance,
@@ -326,5 +329,46 @@ public sealed class PitstopReportService
             TillReconciliations = tillReconciliations,
             IsTestReport = inputs.UseTestPosData,
         };
+    }
+
+    private static IEnumerable<StockCostLine> BuildStockCostLines(
+        PitstopReportInputs inputs,
+        IReadOnlyList<PitstopSaleLineReportRow> posLines)
+    {
+        foreach (var line in posLines.Where(l => l.ItemId > 0 && l.Quantity > 0))
+        {
+            yield return new StockCostLine(line.Quantity, LookupCost(inputs, line.ItemId));
+        }
+
+        foreach (var line in inputs.OutsideLines)
+        {
+            if (line.PitstopItemId is not > 0)
+            {
+                continue;
+            }
+
+            var qty = PitstopEodCalculator.SoldQuantity(line);
+            if (qty <= 0)
+            {
+                continue;
+            }
+
+            yield return new StockCostLine(qty, LookupCost(inputs, line.PitstopItemId.Value));
+        }
+
+        foreach (var prize in inputs.PrizeGiveaways.Where(p => p.Quantity > 0 && p.ItemId > 0))
+        {
+            yield return new StockCostLine(prize.Quantity, LookupCost(inputs, prize.ItemId));
+        }
+    }
+
+    private static decimal? LookupCost(PitstopReportInputs inputs, long itemId)
+    {
+        if (itemId <= 0)
+        {
+            return null;
+        }
+
+        return inputs.ItemUnitCosts.TryGetValue(itemId, out var cost) ? cost : null;
     }
 }

@@ -60,6 +60,28 @@ public sealed class SqlitePitstopEodBatchRepository : IPitstopEodBatchRepository
         return Task.FromResult(count);
     }
 
+    public Task<long?> GetLatestBatchIdForPeriodAsync(
+        DateTimeOffset periodStartLocal,
+        DateTimeOffset periodEndLocal,
+        CancellationToken cancellationToken = default)
+    {
+        using var conn = _factory.OpenConnection();
+        var periodStartIso = periodStartLocal.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
+        var periodEndIso = periodEndLocal.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
+        var id = conn.QuerySingleOrDefault<long?>(
+            new CommandDefinition(
+                """
+                SELECT Id FROM PitstopEodBatches
+                WHERE datetime(PeriodStartLocal) = datetime(@periodStartIso)
+                  AND datetime(PeriodEndLocal) = datetime(@periodEndIso)
+                ORDER BY Id DESC
+                LIMIT 1
+                """,
+                new { periodStartIso, periodEndIso },
+                cancellationToken: cancellationToken));
+        return Task.FromResult(id);
+    }
+
     public Task<int> GetNonPitstopSaleModeCountAsync(CancellationToken cancellationToken = default)
     {
         using var conn = _factory.OpenConnection();
@@ -99,14 +121,6 @@ public sealed class SqlitePitstopEodBatchRepository : IPitstopEodBatchRepository
                     new { periodStart, periodEnd },
                     transaction: tx,
                     cancellationToken: cancellationToken));
-
-            if (activeCount == 0)
-            {
-                tx.Rollback();
-                return Task.FromResult(
-                    PitstopEodArchiveResult.Fail(
-                        "There are no active Pitstop sales in this EOD period to archive. This period may already be archived."));
-            }
 
             var archivedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
             var reportJson = request.ReportData is null

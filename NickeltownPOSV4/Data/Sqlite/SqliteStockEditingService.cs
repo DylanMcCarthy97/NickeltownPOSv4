@@ -6,13 +6,20 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using NickeltownPOSV4.Models.Audit;
+using NickeltownPOSV4.Services;
 namespace NickeltownPOSV4.Data.Sqlite;
 
 public sealed class SqliteStockEditingService : IStockEditingService
 {
     private readonly SqliteConnectionFactory _factory;
+    private readonly IAuditLogService? _audit;
 
-    public SqliteStockEditingService(SqliteConnectionFactory factory) => _factory = factory;
+    public SqliteStockEditingService(SqliteConnectionFactory factory, IAuditLogService? audit = null)
+    {
+        _factory = factory;
+        _audit = audit;
+    }
 
     public Task<IReadOnlyList<StockCategoryRow>> GetStockCategoriesAsync(CancellationToken cancellationToken = default)
     {
@@ -654,11 +661,22 @@ public sealed class SqliteStockEditingService : IStockEditingService
     public Task PermanentlyDeleteStockItemAsync(long itemId, CancellationToken cancellationToken = default)
     {
         using var conn = _factory.OpenConnection();
-        conn.Execute(
+        var name = SqliteActivityAudit.LoadItemName(conn, tx: null, itemId, cancellationToken);
+        var n = conn.Execute(
             new CommandDefinition(
                 "DELETE FROM Items WHERE Id = @id",
                 new { id = itemId },
                 cancellationToken: cancellationToken));
+        if (n > 0)
+        {
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.StockManuallyAdjusted,
+                AuditEntityTypes.Stock,
+                itemId.ToString(CultureInfo.InvariantCulture),
+                amount: null,
+                ActivityLogText.StockItemDeleted(name));
+        }
         return Task.CompletedTask;
     }
 
@@ -805,6 +823,17 @@ public sealed class SqliteStockEditingService : IStockEditingService
         }
 
         tx.Commit();
+        if (delta != 0)
+        {
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.StockManuallyAdjusted,
+                AuditEntityTypes.Stock,
+                write.ItemId.ToString(CultureInfo.InvariantCulture),
+                amount: delta,
+                ActivityLogText.StockAdjusted(label, oldQty.Value, write.StockQty));
+        }
+
         return Task.CompletedTask;
     }
 
@@ -843,6 +872,14 @@ public sealed class SqliteStockEditingService : IStockEditingService
         InsertStockPurchaseCore(conn, tx, purchase, cancellationToken);
 
         tx.Commit();
+        var itemName = SqliteActivityAudit.LoadItemName(conn, tx: null, purchase.ItemId, CancellationToken.None);
+        SqliteActivityAudit.TryLog(
+            _audit,
+            AuditActions.StockManuallyAdjusted,
+            AuditEntityTypes.Stock,
+            purchase.ItemId.ToString(CultureInfo.InvariantCulture),
+            amount: purchase.TotalItems,
+            ActivityLogText.StockReceived(itemName, purchase.TotalItems));
         return Task.CompletedTask;
     }
 
@@ -915,6 +952,7 @@ public sealed class SqliteStockEditingService : IStockEditingService
                     cancellationToken: cancellationToken));
         }
 
+        var changed = 0;
         foreach (var (itemId, newQty) in counts)
         {
             var oldQty = conn.QuerySingleOrDefault<int?>(
@@ -944,6 +982,7 @@ public sealed class SqliteStockEditingService : IStockEditingService
 
             if (delta != 0)
             {
+                changed++;
                 conn.Execute(
                     new CommandDefinition(
                         """
@@ -957,6 +996,17 @@ public sealed class SqliteStockEditingService : IStockEditingService
         }
 
         tx.Commit();
+        if (changed > 0)
+        {
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.StockManuallyAdjusted,
+                AuditEntityTypes.Stock,
+                entityId: null,
+                amount: changed,
+                ActivityLogText.StockCounted(changed));
+        }
+
         return Task.CompletedTask;
     }
 

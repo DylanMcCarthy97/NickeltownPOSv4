@@ -110,7 +110,7 @@
 
             Command="{Binding UndoLastCommand}"
 
-            Content="Undo last"
+            Content="Undo Last Transaction"
 
             FontSize="15"
 

@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Tabs;
 
 namespace NickeltownPOSV4.ViewModels;
 
@@ -205,7 +206,7 @@ public sealed class NewTabPanelViewModel : ObservableViewModel
             }
 
             _undo.PushUndo(
-                "Undo new tab (soft-remove)",
+                TabUndoPreview.ForTabAction("New tab", "Created " + label, "Undo new tab (soft-remove)"),
                 async () =>
                 {
                     if (string.IsNullOrEmpty(r.CreatedLegacyId))

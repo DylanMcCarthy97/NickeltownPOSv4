@@ -13,6 +13,14 @@ public static class AuditActions
     public const string TabFundsUndone = "tab.funds_undone";
     public const string TabFundsUndoneSquareWarning = "tab.funds_undone_square_warning";
 
+    // Tab lifecycle / drink undo
+    public const string TabPurchaseUndone = "tab.purchase_undone";
+    public const string TabArchived = "tab.archived";
+    public const string TabRestored = "tab.restored";
+    public const string TabRemoved = "tab.removed";
+    public const string TabErased = "tab.erased";
+    public const string TabClosed = "tab.closed";
+
     // Payment pipeline (Pitstop / Square)
     public const string PaymentStarted = "payment.started";
     public const string PaymentSent = "payment.sent";
@@ -49,6 +57,13 @@ public static class AuditActions
     // Membership
     public const string MembershipSettingsUpdated = "membership.settings_updated";
 
+    // Complimentary / free member items
+    public const string ComplimentaryItemRecorded = "complimentary.item_recorded";
+    public const string ComplimentaryItemUndone = "complimentary.item_undone";
+    public const string QuickFreeItemAdded = "complimentary.config_added";
+    public const string QuickFreeItemRemoved = "complimentary.config_removed";
+    public const string QuickFreeItemConfigChanged = "complimentary.config_changed";
+
     // Permissions
     public const string PermissionDenied = "permission.denied";
 }
@@ -65,6 +80,8 @@ public static class AuditEntityTypes
     public const string MembershipSettings = "MembershipSettings";
     public const string MembershipApplication = "MembershipApplication";
     public const string MembershipMember = "MembershipMember";
+    public const string ComplimentaryItem = "ComplimentaryItem";
+    public const string QuickFreeItemConfig = "QuickFreeItemConfig";
 }
 
 public sealed class AuditLogEntryRequest

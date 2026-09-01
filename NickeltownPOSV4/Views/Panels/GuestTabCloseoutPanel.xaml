@@ -10,6 +10,7 @@
     mc:Ignorable="d">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:BoolNegateConverter x:Key="BoolNeg" />
         <Style x:Key="GuestCloseoutCashStyle" TargetType="Button" BasedOn="{StaticResource TabsHeaderActionButtonStyle}">
             <Setter Property="MinHeight" Value="56" />
             <Setter Property="Padding" Value="14,12" />
@@ -255,6 +256,7 @@
                     <Button
                         Command="{Binding ConfirmCashCommand}"
                         Content="Record cash payment"
+                        IsEnabled="{Binding CashConfirmEnabled, Mode=OneWay}"
                         Style="{StaticResource GuestCloseoutPrimaryActionStyle}" />
                     <TextBlock
                         FontSize="12"
@@ -327,6 +329,7 @@
                     <Button
                         Command="{Binding ConfirmCardCommand}"
                         Content="Charge card on Square"
+                        IsEnabled="{Binding IsPaymentProcessing, Converter={StaticResource BoolNeg}, Mode=OneWay}"
                         Style="{StaticResource GuestCloseoutCardStyle}" />
                     <TextBlock
                         FontSize="12"

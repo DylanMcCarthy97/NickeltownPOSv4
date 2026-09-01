@@ -8,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using NickeltownPOSV4.Models;
+using NickeltownPOSV4.Models.Audit;
+using NickeltownPOSV4.Services;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -18,8 +20,15 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private readonly SqliteConnectionFactory _factory;
+    private readonly IAuditLogService? _audit;
 
-    public SqliteTabManagementRepository(SqliteConnectionFactory factory) => _factory = factory;
+    public SqliteTabManagementRepository(
+        SqliteConnectionFactory factory,
+        IAuditLogService? audit = null)
+    {
+        _factory = factory;
+        _audit = audit;
+    }
 
     public Task<bool> ExistsOpenTabDisplayNameAsync(
         string displayName,
@@ -387,6 +396,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         try
         {
             using var conn = _factory.OpenConnection();
+            var label = SqliteActivityAudit.LoadTabLabelByRoute(conn, tx: null, routeLegacy, routePk, cancellationToken);
             var n = conn.Execute(
                 new CommandDefinition(
                     """
@@ -403,7 +413,19 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
                     """,
                     new { RouteLegacy = routeLegacy, RoutePk = routePk, A = archived ? 1 : 0, LastActivityAt = stamp },
                     cancellationToken: cancellationToken));
-            return Task.FromResult(n == 0 ? TabMutationResult.Fail("Tab was not found.") : TabMutationResult.Success(legacyId));
+            if (n == 0)
+            {
+                return Task.FromResult(TabMutationResult.Fail("Tab was not found."));
+            }
+
+            SqliteActivityAudit.TryLog(
+                _audit,
+                archived ? AuditActions.TabArchived : AuditActions.TabRestored,
+                AuditEntityTypes.Tab,
+                legacyId,
+                amount: null,
+                archived ? ActivityLogText.ArchivedTab(label) : ActivityLogText.ReopenedTab(label));
+            return Task.FromResult(TabMutationResult.Success(legacyId));
         }
         catch (Exception ex)
         {
@@ -427,6 +449,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         try
         {
             using var conn = _factory.OpenConnection();
+            var label = SqliteActivityAudit.LoadTabLabelByRoute(conn, tx: null, routeLegacy, routePk, cancellationToken);
             var n = conn.Execute(
                 new CommandDefinition(
                     """
@@ -440,7 +463,19 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
                     """,
                     new { RouteLegacy = routeLegacy, RoutePk = routePk, LastActivityAt = stamp },
                     cancellationToken: cancellationToken));
-            return Task.FromResult(n == 0 ? TabMutationResult.Fail("Tab was not found.") : TabMutationResult.Success(legacyId));
+            if (n == 0)
+            {
+                return Task.FromResult(TabMutationResult.Fail("Tab was not found."));
+            }
+
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabRemoved,
+                AuditEntityTypes.Tab,
+                legacyId,
+                amount: null,
+                ActivityLogText.RemovedTab(label));
+            return Task.FromResult(TabMutationResult.Success(legacyId));
         }
         catch (Exception ex)
         {
@@ -464,6 +499,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         try
         {
             using var conn = _factory.OpenConnection();
+            var label = SqliteActivityAudit.LoadTabLabelByRoute(conn, tx: null, routeLegacy, routePk, cancellationToken);
             var n = conn.Execute(
                 new CommandDefinition(
                     """
@@ -476,10 +512,19 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
                     """,
                     new { RouteLegacy = routeLegacy, RoutePk = routePk, LastActivityAt = stamp },
                     cancellationToken: cancellationToken));
-            return Task.FromResult(
-                n == 0
-                    ? TabMutationResult.Fail("Tab was not found or was not removed.")
-                    : TabMutationResult.Success(legacyId));
+            if (n == 0)
+            {
+                return Task.FromResult(TabMutationResult.Fail("Tab was not found or was not removed."));
+            }
+
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabRestored,
+                AuditEntityTypes.Tab,
+                legacyId,
+                amount: null,
+                ActivityLogText.RestoredTab(label));
+            return Task.FromResult(TabMutationResult.Success(legacyId));
         }
         catch (Exception ex)
         {
@@ -502,6 +547,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         try
         {
             using var conn = _factory.OpenConnection();
+            var label = SqliteActivityAudit.LoadTabLabelByRoute(conn, tx: null, routeLegacy, routePk, cancellationToken);
             var n = conn.Execute(
                 new CommandDefinition(
                     """
@@ -510,7 +556,19 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
                     """,
                     new { RouteLegacy = routeLegacy, RoutePk = routePk },
                     cancellationToken: cancellationToken));
-            return Task.FromResult(n == 0 ? TabMutationResult.Fail("Tab was not found.") : TabMutationResult.Success());
+            if (n == 0)
+            {
+                return Task.FromResult(TabMutationResult.Fail("Tab was not found."));
+            }
+
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabErased,
+                AuditEntityTypes.Tab,
+                legacyId,
+                amount: null,
+                ActivityLogText.ErasedTab(label));
+            return Task.FromResult(TabMutationResult.Success());
         }
         catch (Exception ex)
         {
@@ -669,7 +727,19 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
                     """,
                     new { Ids = ids, LastActivityAt = stamp },
                     cancellationToken: cancellationToken));
-            return Task.FromResult(n == 0 ? TabMutationResult.Fail("No matching open guest tabs were archived.") : TabMutationResult.Success());
+            if (n == 0)
+            {
+                return Task.FromResult(TabMutationResult.Fail("No matching open guest tabs were archived."));
+            }
+
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabArchived,
+                AuditEntityTypes.Tab,
+                entityId: null,
+                amount: null,
+                ActivityLogText.ArchivedGuestTabs(n));
+            return Task.FromResult(TabMutationResult.Success());
         }
         catch (Exception ex)
         {
@@ -696,6 +766,17 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
                     """,
                     new { LastActivityAt = stamp },
                     cancellationToken: cancellationToken));
+            if (n > 0)
+            {
+                SqliteActivityAudit.TryLog(
+                    _audit,
+                    AuditActions.TabArchived,
+                    AuditEntityTypes.Tab,
+                    entityId: null,
+                    amount: null,
+                    ActivityLogText.ArchivedGuestTabs(n));
+            }
+
             return Task.FromResult(TabMutationResult.Success());
         }
         catch (Exception ex)
@@ -762,10 +843,27 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
                         cancellationToken: cancellationToken));
             }
 
-            return Task.FromResult(
-                n == 0
-                    ? TabMutationResult.Fail(onlyZeroBalance ? "No zero-balance guest tabs to close." : "No matching open guest tabs were closed.")
-                    : TabMutationResult.Success());
+            if (n == 0)
+            {
+                return Task.FromResult(TabMutationResult.Fail(
+                    onlyZeroBalance ? "No zero-balance guest tabs to close." : "No matching open guest tabs were closed."));
+            }
+
+            string? singleName = null;
+            if (n == 1 && !onlyZeroBalance && legacyIds.Length == 1
+                && TabBoardRoute.TryParse(legacyIds[0], out var oneLegacy, out var onePk))
+            {
+                singleName = SqliteActivityAudit.LoadTabLabelByRoute(conn, tx: null, oneLegacy, onePk, cancellationToken);
+            }
+
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabClosed,
+                AuditEntityTypes.Tab,
+                n == 1 && legacyIds.Length == 1 ? legacyIds[0] : null,
+                amount: null,
+                ActivityLogText.ClosedGuestTabs(n, singleName));
+            return Task.FromResult(TabMutationResult.Success());
         }
         catch (Exception ex)
         {

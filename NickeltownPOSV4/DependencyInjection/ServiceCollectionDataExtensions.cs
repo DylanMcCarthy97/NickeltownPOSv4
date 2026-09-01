@@ -30,6 +30,7 @@ internal static class ServiceCollectionDataExtensions
         services.AddSingleton<ISquareRecoveryRepository, SqliteSquareRecoveryRepository>();
         services.AddSingleton<IAuditLogRepository, SqliteAuditLogRepository>();
         services.AddSingleton<IAuditLogService, AuditLogService>();
+        services.AddSingleton<IComplimentaryItemRepository, SqliteComplimentaryItemRepository>();
         services.AddSingleton<GoogleDriveBackupUploader>();
         services.AddSingleton<ScheduledMaintenanceService>();
         services.AddSingleton<PosCatalogAutoRefreshService>();

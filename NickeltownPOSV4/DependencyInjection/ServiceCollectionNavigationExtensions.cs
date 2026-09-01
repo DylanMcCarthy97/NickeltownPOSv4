@@ -50,8 +50,12 @@ internal static class ServiceCollectionNavigationExtensions
         services.AddTransient<SquareRecoveryPage>();
         services.AddTransient<SystemCheckViewModel>();
         services.AddTransient<SystemCheckPage>();
+        services.AddTransient<ActivityLogViewModel>();
+        services.AddTransient<ActivityLogPage>();
         services.AddTransient<VoidPitstopSaleViewModel>();
         services.AddTransient<VoidPitstopSalePage>();
+        services.AddTransient<FreeMemberItemsReportViewModel>();
+        services.AddTransient<FreeMemberItemsReportPage>();
         services.AddSingleton<IExportedFileLauncher, WindowsExportedFileLauncher>();
         services.AddSingleton<IReportPathProvider, LocalReportPathProvider>();
 

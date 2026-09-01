@@ -11,6 +11,7 @@ using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Payments;
 using NickeltownPOSV4.Services.Pitstop;
 using NickeltownPOSV4.Services.Settings;
+using NickeltownPOSV4.Services.Tabs;
 
 namespace NickeltownPOSV4.ViewModels;
 
@@ -33,6 +34,8 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
     private readonly ISquareCardPaymentOrchestrator _squarePayments;
     private readonly ISquareConfigService _squareConfig;
     private readonly PitstopCashNumpadHostViewModel _cashNumpad = new();
+    private readonly MoneyActionLock _moneyLock = new();
+    private string? _pendingCommitKey;
 
     private string _statusMessage = string.Empty;
     private bool _isBusy;
@@ -164,7 +167,9 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
     }
 
     public bool CashConfirmEnabled =>
-        _cashNumpad.TryPeekCurrency(out var received) && received >= _amountDue;
+        !IsPaymentProcessing
+        && _cashNumpad.TryPeekCurrency(out var received)
+        && received >= _amountDue;
 
     public bool CashShortWarning =>
         _cashNumpad.TryPeekCurrency(out var received) && received < _amountDue;
@@ -316,8 +321,14 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
     private async Task ConfirmCashAsync()
     {
+        if (!_moneyLock.TryBegin())
+        {
+            return;
+        }
+
         if (_step != CloseoutStep.Cash || !_cashNumpad.TryPeekCurrency(out var received))
         {
+            _moneyLock.End();
             return;
         }
 
@@ -325,14 +336,17 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         if (received < _amountDue)
         {
             StatusMessage = "Tendered is less than the amount due.";
+            _moneyLock.End();
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_session.TargetTabLegacyId))
         {
+            _moneyLock.End();
             return;
         }
 
+        _pendingCommitKey ??= Guid.NewGuid().ToString("N");
         IsBusy = true;
         StatusMessage = string.Empty;
         try
@@ -343,7 +357,8 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
                     "cash",
                     _amountDue,
                     "Guest closeout - cash payment",
-                    CancellationToken.None)
+                    CancellationToken.None,
+                    _pendingCommitKey)
                 .ConfigureAwait(true);
 
             if (!r.Ok)
@@ -352,19 +367,27 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
                 return;
             }
 
-            RegisterUndo(r.FundCommitBatchId);
+            _pendingCommitKey = null;
+            RegisterUndo(r.FundCommitBatchId, "Guest closeout", _amountDue);
             await FinishCloseoutAsync().ConfigureAwait(true);
         }
         finally
         {
             IsBusy = false;
+            _moneyLock.End();
         }
     }
 
     private async Task PayCreditReturnCashAsync()
     {
+        if (!_moneyLock.TryBegin())
+        {
+            return;
+        }
+
         if (_session.TargetTabBalance is not { } balance || balance <= 0m)
         {
+            _moneyLock.End();
             return;
         }
 
@@ -389,13 +412,15 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
             }
 
             var draw = decimal.Min(amt, balance);
+            _pendingCommitKey ??= Guid.NewGuid().ToString("N");
             var r = await _funds
                 .CommitFundMovementAsync(
                     _session.TargetTabLegacyId!,
                     "manual",
                     -draw,
                     "Guest closeout - settle tab credit",
-                    CancellationToken.None)
+                    CancellationToken.None,
+                    _pendingCommitKey)
                 .ConfigureAwait(true);
 
             if (!r.Ok)
@@ -404,19 +429,27 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
                 return;
             }
 
-            RegisterUndo(r.FundCommitBatchId);
+            _pendingCommitKey = null;
+            RegisterUndo(r.FundCommitBatchId, "Guest closeout", draw);
             await FinishCloseoutAsync().ConfigureAwait(true);
         }
         finally
         {
             IsBusy = false;
+            _moneyLock.End();
         }
     }
 
     private async Task ConfirmCardAsync()
     {
+        if (!_moneyLock.TryBegin())
+        {
+            return;
+        }
+
         if (_step != CloseoutStep.CardConfirm || _session.TargetTabBalance is not { } balance || balance >= 0m)
         {
+            _moneyLock.End();
             return;
         }
 
@@ -495,7 +528,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
                     return;
                 }
 
-                RegisterUndo(squareResult.FundCommitBatchId);
+                RegisterUndo(squareResult.FundCommitBatchId, "Square Card", amount);
             }
 
             await FinishCloseoutAsync().ConfigureAwait(true);
@@ -503,10 +536,11 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         finally
         {
             IsBusy = false;
+            _moneyLock.End();
         }
     }
 
-    private void RegisterUndo(string? batchId)
+    private void RegisterUndo(string? batchId, string headline, decimal amount)
     {
         if (string.IsNullOrEmpty(batchId) || string.IsNullOrWhiteSpace(_session.TargetTabLegacyId))
         {
@@ -516,7 +550,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         var tabLegacy = _session.TargetTabLegacyId!;
         var label = TargetTabTitle;
         _undo.PushUndo(
-            "Undo guest closeout (" + label + ")",
+            TabUndoPreview.ForFunds(headline, amount, label),
             async () =>
             {
                 var rev = await _funds
@@ -638,6 +672,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         OnPropertyChanged(nameof(IsPaymentProcessing));
         OnPropertyChanged(nameof(ShowCardPayment));
         OnPropertyChanged(nameof(ShowPaymentButtons));
+        OnPropertyChanged(nameof(CashConfirmEnabled));
         PayCashCommand.NotifyCanExecuteChanged();
         PayCardCommand.NotifyCanExecuteChanged();
         ConfirmCashCommand.NotifyCanExecuteChanged();

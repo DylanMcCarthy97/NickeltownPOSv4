@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="NickeltownPOSV4.Views.Settings.QuickFreeItemsConfigPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:NickeltownPOSV4.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:data="using:NickeltownPOSV4.Data.Sqlite"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:settings="using:NickeltownPOSV4.ViewModels.Settings"
+    mc:Ignorable="d"
+    Background="{StaticResource PosCanvasBrush}"
+    NavigationCacheMode="Disabled">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Padding="14,12,14,12" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource SettingsPageHeroStyle}">
+            <Grid ColumnSpacing="14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Grid.Column="0"
+                    Width="52"
+                    Height="52"
+                    Background="{StaticResource SettingsHeroAccentBrush}"
+                    CornerRadius="14">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="24"
+                        Foreground="#FFFFFFFF"
+                        Glyph="&#xE8B0;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Quick Free Items" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        Style="{StaticResource SettingsHeroSubtitleStyle}"
+                        Text="Choose which existing stock products appear as one-tap free member items on the Member Tabs screen. This does not create copies or change Pitstop prices."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource SettingsCardStyle}">
+            <StackPanel Spacing="10">
+                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ADD FREE ITEM" />
+                <Button Command="{Binding SearchProductCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                    <TextBlock Text="{Binding ProductSearchSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                </Button>
+                <ListView
+                    MaxHeight="240"
+                    IsItemClickEnabled="True"
+                    ItemClick="OnCandidateClick"
+                    ItemsSource="{Binding CandidateSuggestions, Mode=OneWay}"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    SelectionMode="Single"
+                    Visibility="{Binding HasSuggestions, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="MinHeight" Value="44" />
+                            <Setter Property="Padding" Value="8,6" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="data:QuickFreeProductCandidate">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{x:Bind Name}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <Button
+                    MinHeight="48"
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding AddCommand}"
+                    Content="Add free item"
+                    Style="{StaticResource SettingsPrimaryButtonStyle}" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource SettingsCardStyle}">
+            <Grid RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CONFIGURED BUTTONS" />
+                <ListView
+                    Grid.Row="1"
+                    IsItemClickEnabled="False"
+                    ItemsSource="{Binding ConfiguredItems, Mode=OneWay}"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollMode="Enabled"
+                    SelectionMode="None">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0,4" />
+                            <Setter Property="MinHeight" Value="0" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="settings:QuickFreeConfigItemViewModel">
+                            <Grid Padding="0,6" ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="{x:Bind ProductLine, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                    <Button
+                                        MinHeight="40"
+                                        MinWidth="44"
+                                        Command="{x:Bind MoveUpCommand}"
+                                        CommandParameter="{x:Bind}"
+                                        Content="↑" />
+                                    <Button
+                                        MinHeight="40"
+                                        MinWidth="44"
+                                        Command="{x:Bind MoveDownCommand}"
+                                        CommandParameter="{x:Bind}"
+                                        Content="↓" />
+                                </StackPanel>
+                                <Button
+                                    Grid.Column="2"
+                                    Command="{x:Bind RemoveCommand}"
+                                    CommandParameter="{x:Bind}"
+                                    Content="Remove"
+                                    Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="3" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button
+                Grid.Column="0"
+                Command="{Binding BackToSettingsCommand}"
+                Content="Back to settings"
+                Style="{StaticResource SettingsSecondaryButtonStyle}" />
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{StaticResource PosTextSecondaryBrush}"
+                Text="{Binding StatusMessage, Mode=OneWay}"
+                TextWrapping="WrapWholeWords" />
+        </Grid>
+    </Grid>
+</Page>

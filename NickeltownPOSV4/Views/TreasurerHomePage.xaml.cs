@@ -148,8 +148,22 @@ public sealed partial class TreasurerHomePage : Page
         _ => "Unmatched",
     };
 
+    private readonly MoneyActionLock _addTransactionLock = new();
+
     private async void AddTransaction_Click(object sender, RoutedEventArgs e)
     {
+        if (!_addTransactionLock.TryBegin())
+        {
+            return;
+        }
+
+        if (AddTransactionButton is not null)
+        {
+            AddTransactionButton.IsEnabled = false;
+        }
+
+        try
+        {
         var amountBox = new TextBox { PlaceholderText = "Amount" };
         var descBox = new TextBox { PlaceholderText = "Description" };
         var typeBox = new ComboBox
@@ -194,6 +208,16 @@ public sealed partial class TreasurerHomePage : Page
         };
         TreasurerService.AddTransaction(tx, _session.DisplayName ?? "Treasurer");
         RefreshAll();
+        }
+        finally
+        {
+            if (AddTransactionButton is not null)
+            {
+                AddTransactionButton.IsEnabled = true;
+            }
+
+            _addTransactionLock.End();
+        }
     }
 
     private void RefreshTransactions_Click(object sender, RoutedEventArgs e) => LoadTransactions();

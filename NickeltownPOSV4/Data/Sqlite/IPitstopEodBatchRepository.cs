@@ -15,6 +15,11 @@ public interface IPitstopEodBatchRepository
         DateTimeOffset periodEndLocal,
         CancellationToken cancellationToken = default);
 
+    Task<long?> GetLatestBatchIdForPeriodAsync(
+        DateTimeOffset periodStartLocal,
+        DateTimeOffset periodEndLocal,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Counts rows in PitstopSales whose SaleMode is set to something other than 'pitstop'
     /// (e.g. an explicit 'tab' or other non-Pitstop tag). Used by System Check to verify that

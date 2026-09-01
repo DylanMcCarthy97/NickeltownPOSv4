@@ -64,9 +64,9 @@
         <Border Grid.Row="2" Style="{StaticResource SettingsCardStyle}">
             <StackPanel Spacing="12">
                 <TextBlock Text="Update feed (folder, https://, or UNC)" />
-                <TextBox
-                    PlaceholderText="https://your-server/pos-updates  or  \\server\share\pos-updates"
-                    Text="{Binding FeedBaseUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Command="{Binding EditFeedUrlCommand}" Style="{StaticResource SettingsTapFieldStyle}">
+                    <TextBlock Text="{Binding FeedBaseUrlSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                </Button>
                 <CheckBox Content="Check for a new build when the app starts" IsChecked="{Binding CheckOnStartup, Mode=TwoWay}" />
                 <CheckBox Content="Fit it without asking (kiosk mode)" IsChecked="{Binding AutoInstall, Mode=TwoWay}" />
                 <TextBlock

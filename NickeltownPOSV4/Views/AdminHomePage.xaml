@@ -31,7 +31,7 @@
         <controls:PosPageHero
             Grid.Row="0"
             IconGlyph="&#xE90F;"
-            Subtitle="Backups, peripherals, users, and store configuration. PDF reports are under Reports."
+            Subtitle="Backups, peripherals, users, activity, and store configuration. PDF reports are under Reports."
             Title="Admin" />
 
         <Border
@@ -455,7 +455,6 @@
             <Button
                 Grid.Row="3"
                 Grid.Column="0"
-                Grid.ColumnSpan="2"
                 AutomationProperties.Name="Pit updates"
                 Command="{Binding AppUpdatesCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
@@ -474,6 +473,56 @@
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
                         Text="Check the feed, fit the new build, auto restart"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="3"
+                Grid.Column="1"
+                AutomationProperties.Name="Activity Log"
+                Command="{Binding ActivityLogCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE81C;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Activity Log" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Who undid, adjusted, closed, or changed stock"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="3"
+                Grid.Column="3"
+                AutomationProperties.Name="Quick Free Items"
+                Command="{Binding QuickFreeItemsCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="26"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8B0;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Quick Free Items" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Water, Pop Top and other complimentary buttons"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>

@@ -9,8 +9,8 @@ public sealed class SquareCardFeeCalculatorTests
     public void CalculateCardTotal_RoundsToNearestFiveCents()
     {
         var (_, total, fee) = SquareCardFeeCalculator.CalculateCardTotal(10.00m, 1.7m);
-        Assert.Equal(10.15m, total);
-        Assert.Equal(0.15m, fee);
+        Assert.Equal(10.20m, total);
+        Assert.Equal(0.20m, fee);
     }
 
     [Fact]

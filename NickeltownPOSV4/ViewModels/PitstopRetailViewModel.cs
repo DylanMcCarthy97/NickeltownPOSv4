@@ -549,8 +549,13 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         && received >= _cashSaleTotal;
 
     public bool CashConfirmEnabled =>
-        _cashNumpad.TryPeekCurrency(out var received)
+        !IsPaymentLocked
+        && _cashNumpad.TryPeekCurrency(out var received)
         && PitstopCashPaymentHelper.IsConfirmEnabled(received, _cashSaleTotal, IsCashSheetOpen);
+
+    public bool PayButtonEnabled => CanStartPayment();
+
+    public bool ChargeCardEnabled => CanConfirmCardFee();
 
     public bool CashShortWarning =>
         _cashNumpad.TryPeekCurrency(out var received)
@@ -722,6 +727,8 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         OnPropertyChanged(nameof(CashChangeSummaryCaption));
         OnPropertyChanged(nameof(CashConfirmEnabled));
         OnPropertyChanged(nameof(CashShortWarning));
+        OnPropertyChanged(nameof(PayButtonEnabled));
+        OnPropertyChanged(nameof(ChargeCardEnabled));
         DismissCashChangeCommand.NotifyCanExecuteChanged();
     }
 
@@ -745,6 +752,10 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         PrevProductPageCommand.NotifyCanExecuteChanged();
         NextProductPageCommand.NotifyCanExecuteChanged();
         RemoveSelectedCartItemCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(PayButtonEnabled));
+        OnPropertyChanged(nameof(ChargeCardEnabled));
+        OnPropertyChanged(nameof(CashConfirmEnabled));
+        OnPropertyChanged(nameof(IsPaymentLocked));
     }
 
     private bool CanStartPayment() =>

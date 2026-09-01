@@ -137,6 +137,16 @@ namespace NickeltownPOSV4.Services.Treasurer
             lock (_transactionsLock)
             {
                 var list = LoadList<List<TreasurerTransaction>>(TransactionsPath) ?? new List<TreasurerTransaction>();
+                if (t.Id == Guid.Empty)
+                {
+                    t.Id = Guid.NewGuid();
+                }
+
+                if (list.Any(x => x.Id == t.Id))
+                {
+                    return;
+                }
+
                 list.Add(t);
                 SaveList(TransactionsPath, list);
             }

@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using NickeltownPOSV4.Models.Audit;
+using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.AddDrinks;
 using NickeltownPOSV4.Services.Stock;
 
@@ -16,13 +18,21 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
     public const string DrinkEntryType = "Drink";
 
     private readonly SqliteConnectionFactory _factory;
+    private readonly IAuditLogService? _audit;
 
-    public SqliteTabDrinkSalesService(SqliteConnectionFactory factory) => _factory = factory;
+    public SqliteTabDrinkSalesService(
+        SqliteConnectionFactory factory,
+        IAuditLogService? audit = null)
+    {
+        _factory = factory;
+        _audit = audit;
+    }
 
     public Task<TabDrinkCommitResult> CommitDrinkSaleAsync(
         string tabLegacyId,
         IReadOnlyList<TabDrinkSaleLine> lines,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? idempotencyKey = null)
     {
         if (string.IsNullOrWhiteSpace(tabLegacyId))
         {
@@ -71,7 +81,27 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
             }
 
             var tabPkValue = tabPk.Value;
-            var drinkCommitBatchId = Guid.NewGuid().ToString("N");
+            var hasClientKey = !string.IsNullOrWhiteSpace(idempotencyKey);
+            var drinkCommitBatchId = hasClientKey
+                ? idempotencyKey!.Trim()
+                : Guid.NewGuid().ToString("N");
+
+            if (hasClientKey)
+            {
+                var claim = MoneyIdempotencyStore.TryClaim(
+                    conn,
+                    tx,
+                    drinkCommitBatchId,
+                    MoneyIdempotencyStore.KindDrinkSale,
+                    cancellationToken);
+                if (claim.AlreadyExists)
+                {
+                    tx.Commit();
+                    return Task.FromResult(
+                        TabDrinkCommitResult.Success(claim.ResultRef ?? drinkCommitBatchId));
+                }
+            }
+
             var totalCharge = 0m;
             var stamp = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
 
@@ -214,8 +244,23 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                     tx,
                     cancellationToken: cancellationToken));
 
+            if (hasClientKey)
+            {
+                MoneyIdempotencyStore.SetResultRef(
+                    conn,
+                    tx,
+                    drinkCommitBatchId,
+                    drinkCommitBatchId,
+                    cancellationToken);
+            }
+
             tx.Commit();
             return Task.FromResult(TabDrinkCommitResult.Success(drinkCommitBatchId));
+        }
+        catch (Exception ex) when (SqliteConstraint.IsUniqueViolation(ex)
+            && !string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            return Task.FromResult(TabDrinkCommitResult.Success(idempotencyKey.Trim()));
         }
         catch (Exception ex)
         {
@@ -291,6 +336,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
             }
 
             var refund = 0m;
+            var undoneLines = new List<(string Name, int Quantity)>();
             foreach (var row in rows)
             {
                 refund += decimal.Round((decimal)row.Amount, 2, MidpointRounding.AwayFromZero);
@@ -323,6 +369,8 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                     return Task.FromResult(TabDrinkCommitResult.Fail("Stored drink line data is invalid; undo was cancelled."));
                 }
 
+                var itemLabel = string.IsNullOrWhiteSpace(payload.DisplayName) ? null : payload.DisplayName.Trim();
+
                 var itemRow = conn.QuerySingleOrDefault<ItemStockRow>(
                     new CommandDefinition(
                         """
@@ -331,7 +379,8 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                           COALESCE(TrackStock, 1) AS TrackStock,
                           COALESCE(OrderInMerchandise, 0) AS OrderInMerchandise,
                           COALESCE(NULLIF(TRIM(CatalogBucket), ''), 'Bar') AS CatalogBucket,
-                          COALESCE(NULLIF(TRIM(CatalogSubCategory), ''), 'Drinks') AS CatalogSubCategory
+                          COALESCE(NULLIF(TRIM(CatalogSubCategory), ''), 'Drinks') AS CatalogSubCategory,
+                          Name
                         FROM Items
                         WHERE Id = @id
                         """,
@@ -344,6 +393,13 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                     tx.Rollback();
                     return Task.FromResult(TabDrinkCommitResult.Fail($"Item id {payload.ItemId} no longer exists; undo was cancelled."));
                 }
+
+                if (string.IsNullOrWhiteSpace(itemLabel))
+                {
+                    itemLabel = string.IsNullOrWhiteSpace(itemRow.Name) ? "item" : itemRow.Name.Trim();
+                }
+
+                undoneLines.Add((itemLabel ?? "item", payload.Quantity));
 
                 var skipStockForSale = itemRow.OrderInMerchandise != 0
                     || itemRow.TrackStock == 0
@@ -403,6 +459,14 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                     cancellationToken: cancellationToken));
 
             tx.Commit();
+            var tabLabel = SqliteActivityAudit.LoadTabLabel(conn, tx: null, tabPkValue, CancellationToken.None);
+            SqliteActivityAudit.TryLog(
+                _audit,
+                AuditActions.TabPurchaseUndone,
+                AuditEntityTypes.Tab,
+                tabLegacyId,
+                refund,
+                ActivityLogText.UndidDrinks(undoneLines, tabLabel));
             return Task.FromResult(TabDrinkCommitResult.Success());
         }
         catch (Exception ex)
@@ -427,6 +491,8 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
         public long ItemId { get; set; }
 
         public int Quantity { get; set; }
+
+        public string? DisplayName { get; set; }
     }
 
     private sealed class ItemStockRow

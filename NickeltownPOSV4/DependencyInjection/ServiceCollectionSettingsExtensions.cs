@@ -36,6 +36,7 @@ internal static class ServiceCollectionSettingsExtensions
         services.AddTransient<ArchivedTabsViewModel>();
         services.AddTransient<ExportMonthlyViewModel>();
         services.AddTransient<UpdateConfigViewModel>();
+        services.AddTransient<QuickFreeItemsConfigViewModel>();
         services.AddTransient<BackupPage>();
         services.AddTransient<ComPortConfigPage>();
         services.AddTransient<EmailConfigPage>();
@@ -44,6 +45,7 @@ internal static class ServiceCollectionSettingsExtensions
         services.AddTransient<ArchivedTabsPage>();
         services.AddTransient<ExportMonthlyPage>();
         services.AddTransient<UpdateConfigPage>();
+        services.AddTransient<QuickFreeItemsConfigPage>();
 
         return services;
     }

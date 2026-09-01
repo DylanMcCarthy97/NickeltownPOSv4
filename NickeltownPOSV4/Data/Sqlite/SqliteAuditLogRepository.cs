@@ -54,21 +54,42 @@ public sealed class SqliteAuditLogRepository : IAuditLogRepository
         return Task.FromResult(id);
     }
 
-    public Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(int maxEntries, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(
+        int maxEntries,
+        IReadOnlyList<string>? actionTypes = null,
+        CancellationToken cancellationToken = default)
     {
         var limit = maxEntries <= 0 ? 200 : Math.Min(maxEntries, 2000);
         using var conn = _factory.OpenConnection();
+        var types = actionTypes?
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var sql = types is { Length: > 0 }
+            ? """
+              SELECT Id, OccurredAt, StaffId, StaffName, StaffRole,
+                     ActionType, EntityType, EntityId,
+                     Amount, Reason, Success, DetailsJson
+              FROM AuditLog
+              WHERE ActionType IN @types
+              ORDER BY datetime(OccurredAt) DESC, Id DESC
+              LIMIT @limit
+              """
+            : """
+              SELECT Id, OccurredAt, StaffId, StaffName, StaffRole,
+                     ActionType, EntityType, EntityId,
+                     Amount, Reason, Success, DetailsJson
+              FROM AuditLog
+              ORDER BY datetime(OccurredAt) DESC, Id DESC
+              LIMIT @limit
+              """;
+
         var rows = conn.Query<AuditLogDbRow>(
             new CommandDefinition(
-                """
-                SELECT Id, OccurredAt, StaffId, StaffName, StaffRole,
-                       ActionType, EntityType, EntityId,
-                       Amount, Reason, Success, DetailsJson
-                FROM AuditLog
-                ORDER BY datetime(OccurredAt) DESC, Id DESC
-                LIMIT @limit
-                """,
-                new { limit },
+                sql,
+                new { limit, types },
                 cancellationToken: cancellationToken));
 
         var list = rows.Select(MapRow).ToList();

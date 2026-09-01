@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -84,5 +85,14 @@ public sealed class AuditLogService : IAuditLogService
             Debug.WriteLine($"[AuditLogService] Failed to log {request.ActionType}: {ex.Message}");
             return 0L;
         }
+    }
+
+    public Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(
+        int maxEntries = 400,
+        bool staffFacingOnly = true,
+        CancellationToken cancellationToken = default)
+    {
+        var types = staffFacingOnly ? ActivityLogText.StaffFacingActionTypes : null;
+        return _repo.GetRecentAsync(maxEntries, types, cancellationToken);
     }
 }

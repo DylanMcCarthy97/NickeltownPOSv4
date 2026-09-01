@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Tabs;
 
 namespace NickeltownPOSV4.ViewModels;
 
@@ -23,7 +24,7 @@ public sealed class GuestCloseoutLineViewModel : ObservableViewModel
         BalanceText = FormatMoney(row.Balance);
         LastActivityText = row.LastActivityText;
         CreatedText = row.CreatedText;
-        RecordPaymentCommand = new AsyncRelayCommand(RecordPaymentAsync, () => Balance != 0m);
+        RecordPaymentCommand = new AsyncRelayCommand(RecordPaymentAsync, () => Balance != 0m && !_host.IsBusy);
         OpenDrinksCommand = new RelayCommand(() => _host.OpenDrinksForLine(this));
         SelectOnBoardCommand = new RelayCommand(() => _host.SelectLineOnBoard(this));
     }
@@ -89,6 +90,8 @@ public sealed class GuestCloseoutPanelViewModel : ObservableViewModel
     private string _statusMessage = string.Empty;
 
     private bool _isBusy;
+    private readonly MoneyActionLock _moneyLock = new();
+    private string? _pendingCommitKey;
 
     public GuestCloseoutPanelViewModel(
         ITabManagementRepository tabs,
@@ -174,6 +177,10 @@ public sealed class GuestCloseoutPanelViewModel : ObservableViewModel
             if (SetProperty(ref _isBusy, value))
             {
                 NotifyWorkCommands();
+                foreach (var line in Lines)
+                {
+                    line.RecordPaymentCommand.NotifyCanExecuteChanged();
+                }
             }
         }
     }
@@ -375,11 +382,18 @@ public sealed class GuestCloseoutPanelViewModel : ObservableViewModel
     /// <summary>Record cash collected (negative balance) or draw down tab credit (positive balance) during closeout.</summary>
     internal async Task RecordPaymentForLineAsync(GuestCloseoutLineViewModel line)
     {
-        if (IsBusy || line.Balance == 0m)
+        if (!_moneyLock.TryBegin())
         {
             return;
         }
 
+        if (IsBusy || line.Balance == 0m)
+        {
+            _moneyLock.End();
+            return;
+        }
+
+        _pendingCommitKey ??= Guid.NewGuid().ToString("N");
         IsBusy = true;
         StatusMessage = string.Empty;
         try
@@ -413,7 +427,8 @@ public sealed class GuestCloseoutPanelViewModel : ObservableViewModel
                         "cash",
                         amt,
                         "Guest closeout — cash payment",
-                        CancellationToken.None)
+                        CancellationToken.None,
+                        _pendingCommitKey)
                     .ConfigureAwait(true);
             }
             else
@@ -425,7 +440,8 @@ public sealed class GuestCloseoutPanelViewModel : ObservableViewModel
                         "manual",
                         -draw,
                         "Guest closeout — settle tab credit",
-                        CancellationToken.None)
+                        CancellationToken.None,
+                        _pendingCommitKey)
                     .ConfigureAwait(true);
             }
 
@@ -439,13 +455,15 @@ public sealed class GuestCloseoutPanelViewModel : ObservableViewModel
             var batchId = r.FundCommitBatchId;
 
             StatusMessage = "Payment recorded — balances updated.";
+            _pendingCommitKey = null;
             _refreshBus.RequestRefresh();
             await LoadAsync().ConfigureAwait(true);
 
             if (!string.IsNullOrEmpty(batchId))
             {
+                var previewAmount = line.Balance < 0m ? amt : decimal.Min(amt, line.Balance);
                 _undo.PushUndo(
-                    $"Undo last guest closeout ({line.DisplayName})",
+                    TabUndoPreview.ForFunds("Guest closeout", previewAmount, line.DisplayName),
                     async () =>
                     {
                         var rev = await _funds
@@ -465,6 +483,7 @@ public sealed class GuestCloseoutPanelViewModel : ObservableViewModel
         finally
         {
             IsBusy = false;
+            _moneyLock.End();
         }
     }
 }

@@ -16,6 +16,7 @@ using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Payments;
 using NickeltownPOSV4.Services.Pitstop;
 using NickeltownPOSV4.Services.Settings;
+using NickeltownPOSV4.Services.Tabs;
 using Windows.UI;
 
 namespace NickeltownPOSV4.ViewModels;
@@ -82,6 +83,8 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     private readonly IAuditLogService _audit;
     private readonly IWindowHandleProvider _windowHandle;
     private readonly IAuthenticationService _auth;
+    private readonly MoneyActionLock _moneyLock = new();
+    private string? _pendingFundCommitKey;
 
     private FundTypeTileModel? _selectedTile;
     private string _amountText = string.Empty;
@@ -167,9 +170,11 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             NotifyFooterHint();
             StatusMessage = string.Empty;
             SuccessBanner = null;
+            _pendingFundCommitKey = null;
             OnPropertyChanged(nameof(SupportsSignedAmount));
             OnPropertyChanged(nameof(AmountDisplay));
             ApplyCommand.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(CanApplyFunds));
             BeginAmountEntryCommand.NotifyCanExecuteChanged();
         }
     }
@@ -183,9 +188,11 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
         {
             if (SetProperty(ref _amountText, value))
             {
+                _pendingFundCommitKey = null;
                 OnPropertyChanged(nameof(AmountDisplay));
                 NotifyFooterHint();
                 ApplyCommand.NotifyCanExecuteChanged();
+                OnPropertyChanged(nameof(CanApplyFunds));
             }
         }
     }
@@ -266,6 +273,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
             OnPropertyChanged(nameof(CanEditFields));
             OnPropertyChanged(nameof(IsPaymentProcessing));
+            OnPropertyChanged(nameof(CanApplyFunds));
             BeginAmountEntryCommand.NotifyCanExecuteChanged();
             BeginNotesEntryCommand.NotifyCanExecuteChanged();
             ApplyCommand.NotifyCanExecuteChanged();
@@ -286,6 +294,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
             OnPropertyChanged(nameof(ShowSendingSquareOverlay));
             OnPropertyChanged(nameof(IsPaymentProcessing));
+            OnPropertyChanged(nameof(CanApplyFunds));
             CancelSquarePaymentCommand.NotifyCanExecuteChanged();
             CancelCommand.NotifyCanExecuteChanged();
             ApplyCommand.NotifyCanExecuteChanged();
@@ -305,6 +314,8 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     public IAsyncRelayCommand ApplyCommand { get; }
     public IAsyncRelayCommand BeginAmountEntryCommand { get; }
     public IAsyncRelayCommand BeginNotesEntryCommand { get; }
+
+    public bool CanApplyFunds => CanApply();
 
     private void RefreshHeader()
     {
@@ -384,17 +395,25 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
     private async Task ApplyAsync()
     {
+        if (!_moneyLock.TryBegin())
+        {
+            return;
+        }
+
         if (_selectedTile is null || !TryParseAmount(AmountText, SupportsSignedAmount, out var amount))
         {
+            _moneyLock.End();
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_session.TargetTabLegacyId))
         {
             StatusMessage = "Select a tab on the board before adding funds.";
+            _moneyLock.End();
             return;
         }
 
+        _pendingFundCommitKey ??= Guid.NewGuid().ToString("N");
         IsBusy = true;
         StatusMessage = string.Empty;
         SuccessBanner = null;
@@ -426,7 +445,6 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                     checkout.ChargeTotal,
                     checkout.CardFee);
                 IsSendingSquare = true;
-                IsBusy = true;
                 DisposeSquareChargeCts();
                 _squareChargeCts = new CancellationTokenSource();
                 SquareCardPaymentOutcome cardOutcome;
@@ -439,7 +457,6 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                 finally
                 {
                     IsSendingSquare = false;
-                    IsBusy = false;
                     DisposeSquareChargeCts();
                 }
 
@@ -451,6 +468,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
                 if (cardOutcome.AlreadyRecorded)
                 {
+                    _pendingFundCommitKey = null;
                     SuccessBanner = $"Recorded: {FormatMoney(amount)} card for {TargetTabTitle}.";
                     _refreshBus.RequestRefresh();
                     _slide.Close();
@@ -491,6 +509,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                 await Task.Delay(480).ConfigureAwait(true);
                 SuccessBanner = null;
 
+                _pendingFundCommitKey = null;
                 _refreshBus.RequestRefresh();
                 _slide.Close();
                 _session.Clear();
@@ -498,8 +517,9 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                 if (!string.IsNullOrEmpty(sqBatchId))
                 {
                     var sqAmount = amount;
+                    var sqTabName = tabName;
                     _undo.PushUndo(
-                        $"Undo Square card ({sqTileLabel}) - POS only, no Square refund",
+                        TabUndoPreview.ForFunds(sqTileLabel, sqAmount, sqTabName),
                         () => RunSquareTopUpUndoAsync(sqTabLegacy, sqBatchId!, sqAmount));
                 }
 
@@ -507,7 +527,13 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             }
 
             var result = await _funds
-                .CommitFundMovementAsync(_session.TargetTabLegacyId!, _selectedTile.Key, amount, Notes, CancellationToken.None)
+                .CommitFundMovementAsync(
+                    _session.TargetTabLegacyId!,
+                    _selectedTile.Key,
+                    amount,
+                    Notes,
+                    CancellationToken.None,
+                    _pendingFundCommitKey)
                 .ConfigureAwait(true);
 
             if (!result.Ok)
@@ -519,11 +545,15 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             var tabLegacy = _session.TargetTabLegacyId!;
             var batchId = result.FundCommitBatchId;
             var tileLabel = _selectedTile.DisplayName;
+            var fundTabName = string.IsNullOrWhiteSpace(_session.TargetTabDisplayName)
+                ? tabLegacy
+                : _session.TargetTabDisplayName.Trim();
 
             SuccessBanner = $"Recorded: {FormatMoney(amount)} {_selectedTile.Key} for {TargetTabTitle}.";
             await Task.Delay(480).ConfigureAwait(true);
             SuccessBanner = null;
 
+            _pendingFundCommitKey = null;
             _refreshBus.RequestRefresh();
             _slide.Close();
             _session.Clear();
@@ -531,7 +561,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             if (!string.IsNullOrEmpty(batchId))
             {
                 _undo.PushUndo(
-                    $"Undo last funds ({tileLabel})",
+                    TabUndoPreview.ForFunds(tileLabel, amount, fundTabName),
                     async () =>
                     {
                         var rev = await _funds
@@ -550,6 +580,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
         finally
         {
             IsBusy = false;
+            _moneyLock.End();
         }
     }
 
@@ -658,20 +689,6 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             }
 
             return false;
-        }
-
-        try
-        {
-            await _audit.LogAsync(
-                AuditActions.TabFundsUndone,
-                AuditEntityTypes.Tab,
-                entityId: tabLegacyId,
-                amount: amount,
-                reason: $"Square top-up reversed by {auth.DisplayName}: {reason.Trim()} - POS only, Square not refunded.").ConfigureAwait(true);
-        }
-        catch
-        {
-            // ignore audit failures
         }
 
         _refreshBus.RequestRefresh();

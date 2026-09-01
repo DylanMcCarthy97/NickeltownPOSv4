@@ -116,8 +116,20 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
 
                 if (dupSquare > 0)
                 {
-                    tx.Rollback();
-                    return PitstopSaleCommitResult.Fail("This card sale was already recorded.");
+                    var existing = conn.QuerySingleOrDefault<(long Id, string? SaleGuid)>(
+                        new CommandDefinition(
+                            """
+                            SELECT Id, SaleGuid FROM PitstopSales
+                            WHERE SquareExternalRef = @squareRef AND trim(COALESCE(SquareExternalRef,'')) != ''
+                            LIMIT 1
+                            """,
+                            new { squareRef = payment.SquareExternalRef.Trim() },
+                            tx,
+                            cancellationToken: cancellationToken));
+                    tx.Commit();
+                    return PitstopSaleCommitResult.Success(
+                        existing.Id,
+                        existing.SaleGuid ?? string.Empty);
                 }
             }
 
@@ -321,6 +333,41 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
             tx.Commit();
             savedSalePk = salePk;
             savedSaleGuid = saleGuid;
+        }
+        catch (Exception ex) when (SqliteConstraint.IsUniqueViolation(ex))
+        {
+            using var lookup = _factory.OpenConnection();
+            if (!string.IsNullOrEmpty(idempotencyKey))
+            {
+                var existingGuid = lookup.ExecuteScalar<string?>(
+                    "SELECT SaleGuid FROM PitstopSales WHERE IdempotencyKey = @key LIMIT 1",
+                    new { key = idempotencyKey });
+                if (!string.IsNullOrEmpty(existingGuid))
+                {
+                    var pk = lookup.ExecuteScalar<long?>(
+                        "SELECT Id FROM PitstopSales WHERE SaleGuid = @g LIMIT 1",
+                        new { g = existingGuid });
+                    return PitstopSaleCommitResult.Success(pk ?? 0, existingGuid);
+                }
+            }
+
+            var squareRef = payment.SquareExternalRef?.Trim();
+            if (!string.IsNullOrEmpty(squareRef))
+            {
+                var existing = lookup.QuerySingleOrDefault<(long Id, string? SaleGuid)>(
+                    """
+                    SELECT Id, SaleGuid FROM PitstopSales
+                    WHERE SquareExternalRef = @squareRef AND trim(COALESCE(SquareExternalRef,'')) != ''
+                    LIMIT 1
+                    """,
+                    new { squareRef });
+                if (existing.Id > 0)
+                {
+                    return PitstopSaleCommitResult.Success(existing.Id, existing.SaleGuid ?? string.Empty);
+                }
+            }
+
+            return PitstopSaleCommitResult.Success(0, idempotencyKey ?? string.Empty);
         }
         catch (Exception ex)
         {
@@ -628,7 +675,7 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
 
             var stamp = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
 
-            conn.Execute(
+            var voidedRows = conn.Execute(
                 new CommandDefinition(
                     """
                     UPDATE PitstopSales
@@ -636,9 +683,10 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                         VoidedAt = @stamp,
                         VoidedByStaffId = @staffId,
                         VoidedByStaffName = @staffName,
-                        VoidReason = @reason,
-                        UpdatedAt = datetime('now')
+                        VoidReason = @reason
                     WHERE Id = @id
+                      AND COALESCE(NULLIF(TRIM(Status), ''), 'Active') = 'Active'
+                      AND PitstopEodBatchId IS NULL
                     """,
                     new
                     {
@@ -650,6 +698,12 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                     },
                     tx,
                     cancellationToken: cancellationToken));
+
+            if (voidedRows == 0)
+            {
+                tx.Rollback();
+                return Task.FromResult(PitstopVoidSaleResult.Fail("That sale is already voided."));
+            }
 
             var stockRestored = false;
             if (head.StockWasDeducted != 0)

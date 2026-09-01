@@ -3,6 +3,7 @@ using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.TabFavorites;
 using NickeltownPOSV4.Services.Tabs;
+using NickeltownPOSV4.Services.Complimentary;
 using NickeltownPOSV4.ViewModels;
 using NickeltownPOSV4.Views.Panels;
 
@@ -29,6 +30,7 @@ internal static class ServiceCollectionTabExtensions
         services.AddSingleton<ITabEntryService, SqliteTabDrinkSalesService>();
         services.AddSingleton<ITabHistoryQuery, SqliteTabHistoryQuery>();
         services.AddSingleton<ITabWorkspaceUndoStack, TabWorkspaceUndoStack>();
+        services.AddSingleton<IComplimentaryItemService, ComplimentaryItemService>();
         services.AddSingleton<ITabManagementRepository, SqliteTabManagementRepository>();
         services.AddSingleton<IEditTabPanelHost, EditTabPanelHost>();
 

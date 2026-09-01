@@ -15,9 +15,12 @@ public sealed class ReportsHomeViewModel
         _navigation = navigation;
         OpenExportsCommand = new RelayCommand(() => _navigation.Navigate(typeof(ExportMonthlyPage)));
         OpenPitstopEndOfDayCommand = new RelayCommand(() => _navigation.Navigate(typeof(PitstopEndOfDayReportPage)));
+        OpenFreeMemberItemsCommand = new RelayCommand(() => _navigation.Navigate(typeof(FreeMemberItemsReportPage)));
     }
 
     public IRelayCommand OpenExportsCommand { get; }
 
     public IRelayCommand OpenPitstopEndOfDayCommand { get; }
+
+    public IRelayCommand OpenFreeMemberItemsCommand { get; }
 }

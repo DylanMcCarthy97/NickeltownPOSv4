@@ -63,6 +63,8 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
     private string _statusMessage = string.Empty;
 
     private bool _isBusy;
+    private readonly MoneyActionLock _moneyLock = new();
+    private string? _pendingDrinkCommitKey;
 
     private string _targetTabTitle = "No tab selected";
 
@@ -265,6 +267,7 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
         {
             if (SetProperty(ref _isBusy, value))
             {
+                OnPropertyChanged(nameof(CanAddToTab));
                 AddDrinkCommand.NotifyCanExecuteChanged();
                 AddToTabCommand.NotifyCanExecuteChanged();
                 ClearCartCommand.NotifyCanExecuteChanged();
@@ -889,12 +892,19 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
 
     private async Task CommitAsync()
     {
-        if (!CanCommit())
+        if (!_moneyLock.TryBegin())
         {
             return;
         }
 
+        if (!CanCommit())
+        {
+            _moneyLock.End();
+            return;
+        }
+
         var projectedAfterSale = ProjectedBalanceAfterCart;
+        _pendingDrinkCommitKey ??= Guid.NewGuid().ToString("N");
 
         IsBusy = true;
         StatusMessage = string.Empty;
@@ -902,7 +912,12 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
         {
             var lines = AddDrinksCartHelper.ToSaleLines(SelectedRows);
             var result = await _saleCommit
-                .CommitAsync(_session.TargetTabLegacyId!, lines, CancellationToken.None)
+                .CommitAsync(
+                    _session.TargetTabLegacyId!,
+                    lines,
+                    _session.TargetTabDisplayName,
+                    CancellationToken.None,
+                    _pendingDrinkCommitKey)
                 .ConfigureAwait(true);
 
             if (!result.Ok)
@@ -912,6 +927,7 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
             }
 
             SelectedRows.Clear();
+            _pendingDrinkCommitKey = null;
             TouchSelection();
             _workspaceNavigator.RequestClose();
             _session.Clear();
@@ -927,6 +943,8 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
         finally
         {
             IsBusy = false;
+            _moneyLock.End();
+            OnPropertyChanged(nameof(CanAddToTab));
             AddToTabCommand.NotifyCanExecuteChanged();
         }
     }

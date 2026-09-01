@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Tabs;
 
 namespace NickeltownPOSV4.ViewModels;
 
@@ -233,7 +234,7 @@ public sealed class ArchivedTabsPanelViewModel : ObservableViewModel
             }
 
             _undo.PushUndo(
-                $"Undo restore ({label})",
+                TabUndoPreview.ForTabAction("Restored tab", label, $"Undo restore ({label})"),
                 async () =>
                 {
                     var back = await _tabs.SetTabArchivedAsync(id, true).ConfigureAwait(true);

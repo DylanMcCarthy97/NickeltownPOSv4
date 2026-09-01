@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Tabs;
 
 namespace NickeltownPOSV4.Services.AddDrinks;
 
@@ -31,9 +32,13 @@ public sealed class AddDrinksSaleCommitService
     public async Task<AddDrinksCommitResult> CommitAsync(
         string tabLegacyId,
         IReadOnlyList<TabDrinkSaleLine> lines,
-        CancellationToken cancellationToken = default)
+        string? tabDisplayName = null,
+        CancellationToken cancellationToken = default,
+        string? idempotencyKey = null)
     {
-        var result = await _tabEntries.CommitDrinkSaleAsync(tabLegacyId, lines, cancellationToken).ConfigureAwait(false);
+        var result = await _tabEntries
+            .CommitDrinkSaleAsync(tabLegacyId, lines, cancellationToken, idempotencyKey)
+            .ConfigureAwait(false);
         if (!result.Ok)
         {
             return AddDrinksCommitResult.Failed(result.ErrorMessage ?? "Could not add drinks to the tab.");
@@ -45,9 +50,9 @@ public sealed class AddDrinksSaleCommitService
         var batchId = result.DrinkCommitBatchId;
         if (!string.IsNullOrEmpty(batchId))
         {
-            var lineCount = lines.Count;
+            var tabName = string.IsNullOrWhiteSpace(tabDisplayName) ? tabLegacyId : tabDisplayName.Trim();
             _undo.PushUndo(
-                $"Undo last drinks ({lineCount} line{(lineCount == 1 ? string.Empty : "s")})",
+                TabUndoPreview.ForDrinks(lines, tabName),
                 async () =>
                 {
                     var rev = await _tabEntries

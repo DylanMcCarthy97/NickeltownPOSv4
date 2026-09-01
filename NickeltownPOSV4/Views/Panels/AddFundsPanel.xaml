@@ -351,6 +351,7 @@
                 Grid.Column="1"
                 Command="{Binding ApplyCommand, Mode=OneWay}"
                 Content="Add Funds"
+                IsEnabled="{Binding CanApplyFunds, Mode=OneWay}"
                 FontWeight="SemiBold"
                 Style="{StaticResource FundsFooterApplyStyle}" />
         </Grid>

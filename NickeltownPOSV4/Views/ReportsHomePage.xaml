@@ -12,7 +12,7 @@
 
     <Page.Resources>
         <Style x:Key="ReportsTileButtonStyle" TargetType="Button" BasedOn="{StaticResource PosHubTileButtonStyle}">
-            <Setter Property="MinHeight" Value="200" />
+            <Setter Property="MinHeight" Value="140" />
             <Setter Property="CornerRadius" Value="14" />
         </Style>
     </Page.Resources>
@@ -26,11 +26,12 @@
         <controls:PosPageHero
             Grid.Row="0"
             IconGlyph="&#xE9F9;"
-            Subtitle="Monthly bar tabs PDFs, stock snapshots, and raw CSV exports. Files save under Documents\POS Reports and open automatically."
+            Subtitle="Monthly bar tabs PDFs, stock snapshots, complimentary member items, and raw CSV exports. Files save under Documents\POS Reports and open automatically."
             Title="Reports" />
 
-        <Grid Grid.Row="1" RowSpacing="14">
+        <Grid Grid.Row="1" RowSpacing="10">
             <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -77,6 +78,29 @@
                         FontSize="13"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
                         Text="Build monthly bar tabs PDFs, stock snapshot PDFs, email them, or export the raw monthly activity CSV."
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+            <Button
+                Grid.Row="2"
+                VerticalAlignment="Stretch"
+                Command="{Binding OpenFreeMemberItemsCommand}"
+                Style="{StaticResource ReportsTileButtonStyle}">
+                <StackPanel Spacing="10" VerticalAlignment="Center">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="32"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8B0;" />
+                    <TextBlock
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Free member items" />
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="See how many complimentary Waters and Pop Tops were recorded. Retail value is informational only."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>

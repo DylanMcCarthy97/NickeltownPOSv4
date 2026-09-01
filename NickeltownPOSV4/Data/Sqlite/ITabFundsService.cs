@@ -27,7 +27,8 @@ public interface ITabFundsService
         string movementUiKey,
         decimal amount,
         string? note,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string? idempotencyKey = null);
 
     /// <summary>
     /// After Square Terminal COMPLETED. Credits tab <paramref name="baseAmountCredited"/>; stores card metadata for audit/reconciliation.

@@ -54,6 +54,79 @@ public sealed class PaymentPipelineTests : IDisposable
     }
 
     [Fact]
+    public async Task FundMovement_IdempotentByClientKey()
+    {
+        var key = "fund-dup-1";
+        var first = await _funds.CommitFundMovementAsync("tab1", "cash", 10m, null, CancellationToken.None, key);
+        var second = await _funds.CommitFundMovementAsync("tab1", "cash", 10m, null, CancellationToken.None, key);
+        Assert.True(first.Ok);
+        Assert.True(second.Ok);
+        Assert.Equal(first.FundCommitBatchId, second.FundCommitBatchId);
+        using var conn = _factory.OpenConnection();
+        Assert.Equal(10m, conn.ExecuteScalar<decimal>("SELECT Balance FROM Tabs WHERE LegacyId = 'tab1'"));
+        Assert.Equal(1L, conn.ExecuteScalar<long>("SELECT COUNT(1) FROM MoneyMovements WHERE CommitBatchId = @k", new { k = key }));
+    }
+
+    [Fact]
+    public async Task DrinkSale_IdempotentByClientKey()
+    {
+        var key = "drink-dup-1";
+        var lines = new[] { new TabDrinkSaleLine { ItemId = 1, DisplayName = "Cola", UnitPrice = 5m, Quantity = 1 } };
+        var first = await _drinks.CommitDrinkSaleAsync("tab1", lines, CancellationToken.None, key);
+        var second = await _drinks.CommitDrinkSaleAsync("tab1", lines, CancellationToken.None, key);
+        Assert.True(first.Ok);
+        Assert.True(second.Ok);
+        Assert.Equal(first.DrinkCommitBatchId, second.DrinkCommitBatchId);
+        using var conn = _factory.OpenConnection();
+        Assert.Equal(-5m, conn.ExecuteScalar<decimal>("SELECT Balance FROM Tabs WHERE LegacyId = 'tab1'"));
+        Assert.Equal(1L, conn.ExecuteScalar<long>("SELECT COUNT(1) FROM TabEntries WHERE CommitBatchId = @k", new { k = key }));
+        Assert.Equal(99, conn.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = 1"));
+    }
+
+    [Fact]
+    public async Task PitstopVoid_SecondCallDoesNotRestoreStockTwice()
+    {
+        var sale = await _pitstop.CommitSaleAsync(
+            [new PitstopSaleLineCommit { ItemId = 1, DisplayName = "Cola", UnitPrice = 5m, Quantity = 2 }],
+            new PitstopSalePaymentCommit
+            {
+                PaymentMethod = "Cash",
+                BaseProductTotal = 10m,
+                ChargedTotal = 10m,
+                CashReceived = 10m,
+                CashChange = 0m,
+                IdempotencyKey = "void-once-1",
+            });
+        Assert.True(sale.Ok);
+        var first = await _pitstop.VoidPitstopSaleAsync(new PitstopVoidSaleRequest
+        {
+            SaleId = sale.SalePk!.Value,
+            Reason = "Test void",
+        });
+        var second = await _pitstop.VoidPitstopSaleAsync(new PitstopVoidSaleRequest
+        {
+            SaleId = sale.SalePk!.Value,
+            Reason = "Test void again",
+        });
+        Assert.True(first.Ok, first.ErrorMessage);
+        Assert.False(second.Ok);
+        using var conn = _factory.OpenConnection();
+        Assert.Equal(100, conn.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = 1"));
+    }
+
+    [Fact]
+    public void MoneyActionLock_RejectsReentrantBegin()
+    {
+        var gate = new MoneyActionLock();
+        Assert.True(gate.TryBegin(useGlobalDebounce: false));
+        Assert.True(gate.IsInFlight);
+        Assert.False(gate.TryBegin(useGlobalDebounce: false));
+        gate.End();
+        Assert.False(gate.IsInFlight);
+        Assert.True(gate.TryBegin(useGlobalDebounce: false));
+        gate.End();
+    }
+    [Fact]
     public async Task DrinkSale_AndUndo()
     {
         var r = await _drinks.CommitDrinkSaleAsync("tab1", [new TabDrinkSaleLine { ItemId = 1, DisplayName = "Cola", UnitPrice = 5m, Quantity = 1 }]);
@@ -62,7 +135,26 @@ public sealed class PaymentPipelineTests : IDisposable
         Assert.True(u.Ok);
         using var conn = _factory.OpenConnection();
         Assert.Equal(0m, conn.ExecuteScalar<decimal>("SELECT Balance FROM Tabs WHERE LegacyId = 'tab1'"));
-        Assert.Equal(98, conn.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = 1"));
+        Assert.Equal(100, conn.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = 1"));
+    }
+
+    [Fact]
+    public async Task DrinkUndo_WritesActivityLog()
+    {
+        var audit = new CapturingAuditLogService();
+        var drinks = new SqliteTabDrinkSalesService(_factory, audit);
+        var r = await drinks.CommitDrinkSaleAsync(
+            "tab1",
+            [new TabDrinkSaleLine { ItemId = 1, DisplayName = "Great Northern", UnitPrice = 5m, Quantity = 1 }]);
+        Assert.True(r.Ok);
+        var u = await drinks.ReverseDrinkBatchAsync("tab1", r.DrinkCommitBatchId!);
+        Assert.True(u.Ok);
+
+        var entry = Assert.Single(audit.Entries);
+        Assert.Equal(AuditActions.TabPurchaseUndone, entry.ActionType);
+        Assert.Equal(AuditEntityTypes.Tab, entry.EntityType);
+        Assert.Contains("Undid 1 × Great Northern", entry.Reason);
+        Assert.Contains("Test tab", entry.Reason);
     }
 
     [Fact]
@@ -157,11 +249,13 @@ public sealed class PaymentPipelineTests : IDisposable
                 PaymentAttemptId = begin.AttemptId,
             },
         };
-        var json = JsonSerializer.Serialize(payload);
+        var json = JsonSerializer.Serialize(
+            payload,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         await _attempts.SaveRecoveryPayloadAsync(begin.AttemptId, json);
 
         var recover = await _paymentRecovery.RecoverPitstopSaleAsync(begin.AttemptId);
-        Assert.True(recover.Ok);
+        Assert.True(recover.Ok, recover.ErrorMessage);
 
         using var conn = _factory.OpenConnection();
         Assert.Equal(1L, conn.ExecuteScalar<long>("SELECT COUNT(1) FROM PitstopSales WHERE IdempotencyKey = @k", new { k = key }));
@@ -183,7 +277,7 @@ public sealed class PaymentPipelineTests : IDisposable
     }
 
     [Fact]
-    public async Task PitstopDaySales_Clear_DoesNotChangeStock()
+    public async Task PitstopDaySales_Clear_IsNoLongerSupported()
     {
         await _pitstop.CommitSaleAsync(
             [new PitstopSaleLineCommit { ItemId = 1, DisplayName = "Cola", UnitPrice = 5m, Quantity = 2 }],
@@ -193,11 +287,10 @@ public sealed class PaymentPipelineTests : IDisposable
 
         var start = DateTimeOffset.UtcNow.AddDays(-1);
         var end = DateTimeOffset.UtcNow.AddDays(1);
-        var clear = await _pitstop.ClearPitstopRetailSalesForPeriodAsync(start, end);
-        Assert.True(clear.Ok);
-        Assert.Equal(1, clear.SalesRemoved);
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _pitstop.ClearPitstopRetailSalesForPeriodAsync(start, end));
         Assert.Equal(98, conn.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = 1"));
-        Assert.Equal(0L, conn.ExecuteScalar<long>("SELECT COUNT(1) FROM PitstopSales WHERE lower(trim(COALESCE(SaleMode,''))) = 'pitstop'"));
+        Assert.Equal(1L, conn.ExecuteScalar<long>("SELECT COUNT(1) FROM PitstopSales WHERE lower(trim(COALESCE(SaleMode,''))) = 'pitstop'"));
     }
 
     private void Seed()
@@ -223,5 +316,50 @@ public sealed class PaymentPipelineTests : IDisposable
             string? detailsJson = null,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(0L);
+
+        public Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(
+            int maxEntries = 400,
+            bool staffFacingOnly = true,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AuditLogEntry>>(Array.Empty<AuditLogEntry>());
+    }
+
+    private sealed class CapturingAuditLogService : IAuditLogService
+    {
+        public List<AuditLogEntryRequest> Entries { get; } = [];
+
+        public Task<long> LogAsync(AuditLogEntryRequest request, CancellationToken cancellationToken = default)
+        {
+            Entries.Add(request);
+            return Task.FromResult((long)Entries.Count);
+        }
+
+        public Task<long> LogAsync(
+            string actionType,
+            string? entityType = null,
+            string? entityId = null,
+            decimal? amount = null,
+            string? reason = null,
+            bool success = true,
+            string? detailsJson = null,
+            CancellationToken cancellationToken = default) =>
+            LogAsync(
+                new AuditLogEntryRequest
+                {
+                    ActionType = actionType,
+                    EntityType = entityType,
+                    EntityId = entityId,
+                    Amount = amount,
+                    Reason = reason,
+                    Success = success,
+                    DetailsJson = detailsJson,
+                },
+                cancellationToken);
+
+        public Task<IReadOnlyList<AuditLogEntry>> GetRecentAsync(
+            int maxEntries = 400,
+            bool staffFacingOnly = true,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AuditLogEntry>>(Array.Empty<AuditLogEntry>());
     }
 }

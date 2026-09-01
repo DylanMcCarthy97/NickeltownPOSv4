@@ -663,6 +663,7 @@
                             MinHeight="56"
                             HorizontalAlignment="Stretch"
                             Command="{Binding OpenPaySheetCommand}"
+                            IsEnabled="{Binding PayButtonEnabled, Mode=OneWay}"
                             Style="{StaticResource PitstopOverlayActionButtonStyle}"
                             UseSystemFocusVisuals="False">
                             <StackPanel Orientation="Horizontal" Spacing="10">
@@ -1036,6 +1037,7 @@
                             HorizontalContentAlignment="Center"
                             Command="{Binding CardFeeConfirmCommand}"
                             Content="Charge card"
+                            IsEnabled="{Binding ChargeCardEnabled, Mode=OneWay}"
                             Style="{StaticResource PitstopOverlayActionButtonStyle}"
                             UseSystemFocusVisuals="False" />
                         <Grid ColumnSpacing="10">

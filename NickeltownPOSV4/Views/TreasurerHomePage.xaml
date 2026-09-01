@@ -44,7 +44,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Click="AddTransaction_Click" Content="Add" Style="{StaticResource TabsHeaderActionButtonStyle}" />
+                        <Button x:Name="AddTransactionButton" Click="AddTransaction_Click" Content="Add" Style="{StaticResource TabsHeaderActionButtonStyle}" />
                         <Button Click="RefreshTransactions_Click" Content="Refresh" Style="{StaticResource TabsHeaderActionButtonStyle}" />
                     </StackPanel>
                     <ListView

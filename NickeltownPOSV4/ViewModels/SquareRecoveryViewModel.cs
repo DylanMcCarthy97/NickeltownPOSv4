@@ -31,6 +31,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
 
     private string _statusMessage = string.Empty;
     private bool _isBusy;
+    private readonly MoneyActionLock _moneyLock = new();
 
     public SquareRecoveryViewModel(
         ISquareRecoveryRepository recovery,
@@ -70,7 +71,22 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
     public bool IsBusy
     {
         get => _isBusy;
-        private set => SetProperty(ref _isBusy, value);
+        private set
+        {
+            if (!SetProperty(ref _isBusy, value))
+            {
+                return;
+            }
+
+            foreach (var row in Rows.CurrentPageItems)
+            {
+                row.RecoverSaleCommand.NotifyCanExecuteChanged();
+                row.IgnoreCommand.NotifyCanExecuteChanged();
+                row.ReconcileCommand.NotifyCanExecuteChanged();
+                row.LinkPitstopCommand.NotifyCanExecuteChanged();
+                row.LinkTabCommand.NotifyCanExecuteChanged();
+            }
+        }
     }
 
     public async Task InitializeAsync()
@@ -121,11 +137,19 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
 
     internal async Task RecoverPitstopSaleAsync(SquareRecoveryRowVm row)
     {
-        if (!row.HasRecoverablePayload)
+        if (!_moneyLock.TryBegin())
         {
-            StatusMessage = "This payment has no automatic recovery payload — link manually or mark reconciled.";
             return;
         }
+
+        IsBusy = true;
+        try
+        {
+            if (!row.HasRecoverablePayload)
+            {
+                StatusMessage = "This payment has no automatic recovery payload — link manually or mark reconciled.";
+                return;
+            }
 
         if (!await EnsureManagerPinAsync("Recover Pitstop sale from Square payment").ConfigureAwait(true))
         {
@@ -150,6 +174,12 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
 
         await LoadAsync().ConfigureAwait(true);
         StatusMessage = $"Recovered Pitstop sale for attempt #{row.AttemptId}.";
+        }
+        finally
+        {
+            IsBusy = false;
+            _moneyLock.End();
+        }
     }
 
     internal async Task IgnoreRecoveryAsync(SquareRecoveryRowVm row)
@@ -475,11 +505,11 @@ public sealed class SquareRecoveryRowVm : ObservableViewModel
         FailureReasonText = string.IsNullOrWhiteSpace(row.FailureReason) ? string.Empty : row.FailureReason;
 
         HasRecoverablePayload = row.HasRecoverablePayload;
-        LinkPitstopCommand = new AsyncRelayCommand(() => host.LinkPitstopAsync(this));
-        LinkTabCommand = new AsyncRelayCommand(() => host.LinkTabAsync(this));
-        RecoverSaleCommand = new AsyncRelayCommand(() => host.RecoverPitstopSaleAsync(this), () => HasRecoverablePayload);
-        IgnoreCommand = new AsyncRelayCommand(() => host.IgnoreRecoveryAsync(this));
-        ReconcileCommand = new AsyncRelayCommand(() => host.MarkManuallyReconciledAsync(this));
+        LinkPitstopCommand = new AsyncRelayCommand(() => host.LinkPitstopAsync(this), () => !host.IsBusy);
+        LinkTabCommand = new AsyncRelayCommand(() => host.LinkTabAsync(this), () => !host.IsBusy);
+        RecoverSaleCommand = new AsyncRelayCommand(() => host.RecoverPitstopSaleAsync(this), () => HasRecoverablePayload && !host.IsBusy);
+        IgnoreCommand = new AsyncRelayCommand(() => host.IgnoreRecoveryAsync(this), () => !host.IsBusy);
+        ReconcileCommand = new AsyncRelayCommand(() => host.MarkManuallyReconciledAsync(this), () => !host.IsBusy);
         AddNoteCommand = new AsyncRelayCommand(() => host.AddNoteAsync(this));
     }
 

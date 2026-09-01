@@ -16,16 +16,17 @@ public static class SquareOutsideSalesAggregator
 
         foreach (var cash in manualCashLines)
         {
+            var soldQty = PitstopEodCalculator.SoldQuantity(cash);
+            var lineSales = PitstopEodCalculator.LineSales(soldQty, PitstopEodCalculator.ResolveUnitPrice(cash));
+            if (soldQty <= 0 && lineSales <= 0m)
+            {
+                continue;
+            }
+
             var square = FindSquareMatch(cash, remainingSquare);
             if (square is not null)
             {
                 remainingSquare.Remove(square);
-            }
-
-            if (cash.CashQty <= 0 && cash.CashDollars <= 0m && square is null
-                && cash.CardQty <= 0 && cash.CardDollars <= 0m)
-            {
-                continue;
             }
 
             rows.Add(new CombinedOutsideSaleRow
@@ -35,10 +36,10 @@ public static class SquareOutsideSalesAggregator
                 CategoryName = cash.OutsideLineKind == PitstopOutsideLineCatalogBuilder.LineKindRaffle
                     ? EventReportCategoryNormalizer.Other
                     : EventReportCategoryNormalizer.Merchandise,
-                CashQuantity = cash.CashQty,
-                CashTotal = Round(cash.CashDollars),
-                CardQuantity = square?.Quantity ?? cash.CardQty,
-                CardTotal = square?.LineTotal ?? (cash.CardDollars > 0m ? Round(cash.CardDollars) : 0m),
+                CashQuantity = soldQty,
+                CashTotal = lineSales > 0m ? lineSales : Round(cash.CashDollars + cash.CardDollars),
+                CardQuantity = 0,
+                CardTotal = 0m,
             });
         }
 

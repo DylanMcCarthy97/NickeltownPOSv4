@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using NickeltownPOSV4.Models.Settings;
+using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Settings;
 using NickeltownPOSV4.Services.Updates;
 
@@ -12,6 +13,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
 {
     private readonly IAppUpdateConfigService _config;
     private readonly IAppUpdateService _updates;
+    private readonly IInputOverlayService _inputOverlay;
 
     private string _feedBaseUrl = string.Empty;
     private bool _checkOnStartup = true;
@@ -21,25 +23,41 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
 
     private Func<XamlRoot?>? _xamlRootProvider;
 
-    public UpdateConfigViewModel(IAppUpdateConfigService config, IAppUpdateService updates)
+    public UpdateConfigViewModel(
+        IAppUpdateConfigService config,
+        IAppUpdateService updates,
+        IInputOverlayService inputOverlay)
     {
         _config = config;
         _updates = updates;
+        _inputOverlay = inputOverlay;
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsBusy);
         CheckNowCommand = new AsyncRelayCommand(CheckNowAsync, () => !IsBusy);
+        EditFeedUrlCommand = new AsyncRelayCommand(EditFeedUrlAsync, () => !IsBusy);
     }
 
     public IAsyncRelayCommand SaveCommand { get; }
 
     public IAsyncRelayCommand CheckNowCommand { get; }
 
+    public IAsyncRelayCommand EditFeedUrlCommand { get; }
+
     public string CurrentBuildText => $"Current build: {AppVersionInfo.CurrentVersionString}";
 
     public string FeedBaseUrl
     {
         get => _feedBaseUrl;
-        set => SetProperty(ref _feedBaseUrl, value);
+        set
+        {
+            if (SetProperty(ref _feedBaseUrl, value))
+            {
+                OnPropertyChanged(nameof(FeedBaseUrlSummary));
+            }
+        }
     }
+
+    public string FeedBaseUrlSummary =>
+        string.IsNullOrWhiteSpace(FeedBaseUrl) ? "Tap to enter the update feed" : FeedBaseUrl;
 
     public bool CheckOnStartup
     {
@@ -76,6 +94,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
             {
                 SaveCommand.NotifyCanExecuteChanged();
                 CheckNowCommand.NotifyCanExecuteChanged();
+                EditFeedUrlCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -89,6 +108,19 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
         CheckOnStartup = cfg.CheckOnStartup;
         AutoInstall = cfg.AutoInstall;
         StatusMessage = string.Empty;
+    }
+
+    private async Task EditFeedUrlAsync()
+    {
+        var result = await _inputOverlay
+            .ShowKeyboardAsync(FeedBaseUrl ?? string.Empty, "Update feed (folder, https://, or UNC)")
+            .ConfigureAwait(true);
+        if (result is null)
+        {
+            return;
+        }
+
+        FeedBaseUrl = result.Trim();
     }
 
     private async Task SaveAsync()
