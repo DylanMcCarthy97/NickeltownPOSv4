@@ -38,6 +38,8 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
 
     private readonly bool _allowEmpty;
 
+    private bool _firstKeystroke;
+
     private string _draft;
 
     public TouchNumpadOverlayViewModel(
@@ -59,6 +61,7 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
         : this(0m, title, false, NumpadMode.Digits, maxLength, false, allowEmpty, _ => { }, finishRaw)
     {
         _draft = SanitizeDigits(initialDigits);
+        _firstKeystroke = !string.IsNullOrEmpty(_draft);
     }
 
     /// <summary>Full constructor used by the input overlay service for integer / PIN modes.</summary>
@@ -100,6 +103,7 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
             : title.Trim();
 
         _draft = mode == NumpadMode.Digits ? string.Empty : BuildInitialDraft(initialValue);
+        _firstKeystroke = !string.IsNullOrEmpty(_draft);
 
         DigitCommand = new RelayCommand<string>(AppendDigit);
         BackspaceCommand = new RelayCommand(Backspace);
@@ -233,6 +237,12 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
             return;
         }
 
+        if (_firstKeystroke)
+        {
+            _draft = string.Empty;
+            _firstKeystroke = false;
+        }
+
         if (_mode == NumpadMode.Pin)
         {
             if (token.Length != 1 || !char.IsDigit(token[0]))
@@ -295,6 +305,8 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
 
     private void Backspace()
     {
+        _firstKeystroke = false;
+
         if (_draft.Length == 0)
         {
             return;
@@ -306,6 +318,7 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
 
     private void Clear()
     {
+        _firstKeystroke = false;
         _draft = string.Empty;
         RaiseDraftChanged();
     }
@@ -316,6 +329,8 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
         {
             return;
         }
+
+        _firstKeystroke = false;
 
         if (string.IsNullOrEmpty(_draft) || _draft == "-")
         {
