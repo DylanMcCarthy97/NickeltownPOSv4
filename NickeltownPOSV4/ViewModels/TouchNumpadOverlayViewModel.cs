@@ -161,6 +161,7 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
         }
 
         _draft = BuildInitialDraft(initialValue);
+        _firstKeystroke = !string.IsNullOrEmpty(_draft);
         RaiseDraftChanged();
     }
 
@@ -237,11 +238,7 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
             return;
         }
 
-        if (_firstKeystroke)
-        {
-            _draft = string.Empty;
-            _firstKeystroke = false;
-        }
+        ReplaceDraftIfFirstKeystroke();
 
         if (_mode == NumpadMode.Pin)
         {
@@ -305,7 +302,13 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
 
     private void Backspace()
     {
-        _firstKeystroke = false;
+        if (_firstKeystroke)
+        {
+            _draft = string.Empty;
+            _firstKeystroke = false;
+            RaiseDraftChanged();
+            return;
+        }
 
         if (_draft.Length == 0)
         {
@@ -314,6 +317,17 @@ public sealed class TouchNumpadOverlayViewModel : ObservableViewModel
 
         _draft = _draft[..^1];
         RaiseDraftChanged();
+    }
+
+    private void ReplaceDraftIfFirstKeystroke()
+    {
+        if (!_firstKeystroke)
+        {
+            return;
+        }
+
+        _draft = string.Empty;
+        _firstKeystroke = false;
     }
 
     private void Clear()
