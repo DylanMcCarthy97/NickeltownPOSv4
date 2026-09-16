@@ -189,6 +189,7 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
             if (SetProperty(ref _cardSurchargePercent, value))
             {
                 OnPropertyChanged(nameof(CardSurchargePercentText));
+                OnPropertyChanged(nameof(CardSurchargeStatusText));
             }
         }
     }
