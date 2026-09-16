@@ -114,15 +114,16 @@ public sealed partial class StockManagementPage
         textBox.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
         textBox.MinHeight = 44;
 
+        var tb = textBox;
         textBox.PointerPressed += async (_, e) =>
         {
             e.Handled = true;
             await RunWithStockOverlayGateAsync(async () =>
             {
-                var r = await _inputOverlay.ShowKeyboardAsync(textBox.Text ?? string.Empty, "Search products").ConfigureAwait(true);
+                var r = await _inputOverlay.ShowKeyboardAsync(tb.Text ?? string.Empty, "Search products").ConfigureAwait(true);
                 if (r is not null)
                 {
-                    textBox.Text = r;
+                    tb.Text = r;
                 }
             }).ConfigureAwait(true);
         };
