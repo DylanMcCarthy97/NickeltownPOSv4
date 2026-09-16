@@ -16,11 +16,13 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
     private bool _isNumbersMode;
     private bool _shiftPointerDown;
     private bool _longHoldFired;
+    private bool _firstKeystroke;
 
     public TouchKeyboardOverlayViewModel(string initialValue, string title, Action<string?> finish)
     {
         _finish = finish;
         _text = initialValue ?? string.Empty;
+        _firstKeystroke = !string.IsNullOrEmpty(_text);
         Title = string.IsNullOrWhiteSpace(title) ? "Type Note" : title.Trim();
 
         _shiftHoldTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
@@ -185,6 +187,12 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
             return;
         }
 
+        if (_firstKeystroke)
+        {
+            Text = string.Empty;
+            _firstKeystroke = false;
+        }
+
         var ch = key[0];
         if (!char.IsLetter(ch))
         {
@@ -207,6 +215,12 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
             return;
         }
 
+        if (_firstKeystroke)
+        {
+            Text = string.Empty;
+            _firstKeystroke = false;
+        }
+
         AppendRaw(key);
     }
 
@@ -217,12 +231,19 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
 
     private void AppendSpace()
     {
+        if (_firstKeystroke)
+        {
+            Text = string.Empty;
+            _firstKeystroke = false;
+        }
+
         AppendRaw(" ");
         ShiftArmed = false;
     }
 
     private void ClearAll()
     {
+        _firstKeystroke = false;
         Text = string.Empty;
         ShiftArmed = false;
         CapsLock = false;
@@ -240,6 +261,8 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
 
     private void Backspace()
     {
+        _firstKeystroke = false;
+
         if (Text.Length == 0)
         {
             return;
