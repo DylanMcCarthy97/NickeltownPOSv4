@@ -148,17 +148,30 @@
                         </Button>
                     </StackPanel>
 
+                    <StackPanel Spacing="6" Orientation="Vertical" Margin="0,8,0,0">
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CARD SURCHARGE" />
+                        <ToggleSwitch
+                            IsOn="{Binding CardSurchargeEnabled, Mode=TwoWay}"
+                            OffContent="Disabled"
+                            OnContent="Enabled" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="Pass-through fee charged to card payments"
+                            TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+
                     <Grid Margin="0,2,0,0" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CARD SURCHARGE %" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SURCHARGE PERCENTAGE" />
                             <TextBlock
                                 FontSize="11"
                                 Foreground="{StaticResource PosTextSecondaryBrush}"
-                                Text="Square fee on card payments (default 1.7%)."
+                                Text="Percentage when surcharge is enabled"
                                 TextWrapping="WrapWholeWords" />
                         </StackPanel>
                         <Button
