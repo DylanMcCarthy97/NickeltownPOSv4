@@ -22,6 +22,7 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
     private string _barTabCardCatalogVariationId = string.Empty;
     private string _guestTabCardCatalogVariationId = string.Empty;
     private double _cardSurchargePercent = 1.7;
+    private bool _cardSurchargeEnabled = true;
     private bool _isSandbox;
 
     public SquareConfigViewModel(
@@ -168,6 +169,18 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
     public string GuestTabVariationIdSummary =>
         string.IsNullOrWhiteSpace(GuestTabCardCatalogVariationId) ? "Tap to enter variation ID" : GuestTabCardCatalogVariationId;
 
+    public bool CardSurchargeEnabled
+    {
+        get => _cardSurchargeEnabled;
+        set
+        {
+            if (SetProperty(ref _cardSurchargeEnabled, value))
+            {
+                OnPropertyChanged(nameof(CardSurchargeStatusText));
+            }
+        }
+    }
+
     public double CardSurchargePercent
     {
         get => _cardSurchargePercent;
@@ -176,9 +189,15 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
             if (SetProperty(ref _cardSurchargePercent, value))
             {
                 OnPropertyChanged(nameof(CardSurchargePercentText));
+                OnPropertyChanged(nameof(CardSurchargeStatusText));
             }
         }
     }
+
+    public string CardSurchargeStatusText =>
+        CardSurchargeEnabled 
+            ? $"Enabled ({_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}%)"
+            : "Disabled (0%)";
 
     public string CardSurchargePercentText =>
         _cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture) + "%";
@@ -211,9 +230,23 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
             IsSandbox = string.Equals(current.Environment, "sandbox", StringComparison.OrdinalIgnoreCase);
             BarTabCardCatalogVariationId = current.BarTabCardCatalogVariationId;
             GuestTabCardCatalogVariationId = current.GuestTabCardCatalogVariationId;
-            CardSurchargePercent = current.PitstopTerminalCardSurchargePercent > 0
-                ? (double)decimal.Round(current.PitstopTerminalCardSurchargePercent, 2, MidpointRounding.AwayFromZero)
-                : 1.7;
+            
+            if (current.PitstopTerminalCardSurchargePercent > 0 && current.PitstopTerminalCardSurchargePercent < 100)
+            {
+                CardSurchargeEnabled = true;
+                CardSurchargePercent = (double)decimal.Round(current.PitstopTerminalCardSurchargePercent, 2, MidpointRounding.AwayFromZero);
+            }
+            else if (current.PitstopTerminalCardSurchargePercent == 0)
+            {
+                CardSurchargeEnabled = false;
+                CardSurchargePercent = 1.7;
+            }
+            else
+            {
+                CardSurchargeEnabled = true;
+                CardSurchargePercent = 1.7;
+            }
+            
             SetStatus("Loaded.");
         }
         catch (Exception ex)
@@ -240,7 +273,9 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
                 Environment = IsSandbox ? "sandbox" : "production",
                 BarTabCardCatalogVariationId = (BarTabCardCatalogVariationId ?? string.Empty).Trim(),
                 GuestTabCardCatalogVariationId = (GuestTabCardCatalogVariationId ?? string.Empty).Trim(),
-                PitstopTerminalCardSurchargePercent = (decimal)Math.Clamp(CardSurchargePercent, 0d, 100d),
+                PitstopTerminalCardSurchargePercent = CardSurchargeEnabled 
+                    ? (decimal)Math.Clamp(CardSurchargePercent, 0d, 100d)
+                    : 0m,
             }).ConfigureAwait(true);
             SetStatus("Saved.");
         }

@@ -187,12 +187,6 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
             return;
         }
 
-        if (_firstKeystroke)
-        {
-            Text = string.Empty;
-            _firstKeystroke = false;
-        }
-
         var ch = key[0];
         if (!char.IsLetter(ch))
         {
@@ -215,12 +209,6 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
             return;
         }
 
-        if (_firstKeystroke)
-        {
-            Text = string.Empty;
-            _firstKeystroke = false;
-        }
-
         AppendRaw(key);
     }
 
@@ -231,12 +219,6 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
 
     private void AppendSpace()
     {
-        if (_firstKeystroke)
-        {
-            Text = string.Empty;
-            _firstKeystroke = false;
-        }
-
         AppendRaw(" ");
         ShiftArmed = false;
     }
@@ -251,6 +233,12 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
 
     private void AppendRaw(string raw)
     {
+        if (_firstKeystroke)
+        {
+            Text = string.Empty;
+            _firstKeystroke = false;
+        }
+
         if (Text.Length >= 120)
         {
             return;
@@ -261,7 +249,11 @@ public sealed class TouchKeyboardOverlayViewModel : ObservableViewModel
 
     private void Backspace()
     {
-        _firstKeystroke = false;
+        if (_firstKeystroke)
+        {
+            ClearAll();
+            return;
+        }
 
         if (Text.Length == 0)
         {

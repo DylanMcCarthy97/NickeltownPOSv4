@@ -81,7 +81,8 @@ public sealed partial class StockManagementPage
 
     internal TouchFieldRow CreateEditableSearchRow(string initialText, string overlayTitle, string placeholder)
     {
-        var tb = CreateEditableTextBoxShell(placeholder);
+        var tb = CreateOverlayTextBoxShell();
+        tb.PlaceholderText = placeholder ?? string.Empty;
         tb.Text = initialText ?? string.Empty;
         async Task RunOverlayAsync()
         {
@@ -109,15 +110,15 @@ public sealed partial class StockManagementPage
 
     internal Border CreateEditableSearchBar(string placeholder, out TextBox textBox)
     {
-        textBox = CreateEditableTextBoxShell(placeholder);
-        textBox.BorderThickness = new Thickness(0);
-        textBox.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
-        textBox.MinHeight = 44;
+        var tb = CreateOverlayTextBoxShell();
+        tb.PlaceholderText = placeholder ?? string.Empty;
+        tb.BorderThickness = new Thickness(0);
+        tb.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        tb.MinHeight = 44;
+        textBox = tb;
 
-        var tb = textBox;
-        textBox.PointerPressed += async (_, e) =>
+        async Task RunOverlayAsync()
         {
-            e.Handled = true;
             await RunWithStockOverlayGateAsync(async () =>
             {
                 var r = await _inputOverlay.ShowKeyboardAsync(tb.Text ?? string.Empty, "Search products").ConfigureAwait(true);
@@ -126,7 +127,10 @@ public sealed partial class StockManagementPage
                     tb.Text = r;
                 }
             }).ConfigureAwait(true);
-        };
+        }
+
+        var btn = CreateOverlaySideButton("Keyboard");
+        WireOverlayField(tb, btn, RunOverlayAsync);
 
         var icon = new FontIcon
         {
@@ -135,13 +139,16 @@ public sealed partial class StockManagementPage
             Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["PosTextSecondaryBrush"],
             Glyph = "\uE721",
         };
-        var grid = new Grid { Padding = new Thickness(12, 0, 12, 0), ColumnSpacing = 8 };
+        var grid = new Grid { Padding = new Thickness(12, 0, 8, 0), ColumnSpacing = 8 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         Grid.SetColumn(icon, 0);
         grid.Children.Add(icon);
-        Grid.SetColumn(textBox, 1);
-        grid.Children.Add(textBox);
+        Grid.SetColumn(tb, 1);
+        grid.Children.Add(tb);
+        Grid.SetColumn(btn, 2);
+        grid.Children.Add(btn);
 
         return new Border
         {
@@ -443,12 +450,18 @@ public sealed partial class StockManagementPage
 
     private static void WireOverlayField(TextBox textBox, Button sideButton, Func<Task> runOverlayAsync)
     {
-        sideButton.Click += async (_, _) => await runOverlayAsync().ConfigureAwait(true);
-        textBox.PointerPressed += async (_, e) =>
-        {
-            e.Handled = true;
-            await runOverlayAsync().ConfigureAwait(true);
-        };
+        async Task OpenAsync() => await runOverlayAsync().ConfigureAwait(true);
+
+        sideButton.Click += async (_, _) => await OpenAsync().ConfigureAwait(true);
+        // TextBox marks pointer events handled; handledEventsToo is required or taps never open the overlay.
+        textBox.AddHandler(
+            UIElement.TappedEvent,
+            new TappedEventHandler(async (_, e) =>
+            {
+                e.Handled = true;
+                await OpenAsync().ConfigureAwait(true);
+            }),
+            handledEventsToo: true);
     }
 
     private TextBox CreateEditableTextBoxShell(string? placeholder = null) =>

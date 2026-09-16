@@ -226,7 +226,8 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git fetch origin main
-        git checkout -B main origin/main
+        # Stamp-package-version dirties Package.appxmanifest; force-checkout so the feed commit can proceed.
+        git checkout -f -B main origin/main
 
         $version = "${{ steps.get_version.outputs.VERSION }}"
         $tag = "${{ steps.get_version.outputs.TAG }}"
