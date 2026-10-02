@@ -426,7 +426,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                     : _session.TargetTabDisplayName.Trim();
 
                 var sqCfg = await _squareConfig.LoadAsync(CancellationToken.None).ConfigureAwait(true);
-                var feePercent = sqCfg.PitstopTerminalCardSurchargePercent is > 0 and < 100
+                var feePercent = sqCfg.PitstopTerminalCardSurchargePercent is >= 0 and < 100
                     ? sqCfg.PitstopTerminalCardSurchargePercent
                     : 1.7m;
                 var catalogVariationId = sqCfg.BarTabCardCatalogVariationId?.Trim() ?? string.Empty;

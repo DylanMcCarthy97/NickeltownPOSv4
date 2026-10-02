@@ -137,7 +137,9 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         _session.TargetTabBalance is < 0m && _cardFee > 0m;
 
     public string CardFeePercentCaption =>
-        $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through";
+        _cardSurchargePercent > 0m
+            ? $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through"
+            : "No surcharge";
 
     public string CardFeeAmountText => FormatMoney(_cardFee);
 
@@ -147,7 +149,9 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         ShowCardFeeBreakdown ? $"Card ({CardFeeChargeTotalText})" : "Card";
 
     public string CardFeeWarning =>
-        "Card payments include a Square surcharge. Confirm the guest accepts the charge total before sending to Square.";
+        _cardSurchargePercent > 0m
+            ? "Card payments include a Square surcharge. Confirm the guest accepts the charge total before sending to Square."
+            : "Card payment will be sent to Square Terminal. Confirm the total before proceeding.";
 
     public string CashReceivedDisplay => _cashNumpad.AmountDisplay;
 
@@ -252,7 +256,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         try
         {
             var sqCfg = await _squareConfig.LoadAsync(CancellationToken.None).ConfigureAwait(true);
-            _cardSurchargePercent = sqCfg.PitstopTerminalCardSurchargePercent is > 0 and < 100
+            _cardSurchargePercent = sqCfg.PitstopTerminalCardSurchargePercent is >= 0 and < 100
                 ? sqCfg.PitstopTerminalCardSurchargePercent
                 : 1.7m;
 

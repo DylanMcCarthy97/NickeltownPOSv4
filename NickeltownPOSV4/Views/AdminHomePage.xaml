@@ -295,7 +295,7 @@
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Configure Square &amp; diagnostics"
+                        Text="Card surcharge on/off &amp; Square"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>

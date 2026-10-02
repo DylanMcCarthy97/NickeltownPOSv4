@@ -563,14 +563,19 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     public string CardFeeSubtotalText => _pendingCardSubtotal.ToString("0.00", CultureInfo.InvariantCulture);
 
-    public string CardFeePercentCaption => $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through";
+    public string CardFeePercentCaption => 
+        _cardSurchargePercent > 0 
+            ? $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through"
+            : "No surcharge";
 
     public string CardFeeAmountText => _pendingCardFee.ToString("0.00", CultureInfo.InvariantCulture);
 
     public string CardFeeChargeTotalText => _pendingCardChargeTotal.ToString("0.00", CultureInfo.InvariantCulture);
 
     public string CardFeeWarning =>
-        "Card payments include a Square surcharge. Confirm the customer accepts the new total before sending to Square.";
+        _cardSurchargePercent > 0
+            ? "Card payments include a Square surcharge. Confirm the customer accepts the new total before sending to Square."
+            : "Card payment will be sent to Square Terminal. Confirm the total before proceeding.";
 
     public string CartTotalText =>
         PitstopCartHelper.GetCartTotal(CartLines).ToString("0.00", CultureInfo.InvariantCulture);
@@ -602,7 +607,9 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     public string ReceiptSubtotalText => $"${CartTotalText}";
 
     public string ReceiptCardFeeCaption =>
-        $"Card fee ({_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}%)";
+        _cardSurchargePercent > 0
+            ? $"Card fee ({_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}%)"
+            : "Card (no surcharge)";
 
     public string ReceiptCardFeeText
     {
