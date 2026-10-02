@@ -345,6 +345,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         StartCardCheckoutCommand.NotifyCanExecuteChanged();
         CancelSaleCommand.NotifyCanExecuteChanged();
         HoldSaleCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(PayButtonEnabled));
         NotifyHoldSalePresentation();
     }
 
@@ -766,7 +767,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     }
 
     private bool CanStartPayment() =>
-        !IsPaymentLocked && CartLines.Count > 0 && !IsSendingSquare;
+        PitstopPayButtonRules.CanStart(CartLines.Count, IsPaymentLocked, IsSendingSquare);
 
     private bool CanConfirmCash() =>
         !IsBusy && !IsSendingSquare && !_paymentInFlight && IsCashSheetOpen;
