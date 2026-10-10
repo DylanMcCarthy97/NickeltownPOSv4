@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,11 +19,25 @@ public sealed class AppUpdateService : IAppUpdateService
         PropertyNameCaseInsensitive = true,
     };
 
-    private static readonly HttpClient Http = new()
+    private static readonly HttpClient Http = CreateHttpClient();
+
+    private static HttpClient CreateHttpClient()
     {
-        // MSIX packages are ~100MB; keep headroom for slow venue Wi‑Fi.
-        Timeout = TimeSpan.FromMinutes(10),
-    };
+        var http = new HttpClient
+        {
+            // MSIX packages are ~100MB; keep headroom for slow venue Wi‑Fi.
+            Timeout = TimeSpan.FromMinutes(10),
+        };
+        // GitHub raw/CDN can otherwise serve a stale update-manifest for minutes.
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("NickeltownPOS/1.0");
+        http.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue
+        {
+            NoCache = true,
+            NoStore = true,
+        };
+        http.DefaultRequestHeaders.Pragma.ParseAdd("no-cache");
+        return http;
+    }
 
     private readonly IAppUpdateConfigService _config;
     private readonly ILogger<AppUpdateService> _logger;
@@ -136,7 +151,9 @@ public sealed class AppUpdateService : IAppUpdateService
         if (basePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             || basePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            return basePath + "/update-manifest.json";
+            // Cache-bust so WinHTTP / GitHub CDN cannot keep serving a previous version.
+            var stamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
+            return basePath + "/update-manifest.json?nocache=" + stamp;
         }
 
         return Path.Combine(basePath, "update-manifest.json");
