@@ -10,7 +10,7 @@
     MinHeight="88"
     MaxHeight="88">
 
-    <!-- Full-width Race Day banner: artwork + live typography (no theme toggle column). -->
+    <!-- Full-width Race Day banner: continuous photo + live left title / right slogan. -->
     <Grid Background="#FF101216">
         <Image
             HorizontalAlignment="Stretch"
@@ -26,57 +26,64 @@
             </Image.Source>
         </Image>
 
+        <!-- Soft left chequered accent; title stays live XAML over the dark flag zone. -->
         <Image
-            Width="48"
+            Width="56"
             Height="88"
             HorizontalAlignment="Left"
             IsHitTestVisible="False"
-            Opacity="0.55"
+            Opacity="0.42"
             Stretch="Fill">
             <Image.Source>
                 <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-edge.png" />
             </Image.Source>
         </Image>
-        <Image
-            Width="48"
-            Height="88"
-            HorizontalAlignment="Right"
-            IsHitTestVisible="False"
-            Opacity="0.55"
-            Stretch="Fill">
-            <Image.Source>
-                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-edge-right.png" />
-            </Image.Source>
-        </Image>
 
+        <!-- Left ~40%: stacked italic BATHURST / red 1000 -->
         <StackPanel
-            HorizontalAlignment="Center"
+            Margin="28,0,0,0"
+            HorizontalAlignment="Left"
             VerticalAlignment="Center"
-            Spacing="0">
+            Spacing="-4">
             <TextBlock
-                HorizontalAlignment="Center"
-                FontSize="10"
-                FontWeight="SemiBold"
-                Foreground="#FFF5F5F5"
-                Opacity="0.92"
-                Text="NICKELTOWN POS" />
-            <StackPanel
-                HorizontalAlignment="Center"
-                Orientation="Horizontal"
-                Spacing="10">
-                <TextBlock
-                    FontSize="34"
-                    FontStyle="Italic"
-                    FontWeight="Bold"
-                    Foreground="#FFFFFFFF"
-                    Text="BATHURST" />
-                <TextBlock
-                    FontSize="34"
-                    FontStyle="Italic"
-                    FontWeight="Bold"
-                    Foreground="#FFE32636"
-                    Text="1000" />
-            </StackPanel>
+                FontSize="28"
+                FontStyle="Italic"
+                FontWeight="Bold"
+                Foreground="#FFFFFFFF"
+                CharacterSpacing="-20"
+                Text="BATHURST" />
+            <TextBlock
+                Margin="2,-6,0,0"
+                FontSize="40"
+                FontStyle="Italic"
+                FontWeight="Bold"
+                Foreground="#FFE32636"
+                CharacterSpacing="-40"
+                Text="1000" />
+        </StackPanel>
+
+        <!-- Right ~25%: slogan over Mount Panorama scenery -->
+        <StackPanel
+            Margin="0,0,18,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Spacing="-2">
+            <TextBlock
+                HorizontalAlignment="Right"
+                FontSize="13"
+                FontStyle="Italic"
+                FontWeight="Bold"
+                Foreground="#FFFFFFFF"
+                CharacterSpacing="40"
+                Text="GREATEST RACE" />
+            <TextBlock
+                HorizontalAlignment="Right"
+                FontSize="18"
+                FontStyle="Italic"
+                FontWeight="Bold"
+                Foreground="#FFE32636"
+                CharacterSpacing="60"
+                Text="ON EARTH" />
         </StackPanel>
 
         <Border
