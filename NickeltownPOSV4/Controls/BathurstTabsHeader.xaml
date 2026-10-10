@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Controls.BathurstTabsHeader"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Height="176">
+
+    <Grid Background="#FF050507">
+        <Image
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Center"
+            IsHitTestVisible="False"
+            Stretch="UniformToFill">
+            <Image.Source>
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/bathurst-header.jpg" DecodePixelWidth="1920" />
+            </Image.Source>
+        </Image>
+        <Border Background="#40000000" IsHitTestVisible="False" />
+        <Image
+            Width="52"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Height="72"
+            Margin="0,0,0,0"
+            IsHitTestVisible="False"
+            Opacity="0.95"
+            Stretch="UniformToFill">
+            <Image.Source>
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="104" />
+            </Image.Source>
+        </Image>
+        <Image
+            Width="52"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Height="72"
+            IsHitTestVisible="False"
+            Opacity="0.95"
+            Stretch="UniformToFill">
+            <Image.Source>
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="104" />
+            </Image.Source>
+        </Image>
+
+        <Grid Padding="20,18,24,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <Image
+                    Width="92"
+                    Height="92"
+                    VerticalAlignment="Center"
+                    IsHitTestVisible="False"
+                    Stretch="Uniform">
+                    <Image.Source>
+                        <SvgImageSource UriSource="ms-appx:///Assets/Bathurst/mount-panorama-outline.svg" />
+                    </Image.Source>
+                </Image>
+                <StackPanel VerticalAlignment="Center" Spacing="-8">
+                    <TextBlock
+                        CharacterSpacing="60"
+                        FontSize="42"
+                        FontWeight="Black"
+                        Foreground="#FFFFFFFF"
+                        Text="BATHURST" />
+                    <TextBlock
+                        CharacterSpacing="120"
+                        FontSize="42"
+                        FontWeight="Black"
+                        Foreground="#FFFFFFFF"
+                        Text="1000" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Right"
+                Spacing="2">
+                <TextBlock
+                    HorizontalAlignment="Right"
+                    CharacterSpacing="80"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    Foreground="#FFFFFFFF"
+                    Text="MOUNT PANORAMA" />
+                <TextBlock
+                    HorizontalAlignment="Right"
+                    CharacterSpacing="40"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="#FFF8FAFC"
+                    Text="GREATEST RACE ON EARTH" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

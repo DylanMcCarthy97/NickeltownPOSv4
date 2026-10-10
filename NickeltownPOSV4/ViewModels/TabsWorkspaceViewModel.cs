@@ -12,6 +12,7 @@ using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Complimentary;
+using NickeltownPOSV4.Themes;
 using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.Views;
 using NickeltownPOSV4.Views.Panels;
@@ -72,7 +73,11 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     private readonly IComplimentaryItemService _complimentary;
 
+    private readonly IPosThemeService _themes;
+
     private readonly ComplimentaryItemTapGuard _freeItemTapGuard = new();
+
+    private bool _isBathurstTheme;
 
     private int _freeItemToastGeneration;
 
@@ -149,7 +154,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         IAuthenticationService authentication,
         IAuthSignOutService signOut,
         IWindowHandleProvider windowHandle,
-        IComplimentaryItemService complimentary)
+        IComplimentaryItemService complimentary,
+        IPosThemeService themes)
     {
         _tabQuery = tabQuery;
         _refreshBus = refreshBus;
@@ -173,6 +179,9 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         _authentication = authentication;
         _windowHandle = windowHandle;
         _complimentary = complimentary;
+        _themes = themes;
+        _isBathurstTheme = themes.CurrentThemeId == UiThemeId.Bathurst1000;
+        _themes.ThemeChanged += OnAppearanceThemeChanged;
         _guestCloseoutOpen.OpenRequested += OnGuestCloseoutOpenRequested;
 
         _session.PropertyChanged += OnShellSessionPropertyChanged;
@@ -226,6 +235,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         UndoComplimentaryToastCommand = new AsyncRelayCommand(UndoComplimentaryToastAsync, () => FreeItemToastCanUndo);
 
         _addDrinksWorkspaceNavigator.SetHandler(OnAddDrinksWorkspaceCloseRequested);
+        ApplyBathurstFlagToCells();
     }
 
     private bool ToolbarActionsEnabled =>
@@ -366,6 +376,20 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private void OnTabsRefreshRequested(object? sender, EventArgs e) =>
         _ = RefreshTabsFromDatabaseAsync();
 
+    private void OnAppearanceThemeChanged(object? sender, EventArgs e)
+    {
+        IsBathurstTheme = _themes.CurrentThemeId == UiThemeId.Bathurst1000;
+        ApplyBathurstFlagToCells();
+    }
+
+    private void ApplyBathurstFlagToCells()
+    {
+        foreach (var cell in PageSlots)
+        {
+            cell.IsBathurstTheme = IsBathurstTheme;
+        }
+    }
+
     private void OnGuestCloseoutOpenRequested(object? sender, EventArgs e) => OpenGuestCloseoutPanel();
 
     public IAsyncRelayCommand RefreshFromDatabaseCommand { get; }
@@ -434,6 +458,20 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public IAsyncRelayCommand UndoComplimentaryToastCommand { get; }
 
+    public bool IsBathurstTheme
+    {
+        get => _isBathurstTheme;
+        private set
+        {
+            if (SetProperty(ref _isBathurstTheme, value))
+            {
+                OnPropertyChanged(nameof(BoardMode));
+                OnPropertyChanged(nameof(SelectedBalanceTier));
+                ApplyBathurstFlagToCells();
+            }
+        }
+    }
+
     public ObservableCollection<QuickFreeItemButtonViewModel> QuickFreeItems { get; } = new();
 
     public bool ShowQuickFreeItems => !IsArchivedMode && QuickFreeItems.Count > 0;
@@ -465,6 +503,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public async Task RefreshTabsFromDatabaseAsync()
     {
+        IsBathurstTheme = _themes.CurrentThemeId == UiThemeId.Bathurst1000;
+        ApplyBathurstFlagToCells();
         try
         {
             var rows = await _tabQuery.GetOpenTabCardsAsync().ConfigureAwait(true);
@@ -886,6 +926,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
             page,
             includeAdd,
             addKind);
+        ApplyBathurstFlagToCells();
 
         PageInfo = TabsBoardPagerHelper.FormatPageInfo(
             page,

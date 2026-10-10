@@ -455,7 +455,7 @@ public sealed class SettingsPageViewModel : ObservableViewModel
 
         var hint = new TextBlock
         {
-            Text = "Select a theme to preview it live. Apply saves to your user profile.",
+            Text = "Select a theme to preview it live. Apply saves to your user profile. Bathurst 1000 restyles Bar Tabs for race day.",
             TextWrapping = TextWrapping.WrapWholeWords,
             Foreground = Application.Current.Resources["PosTextSecondaryBrush"] as Brush,
             Margin = new Thickness(0, 0, 0, 10),

@@ -58,7 +58,9 @@ namespace NickeltownPOSV4.Themes
         /// <summary>Soft warm light, low glare.</summary>
         Cream,
         /// <summary>Muted eucalyptus green-grey calm.</summary>
-        Eucalyptus
+        Eucalyptus,
+        /// <summary>Bathurst 1000 race-day carbon and racing red.</summary>
+        Bathurst1000
     }
 
     /// <summary>
@@ -852,6 +854,34 @@ namespace NickeltownPOSV4.Themes
             ControlStrongBorder = Color.FromArgb(255, 0x44, 0x40, 0x3C)
         };
 
+        private static readonly ThemePalette Bathurst1000Palette = new ThemePalette
+        {
+            Background = Color.FromArgb(255, 0x05, 0x05, 0x07),
+            Card = Color.FromArgb(255, 0x14, 0x14, 0x16),
+            CardAlt = Color.FromArgb(255, 0x10, 0x10, 0x12),
+            Border = Color.FromArgb(255, 0x2A, 0x2A, 0x30),
+            Accent = Color.FromArgb(255, 0xE1, 0x06, 0x00),
+            AccentHover = Color.FromArgb(255, 0xFF, 0x2A, 0x1F),
+            TextPrimary = Color.FromArgb(255, 0xFF, 0xFF, 0xFF),
+            TextSecondary = Color.FromArgb(255, 0xB4, 0xB4, 0xBC),
+            Success = Color.FromArgb(255, 0x22, 0xC5, 0x5E),
+            Danger = Color.FromArgb(255, 0xEF, 0x44, 0x44),
+            Warning = Color.FromArgb(255, 0xF5, 0x9E, 0x0B),
+            RowAlt = Color.FromArgb(255, 0x14, 0x14, 0x16),
+            TilePrimary = Color.FromArgb(255, 0x1A, 0x1A, 0x1E),
+            TilePrimaryHover = Color.FromArgb(255, 0x26, 0x26, 0x2B),
+            TileDangerBack = Color.FromArgb(255, 0x45, 0x0A, 0x0A),
+            TileDangerBackHover = Color.FromArgb(255, 0x7F, 0x1D, 0x1D),
+            TileDangerForeground = Color.FromArgb(255, 0xFC, 0xA5, 0xA5),
+            DrinkRegular = Color.FromArgb(255, 0x16, 0x16, 0x18),
+            DrinkOrderIn = Color.FromArgb(255, 0xE1, 0x06, 0x00),
+            DrinkSpecial = Color.FromArgb(255, 0xFD, 0xE6, 0x8A),
+            DrinkSpecialPriceText = Color.FromArgb(255, 0x78, 0x35, 0x0F),
+            FocusRing = Color.FromArgb(255, 0xFF, 0x2A, 0x1F),
+            PressedRing = Color.FromArgb(255, 0xDC, 0x26, 0x26),
+            ControlStrongBorder = Color.FromArgb(255, 0x52, 0x52, 0x58)
+        };
+
         private static readonly ThemePalette EucalyptusPalette = new ThemePalette
         {
             Background = Color.FromArgb(255, 0xE8, 0xEE, 0xEA),
@@ -909,6 +939,7 @@ namespace NickeltownPOSV4.Themes
             UiThemeId.TrackDay => TrackDayPalette,
             UiThemeId.Cream => CreamPalette,
             UiThemeId.Eucalyptus => EucalyptusPalette,
+            UiThemeId.Bathurst1000 => Bathurst1000Palette,
             _ => LightPalette
         };
 
@@ -940,7 +971,8 @@ namespace NickeltownPOSV4.Themes
             || CurrentThemeId == UiThemeId.FlounderersRed
             || CurrentThemeId == UiThemeId.PitstopDark
             || CurrentThemeId == UiThemeId.Workshop
-            || CurrentThemeId == UiThemeId.TrackDay;
+            || CurrentThemeId == UiThemeId.TrackDay
+            || CurrentThemeId == UiThemeId.Bathurst1000;
 
         public static Color Background => _palette.Background;
         public static Color Card => _palette.Card;
@@ -975,6 +1007,7 @@ namespace NickeltownPOSV4.Themes
         {
             CurrentThemeId = id;
             _palette = PaletteFor(id);
+            BathurstTabsTheme.IsEnabled = id == UiThemeId.Bathurst1000;
             ThemeChanged?.Invoke(null, EventArgs.Empty);
         }
 

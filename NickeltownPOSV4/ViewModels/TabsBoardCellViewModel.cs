@@ -6,6 +6,7 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
 {
     private TabCardModel? _tab;
     private TabsBoardCellKind _kind = TabsBoardCellKind.Tab;
+    private bool _isBathurstTheme;
 
     public TabsBoardCellKind Kind => _kind;
 
@@ -40,6 +41,22 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
     public string TabLastUpdatedText => Tab?.LastUpdatedText ?? string.Empty;
 
     public string TabFooterLine => Tab?.FooterLine ?? string.Empty;
+
+    public bool IsBathurstTheme
+    {
+        get => _isBathurstTheme;
+        set
+        {
+            if (SetProperty(ref _isBathurstTheme, value))
+            {
+                RaiseAll();
+            }
+        }
+    }
+
+    /// <summary>Changes when Bathurst mode or selection changes so card converters re-run.</summary>
+    public string CardChromeKey =>
+        $"{(IsBathurstTheme ? "B" : "N")}:{(TabIsSelected ? "S" : "U")}:{(TabIsGuest ? "G" : "M")}:{DisplayBalanceTier}";
 
     public bool TabIsSelected => Tab?.IsSelected ?? false;
 
@@ -123,6 +140,8 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
         OnPropertyChanged(nameof(TabFooterLine));
         OnPropertyChanged(nameof(TabIsSelected));
         OnPropertyChanged(nameof(TabIsGuest));
+        OnPropertyChanged(nameof(IsBathurstTheme));
+        OnPropertyChanged(nameof(CardChromeKey));
         OnPropertyChanged(string.Empty);
     }
 }

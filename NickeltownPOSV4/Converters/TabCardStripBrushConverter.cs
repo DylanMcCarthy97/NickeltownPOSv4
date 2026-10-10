@@ -3,6 +3,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using NickeltownPOSV4.Models;
+using NickeltownPOSV4.Themes;
+using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Converters;
 
@@ -10,18 +12,36 @@ namespace NickeltownPOSV4.Converters;
 public sealed class TabCardStripBrushConverter : IValueConverter
 {
     public static Brush ResolveStripBrush(bool isGuest, TabBalanceTier tier) =>
-        Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(tier));
+        BathurstTabsTheme.IsEnabled
+            ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(isGuest, tier))
+            : Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(tier));
 
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        if (value is TabCardModel tab)
+        if (value is TabsBoardCellViewModel cell)
         {
-            return Lookup(TabBalanceTierBrushes.StripResourceKey(tab));
+            var isGuest = cell.TabIsGuest;
+            var cellTier = cell.DisplayBalanceTier;
+            if (cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled)
+            {
+                return BathurstTabsBrushes.FromArgb(0x00000000);
+            }
+
+            return Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(cellTier));
         }
 
-        if (value is TabBalanceTier tier)
+        if (value is TabCardModel tab)
         {
-            return Lookup(TabBalanceTierBrushes.StripResourceKey(tier));
+            return BathurstTabsTheme.IsEnabled
+                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(tab.IsGuest, tab.BalanceTier))
+                : Lookup(TabBalanceTierBrushes.StripResourceKey(tab));
+        }
+
+        if (value is TabBalanceTier balanceTier)
+        {
+            return BathurstTabsTheme.IsEnabled
+                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.BalanceColor(balanceTier))
+                : Lookup(TabBalanceTierBrushes.StripResourceKey(balanceTier));
         }
 
         return Lookup(TabBalanceTierBrushes.StripResourceKey(TabBalanceTier.Settled));
