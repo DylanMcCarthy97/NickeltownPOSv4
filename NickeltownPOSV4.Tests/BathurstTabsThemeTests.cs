@@ -159,14 +159,23 @@ public sealed class BathurstTabsThemeTests
     [Fact]
     public void CardBackgroundIndex_Alternates_ByBoardSlot()
     {
-        Assert.Equal(0, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(0, 4));
-        Assert.Equal(1, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(1, 4));
-        Assert.Equal(2, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(2, 4));
-        Assert.Equal(3, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(3, 4));
-        Assert.Equal(0, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(4, 4));
-        Assert.Equal(1, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(5, 4));
-        Assert.Equal(2, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(8, 4));
+        Assert.Equal(0, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(0, 6));
+        Assert.Equal(1, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(1, 6));
+        Assert.Equal(2, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(2, 6));
+        Assert.Equal(3, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(3, 6));
+        Assert.Equal(4, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(4, 6));
+        Assert.Equal(5, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(5, 6));
+        Assert.Equal(0, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(6, 6));
+        Assert.Equal(2, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(8, 6));
     }
+
+    [Theory]
+    [InlineData(TabBalanceTier.Negative, 0xFFFF7575u)]
+    [InlineData(TabBalanceTier.Low, 0xFFFFC268u)]
+    [InlineData(TabBalanceTier.Good, 0xFF6DE58Bu)]
+    [InlineData(TabBalanceTier.Settled, 0xFFC4CAD2u)]
+    public void BalanceColor_MatchesTier(TabBalanceTier tier, uint expected) =>
+        Assert.Equal(expected, BathurstTabsTheme.BalanceColor(tier));
 
     [Fact]
     public void FreeItemTile_IsDeepBlue_NotBrightPrimary()

@@ -13,9 +13,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
 {
     private readonly IAppUpdateConfigService _config;
     private readonly IAppUpdateService _updates;
-    private readonly IInputOverlayService _inputOverlay;
 
-    private string _feedBaseUrl = string.Empty;
     private bool _checkOnStartup = true;
     private bool _autoInstall;
     private string _statusMessage = string.Empty;
@@ -25,41 +23,21 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
 
     public UpdateConfigViewModel(
         IAppUpdateConfigService config,
-        IAppUpdateService updates,
-        IInputOverlayService inputOverlay)
+        IAppUpdateService updates)
     {
         _config = config;
         _updates = updates;
-        _inputOverlay = inputOverlay;
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsBusy);
         CheckNowCommand = new AsyncRelayCommand(CheckNowAsync, () => !IsBusy);
-        EditFeedUrlCommand = new AsyncRelayCommand(EditFeedUrlAsync, () => !IsBusy);
     }
 
     public IAsyncRelayCommand SaveCommand { get; }
 
     public IAsyncRelayCommand CheckNowCommand { get; }
 
-    public IAsyncRelayCommand EditFeedUrlCommand { get; }
-
     public string CurrentBuildText => $"Current build: {AppVersionInfo.CurrentVersionString}";
 
-    public string FeedBaseUrl
-    {
-        get => _feedBaseUrl;
-        set
-        {
-            if (SetProperty(ref _feedBaseUrl, value))
-            {
-                OnPropertyChanged(nameof(FeedBaseUrlSummary));
-            }
-        }
-    }
-
-    public string FeedBaseUrlSummary =>
-        string.IsNullOrWhiteSpace(FeedBaseUrl)
-            ? $"Tap to enter — e.g. {AppUpdateConfig.RecommendedFeedBaseUrl}"
-            : FeedBaseUrl;
+    public string FeedSourceSummary => "Updates come from the Nickeltown pit feed automatically.";
 
     public bool CheckOnStartup
     {
@@ -96,7 +74,6 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
             {
                 SaveCommand.NotifyCanExecuteChanged();
                 CheckNowCommand.NotifyCanExecuteChanged();
-                EditFeedUrlCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -106,26 +83,9 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
     public async Task LoadAsync()
     {
         var cfg = await _config.LoadAsync().ConfigureAwait(true);
-        FeedBaseUrl = cfg.FeedBaseUrl ?? string.Empty;
         CheckOnStartup = cfg.CheckOnStartup;
         AutoInstall = cfg.AutoInstall;
         StatusMessage = string.Empty;
-    }
-
-    private async Task EditFeedUrlAsync()
-    {
-        var seed = string.IsNullOrWhiteSpace(FeedBaseUrl)
-            ? AppUpdateConfig.RecommendedFeedBaseUrl
-            : FeedBaseUrl;
-        var result = await _inputOverlay
-            .ShowKeyboardAsync(seed, "Update feed (folder, https://, or UNC)")
-            .ConfigureAwait(true);
-        if (result is null)
-        {
-            return;
-        }
-
-        FeedBaseUrl = result.Trim();
     }
 
     private async Task SaveAsync()
@@ -135,7 +95,6 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
         {
             await _config.SaveAsync(new AppUpdateConfig
             {
-                FeedBaseUrl = FeedBaseUrl.Trim(),
                 CheckOnStartup = CheckOnStartup,
                 AutoInstall = AutoInstall,
             }).ConfigureAwait(true);

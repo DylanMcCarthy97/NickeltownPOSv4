@@ -45,7 +45,7 @@
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="The pit crew feed for this till — it checks for a new build, fits it, then restarts on its own." />
+                        Text="Checks the Nickeltown pit feed for a new build, fits it, then restarts on its own." />
                     <TextBlock
                         Margin="0,10,0,0"
                         FontWeight="SemiBold"
@@ -58,21 +58,17 @@
             Grid.Row="1"
             FontSize="13"
             Foreground="{StaticResource PosTextSecondaryBrush}"
-            Text="How it works: the till reads update-manifest.json on your feed, pulls in the new build, fits it, then restarts itself."
+            Text="{Binding FeedSourceSummary, Mode=OneWay}"
             TextWrapping="Wrap" />
 
         <Border Grid.Row="2" Style="{StaticResource SettingsCardStyle}">
             <StackPanel Spacing="12">
-                <TextBlock Text="Update feed (folder, https://, or UNC)" />
-                <Button Command="{Binding EditFeedUrlCommand}" Style="{StaticResource SettingsTapFieldStyle}">
-                    <TextBlock Text="{Binding FeedBaseUrlSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                </Button>
                 <CheckBox Content="Check for a new build when the app starts" IsChecked="{Binding CheckOnStartup, Mode=TwoWay}" />
                 <CheckBox Content="Fit it without asking (kiosk mode)" IsChecked="{Binding AutoInstall, Mode=TwoWay}" />
                 <TextBlock
                     FontSize="13"
                     Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="First-time setup: install once from the .msix. Later releases only need a new package and update-manifest.json on the feed. The till comes back on its own after a build — if it does not, open it from the Start menu once."
+                    Text="First-time setup: install once from the .msix. Later releases land on the pit feed automatically — tap Check for new build, or let startup check do it."
                     TextWrapping="Wrap" />
                 <TextBlock
                     Foreground="#FFB91C1C"
