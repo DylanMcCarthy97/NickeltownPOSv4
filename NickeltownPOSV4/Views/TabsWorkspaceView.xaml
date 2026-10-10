@@ -275,9 +275,9 @@
                                     <Rectangle
                                         RadiusX="12"
                                         RadiusY="12"
-                                        Opacity="0.16"
+                                        Opacity="0.20"
                                         IsHitTestVisible="False"
-                                        Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Center, Mode=OneWay}"
+                                        Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Uniform|Center, Mode=OneWay}"
                                         Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -362,14 +362,14 @@
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
-                                        <!-- ImageBrush + rounded Rectangle crops UniformToFill without stretching source art. -->
+                                        <!-- Uniform keeps car proportions; dark card chrome fills letterbox areas. -->
                                         <Rectangle
                                             Grid.RowSpan="2"
                                             RadiusX="12"
                                             RadiusY="12"
-                                            Opacity="0.18"
+                                            Opacity="0.22"
                                             IsHitTestVisible="False"
-                                            Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Center, Mode=OneWay}"
+                                            Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Uniform|Center, Mode=OneWay}"
                                             Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Border
                                             Grid.Row="0"
