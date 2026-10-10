@@ -47,7 +47,7 @@ public sealed partial class TabsWorkspaceView : UserControl
         var vm = DataContext as TabsWorkspaceViewModel;
         var bathurst = vm is { IsBathurstTheme: true };
         var roomyFooter = bathurst || vm is { CanToggleBathurstTheme: true };
-        HeaderRowDef.Height = new GridLength(bathurst ? 88 : 56);
+        HeaderRowDef.Height = new GridLength(bathurst ? 112 : 56);
         ModeRowDef.Height = new GridLength(bathurst ? 52 : 70);
         ModeSelectorGrid.Height = bathurst ? 52 : 70;
         ModeSelectorGrid.Margin = bathurst ? new Thickness(8, 0, 8, 0) : new Thickness(10, 2, 10, 0);

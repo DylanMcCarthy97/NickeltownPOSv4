@@ -22,6 +22,7 @@
         <converters:TabsModeSegmentForegroundConverter x:Key="ModeSegmentFg" />
         <converters:BathurstOrThemeBrushConverter x:Key="BathurstBrush" />
         <converters:UriToImageBrushConverter x:Key="UriToImageBrush" />
+        <converters:PathToImageSourceConverter x:Key="PathToImage" />
 
         <Style x:Key="TabsModeSegmentStyle" TargetType="Button">
             <Setter Property="MinHeight" Value="50" />
@@ -272,12 +273,13 @@
                                         Stroke="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=AddBorder, Mode=OneWay}"
                                         StrokeDashArray="6,4"
                                         StrokeThickness="2" />
-                                    <Rectangle
-                                        RadiusX="12"
-                                        RadiusY="12"
-                                        Opacity="0.20"
+                                    <Image
+                                        Opacity="0.36"
+                                        Stretch="Uniform"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
                                         IsHitTestVisible="False"
-                                        Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Uniform|Center, Mode=OneWay}"
+                                        Source="{Binding CardBackgroundUri, Converter={StaticResource PathToImage}, ConverterParameter=360, Mode=OneWay}"
                                         Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -362,14 +364,15 @@
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
-                                        <!-- Uniform keeps car proportions; dark card chrome fills letterbox areas. -->
-                                        <Rectangle
+                                        <!-- Assets match card aspect with full car + blurred edge fill; Uniform paints edge-to-edge. -->
+                                        <Image
                                             Grid.RowSpan="2"
-                                            RadiusX="12"
-                                            RadiusY="12"
-                                            Opacity="0.22"
+                                            Opacity="0.38"
+                                            Stretch="Uniform"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
                                             IsHitTestVisible="False"
-                                            Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Uniform|Center, Mode=OneWay}"
+                                            Source="{Binding CardBackgroundUri, Converter={StaticResource PathToImage}, ConverterParameter=360, Mode=OneWay}"
                                             Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Border
                                             Grid.Row="0"

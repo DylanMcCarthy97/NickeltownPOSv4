@@ -1,6 +1,6 @@
 {
-  "version": "1.0.7.32",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.32/NickeltownPOSV4_1.0.7.32_x64.msix",
-  "releaseNotes": "Update feed now ships on the rolling GitHub release tag update-feed (and on each versioned release) so tills are not stuck on a stale raw/CDN copy. Paste https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/update-feed into Admin → Pit updates.",
+  "version": "1.0.7.33",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.33/NickeltownPOSV4_1.0.7.33_x64.msix",
+  "releaseNotes": "Taller 112px Bathurst banner and tab cards that show a full car silhouette with Uniform fit (no zoomed panel crops). Use feed https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/update-feed",
   "mandatory": false
 }
