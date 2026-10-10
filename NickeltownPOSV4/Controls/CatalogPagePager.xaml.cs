@@ -65,7 +65,7 @@ public sealed partial class CatalogPagePager : UserControl
 
     private void ApplyChrome()
     {
-        if (PagerChrome is null || PageLabelText is null)
+        if (PagerChrome is null || PageLabelText is null || PreviousButton is null || NextButton is null)
         {
             return;
         }
@@ -75,17 +75,39 @@ public sealed partial class CatalogPagePager : UserControl
             PagerChrome.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x1B, 0x1F, 0x25));
             PagerChrome.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xC4, 0xCA, 0xD2));
             PageLabelText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xF5, 0xF5, 0xF5));
+            PagerChrome.MinHeight = 52;
+            PagerChrome.Padding = new Thickness(8, 4, 8, 4);
+
+            if (Resources.TryGetValue("BathurstPagerNavButtonStyle", out var bathurstStyle) &&
+                bathurstStyle is Style style)
+            {
+                PreviousButton.Style = style;
+                NextButton.Style = style;
+            }
         }
-        else if (Application.Current?.Resources.TryGetValue("PosSurfaceBrush", out var surface) == true &&
-                 surface is Brush surfaceBrush &&
-                 Application.Current.Resources.TryGetValue("PosBorderBrush", out var border) == true &&
-                 border is Brush borderBrush &&
-                 Application.Current.Resources.TryGetValue("PosTextPrimaryBrush", out var text) == true &&
-                 text is Brush textBrush)
+        else
         {
-            PagerChrome.Background = surfaceBrush;
-            PagerChrome.BorderBrush = borderBrush;
-            PageLabelText.Foreground = textBrush;
+            PagerChrome.MinHeight = 40;
+            PagerChrome.Padding = new Thickness(4, 2, 4, 2);
+
+            if (Application.Current?.Resources.TryGetValue("TabsPagerPillButtonStyle", out var pill) == true &&
+                pill is Style pillStyle)
+            {
+                PreviousButton.Style = pillStyle;
+                NextButton.Style = pillStyle;
+            }
+
+            if (Application.Current?.Resources.TryGetValue("PosSurfaceBrush", out var surface) == true &&
+                surface is Brush surfaceBrush &&
+                Application.Current.Resources.TryGetValue("PosBorderBrush", out var border) == true &&
+                border is Brush borderBrush &&
+                Application.Current.Resources.TryGetValue("PosTextPrimaryBrush", out var text) == true &&
+                text is Brush textBrush)
+            {
+                PagerChrome.Background = surfaceBrush;
+                PagerChrome.BorderBrush = borderBrush;
+                PageLabelText.Foreground = textBrush;
+            }
         }
     }
 
@@ -125,7 +147,7 @@ public sealed partial class CatalogPagePager : UserControl
         set => SetValue(IsNextEnabledProperty, value);
     }
 
-    /// <summary>When true, uses a dark charcoal pill with white label (Bathurst Race Day).</summary>
+    /// <summary>When true, uses Bathurst dark charcoal chrome with explicit nav visual states.</summary>
     public bool UseDarkChrome
     {
         get => (bool)GetValue(UseDarkChromeProperty);

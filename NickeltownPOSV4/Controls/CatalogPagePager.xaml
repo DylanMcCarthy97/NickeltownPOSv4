@@ -10,29 +10,148 @@
     mc:Ignorable="d">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+
+        <SolidColorBrush x:Key="BathurstPagerNavBackground" Color="#FF1B1F25" />
+        <SolidColorBrush x:Key="BathurstPagerNavBorder" Color="#FFC4CAD2" />
+        <SolidColorBrush x:Key="BathurstPagerNavForeground" Color="#FFF5F5F5" />
+        <SolidColorBrush x:Key="BathurstPagerNavHoverBackground" Color="#FF8B1E28" />
+        <SolidColorBrush x:Key="BathurstPagerNavHoverBorder" Color="#FFE32636" />
+        <SolidColorBrush x:Key="BathurstPagerNavPressedBackground" Color="#FFE32636" />
+        <SolidColorBrush x:Key="BathurstPagerNavPressedBorder" Color="#FFFF7575" />
+        <SolidColorBrush x:Key="BathurstPagerNavDisabledBackground" Color="#FF161A20" />
+        <SolidColorBrush x:Key="BathurstPagerNavDisabledBorder" Color="#FF3A404A" />
+        <SolidColorBrush x:Key="BathurstPagerNavDisabledForeground" Color="#FF8A9199" />
+        <SolidColorBrush x:Key="BathurstPagerNavFocusStroke" Color="#FFE32636" />
+        <SolidColorBrush x:Key="BathurstPagerNavOnAccent" Color="#FFFFFFFF" />
+
+        <!-- Bathurst Race Day pager nav: dark charcoal, white arrows, restrained red hover. -->
+        <Style x:Key="BathurstPagerNavButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="MinWidth" Value="44" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource BathurstPagerNavBackground}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BathurstPagerNavBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource BathurstPagerNavForeground}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="RootGrid">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="Background">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavHoverBackground}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="BorderBrush">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavHoverBorder}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavOnAccent}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="Background">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavPressedBackground}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="BorderBrush">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavPressedBorder}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavOnAccent}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="Background">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavDisabledBackground}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="BorderBrush">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavDisabledBorder}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavDisabledForeground}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualState>
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="FocusStates">
+                                    <VisualState x:Name="Focused">
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="FocusRing"
+                                                Storyboard.TargetProperty="Opacity"
+                                                To="1"
+                                                Duration="0" />
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Unfocused" />
+                                    <VisualState x:Name="PointerFocused" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+
+                            <Border
+                                x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}" />
+                            <Rectangle
+                                x:Name="FocusRing"
+                                RadiusX="10"
+                                RadiusY="10"
+                                Stroke="{StaticResource BathurstPagerNavFocusStroke}"
+                                StrokeThickness="2"
+                                Opacity="0"
+                                IsHitTestVisible="False" />
+                            <ContentPresenter
+                                x:Name="ContentPresenter"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Foreground="{TemplateBinding Foreground}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
+
     <Border
         x:Name="PagerChrome"
-        Height="40"
-        Padding="4,2"
+        MinHeight="48"
+        Padding="6,2"
         HorizontalAlignment="Center"
         Background="{StaticResource PosSurfaceBrush}"
         BorderBrush="{StaticResource PosBorderBrush}"
         BorderThickness="1"
         CornerRadius="16"
         Visibility="{Binding ShowPager, ElementName=PagerRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
             <Button
+                x:Name="PreviousButton"
                 Command="{Binding PreviousCommand, ElementName=PagerRoot}"
                 IsEnabled="{Binding IsPreviousEnabled, ElementName=PagerRoot, Mode=OneWay}"
                 Style="{StaticResource TabsPagerPillButtonStyle}"
                 ToolTipService.ToolTip="Previous page">
-                <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE72B;" />
+                <FontIcon x:Name="PreviousIcon" FontFamily="Segoe MDL2 Assets" FontSize="16" Glyph="&#xE72B;" />
             </Button>
             <TextBlock
                 x:Name="PageLabelText"
                 MinWidth="96"
-                Padding="4,0"
+                Padding="6,0"
                 VerticalAlignment="Center"
                 FontSize="12"
                 FontWeight="SemiBold"
@@ -40,11 +159,12 @@
                 Text="{Binding PageLabel, ElementName=PagerRoot, Mode=OneWay}"
                 TextAlignment="Center" />
             <Button
+                x:Name="NextButton"
                 Command="{Binding NextCommand, ElementName=PagerRoot}"
                 IsEnabled="{Binding IsNextEnabled, ElementName=PagerRoot, Mode=OneWay}"
                 Style="{StaticResource TabsPagerPillButtonStyle}"
                 ToolTipService.ToolTip="Next page">
-                <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE72A;" />
+                <FontIcon x:Name="NextIcon" FontFamily="Segoe MDL2 Assets" FontSize="16" Glyph="&#xE72A;" />
             </Button>
         </StackPanel>
     </Border>

@@ -162,4 +162,12 @@ public sealed class BathurstTabsThemeTests
         Assert.Equal(0xFF1A2744u, BathurstTabsTheme.FreeItemTile);
         Assert.NotEqual(0xFF2F6FEDu, BathurstTabsTheme.FreeItemTile);
     }
+
+    [Fact]
+    public void UriToImageBrush_ReturnsNull_ForEmptyUri()
+    {
+        var converter = new Converters.UriToImageBrushConverter();
+        Assert.Null(converter.Convert(null!, typeof(object), null!, string.Empty));
+        Assert.Null(converter.Convert(string.Empty, typeof(object), null!, string.Empty));
+    }
 }

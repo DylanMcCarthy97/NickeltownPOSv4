@@ -21,6 +21,7 @@
         <converters:TabsModeSegmentBrushConverter x:Key="ModeSegmentBg" />
         <converters:TabsModeSegmentForegroundConverter x:Key="ModeSegmentFg" />
         <converters:BathurstOrThemeBrushConverter x:Key="BathurstBrush" />
+        <converters:UriToImageBrushConverter x:Key="UriToImageBrush" />
 
         <Style x:Key="TabsModeSegmentStyle" TargetType="Button">
             <Setter Property="MinHeight" Value="50" />
@@ -232,17 +233,19 @@
                     Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Canvas, Mode=OneWay}"
                     CornerRadius="10">
                     <Grid>
-                        <Image
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
+                        <Border
+                            CornerRadius="10"
                             IsHitTestVisible="False"
                             Opacity="0.18"
-                            Stretch="UniformToFill"
                             Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                            <Image.Source>
-                                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/board-backdrop.jpg" DecodePixelWidth="720" />
-                            </Image.Source>
-                        </Image>
+                            <Border.Background>
+                                <ImageBrush AlignmentX="Center" AlignmentY="Center" Stretch="UniformToFill">
+                                    <ImageBrush.ImageSource>
+                                        <BitmapImage DecodePixelWidth="720" UriSource="ms-appx:///Assets/Bathurst/board-backdrop.jpg" />
+                                    </ImageBrush.ImageSource>
+                                </ImageBrush>
+                            </Border.Background>
+                        </Border>
             <ItemsControl
                 IsTabStop="False"
                 ItemsSource="{Binding PageSlots, Mode=OneWay}">
@@ -269,13 +272,12 @@
                                         Stroke="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=AddBorder, Mode=OneWay}"
                                         StrokeDashArray="6,4"
                                         StrokeThickness="2" />
-                                    <Image
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        IsHitTestVisible="False"
+                                    <Rectangle
+                                        RadiusX="12"
+                                        RadiusY="12"
                                         Opacity="0.16"
-                                        Source="{Binding CardBackgroundUri, Mode=OneWay}"
-                                        Stretch="UniformToFill"
+                                        IsHitTestVisible="False"
+                                        Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Center, Mode=OneWay}"
                                         Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -360,14 +362,14 @@
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
-                                        <Image
+                                        <!-- ImageBrush + rounded Rectangle crops UniformToFill without stretching source art. -->
+                                        <Rectangle
                                             Grid.RowSpan="2"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch"
-                                            IsHitTestVisible="False"
+                                            RadiusX="12"
+                                            RadiusY="12"
                                             Opacity="0.18"
-                                            Source="{Binding CardBackgroundUri, Mode=OneWay}"
-                                            Stretch="UniformToFill"
+                                            IsHitTestVisible="False"
+                                            Fill="{Binding CardBackgroundUri, Converter={StaticResource UriToImageBrush}, ConverterParameter=Center, Mode=OneWay}"
                                             Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Border
                                             Grid.Row="0"
@@ -486,6 +488,8 @@
                         Grid.Column="2"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
+                        IsNextEnabled="{Binding CanPageNext, Mode=OneWay}"
+                        IsPreviousEnabled="{Binding CanPagePrevious, Mode=OneWay}"
                         NextCommand="{Binding NextPageCommand}"
                         PageLabel="{Binding PageInfo, Mode=OneWay}"
                         PreviousCommand="{Binding PreviousPageCommand}"
@@ -503,17 +507,19 @@
                     <Border
                         Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Surface, Mode=OneWay}"
                         CornerRadius="12" />
-                    <Image
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        IsHitTestVisible="False"
+                    <Border
+                        CornerRadius="12"
                         Opacity="0.55"
-                        Stretch="UniformToFill"
+                        IsHitTestVisible="False"
                         Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                        <Image.Source>
-                            <BitmapImage UriSource="ms-appx:///Assets/Bathurst/right-panel-panorama.jpg" DecodePixelWidth="360" />
-                        </Image.Source>
-                    </Image>
+                        <Border.Background>
+                            <ImageBrush AlignmentX="Center" AlignmentY="Center" Stretch="UniformToFill">
+                                <ImageBrush.ImageSource>
+                                    <BitmapImage DecodePixelWidth="360" UriSource="ms-appx:///Assets/Bathurst/right-panel-panorama.jpg" />
+                                </ImageBrush.ImageSource>
+                            </ImageBrush>
+                        </Border.Background>
+                    </Border>
                     <Border
                         Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=PanelScrim, Mode=OneWay}"
                         CornerRadius="12"
