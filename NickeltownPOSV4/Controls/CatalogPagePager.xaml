@@ -11,6 +11,19 @@
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
 
+        <SolidColorBrush x:Key="BathurstPagerNavBackground" Color="#FF1B1F25" />
+        <SolidColorBrush x:Key="BathurstPagerNavBorder" Color="#FFC4CAD2" />
+        <SolidColorBrush x:Key="BathurstPagerNavForeground" Color="#FFF5F5F5" />
+        <SolidColorBrush x:Key="BathurstPagerNavHoverBackground" Color="#FF8B1E28" />
+        <SolidColorBrush x:Key="BathurstPagerNavHoverBorder" Color="#FFE32636" />
+        <SolidColorBrush x:Key="BathurstPagerNavPressedBackground" Color="#FFE32636" />
+        <SolidColorBrush x:Key="BathurstPagerNavPressedBorder" Color="#FFFF7575" />
+        <SolidColorBrush x:Key="BathurstPagerNavDisabledBackground" Color="#FF161A20" />
+        <SolidColorBrush x:Key="BathurstPagerNavDisabledBorder" Color="#FF3A404A" />
+        <SolidColorBrush x:Key="BathurstPagerNavDisabledForeground" Color="#FF8A9199" />
+        <SolidColorBrush x:Key="BathurstPagerNavFocusStroke" Color="#FFE32636" />
+        <SolidColorBrush x:Key="BathurstPagerNavOnAccent" Color="#FFFFFFFF" />
+
         <!-- Bathurst Race Day pager nav: dark charcoal, white arrows, restrained red hover. -->
         <Style x:Key="BathurstPagerNavButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="44" />
@@ -20,10 +33,10 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Background" Value="#FF1B1F25" />
-            <Setter Property="BorderBrush" Value="#FFC4CAD2" />
+            <Setter Property="Background" Value="{StaticResource BathurstPagerNavBackground}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BathurstPagerNavBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#FFF5F5F5" />
+            <Setter Property="Foreground" Value="{StaticResource BathurstPagerNavForeground}" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="UseSystemFocusVisuals" Value="False" />
             <Setter Property="Template">
@@ -36,39 +49,39 @@
                                     <VisualState x:Name="PointerOver">
                                         <Storyboard>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FF8B1E28" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavHoverBackground}" />
                                             </ObjectAnimationUsingKeyFrames>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FFE32636" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavHoverBorder}" />
                                             </ObjectAnimationUsingKeyFrames>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavOnAccent}" />
                                             </ObjectAnimationUsingKeyFrames>
                                         </Storyboard>
                                     </VisualState>
                                     <VisualState x:Name="Pressed">
                                         <Storyboard>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FFE32636" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavPressedBackground}" />
                                             </ObjectAnimationUsingKeyFrames>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FFFF7575" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavPressedBorder}" />
                                             </ObjectAnimationUsingKeyFrames>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavOnAccent}" />
                                             </ObjectAnimationUsingKeyFrames>
                                         </Storyboard>
                                     </VisualState>
                                     <VisualState x:Name="Disabled">
                                         <Storyboard>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="Background">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FF161A20" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavDisabledBackground}" />
                                             </ObjectAnimationUsingKeyFrames>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Chrome" Storyboard.TargetProperty="BorderBrush">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FF3A404A" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavDisabledBorder}" />
                                             </ObjectAnimationUsingKeyFrames>
                                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FF8A9199" />
+                                                <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource BathurstPagerNavDisabledForeground}" />
                                             </ObjectAnimationUsingKeyFrames>
                                         </Storyboard>
                                     </VisualState>
@@ -76,9 +89,6 @@
                                 <VisualStateGroup x:Name="FocusStates">
                                     <VisualState x:Name="Focused">
                                         <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="FocusRing" Storyboard.TargetProperty="Stroke">
-                                                <DiscreteObjectKeyFrame KeyTime="0" Value="#FFE32636" />
-                                            </ObjectAnimationUsingKeyFrames>
                                             <DoubleAnimation
                                                 Storyboard.TargetName="FocusRing"
                                                 Storyboard.TargetProperty="Opacity"
@@ -101,7 +111,7 @@
                                 x:Name="FocusRing"
                                 RadiusX="10"
                                 RadiusY="10"
-                                Stroke="#FFE32636"
+                                Stroke="{StaticResource BathurstPagerNavFocusStroke}"
                                 StrokeThickness="2"
                                 Opacity="0"
                                 IsHitTestVisible="False" />

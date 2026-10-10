@@ -51,8 +51,9 @@ public sealed partial class TabsWorkspaceView : UserControl
         ModeRowDef.Height = new GridLength(bathurst ? 52 : 70);
         ModeSelectorGrid.Height = bathurst ? 52 : 70;
         ModeSelectorGrid.Margin = bathurst ? new Thickness(8, 0, 8, 0) : new Thickness(10, 2, 10, 0);
-        BoardFooterRowDef.Height = new GridLength(roomyFooter ? 48 : 40);
-        BoardFooterGrid.Height = roomyFooter ? 48 : 40;
+        // Bathurst pager nav targets are 44×44 inside a taller chrome pill.
+        BoardFooterRowDef.Height = new GridLength(roomyFooter ? 56 : 40);
+        BoardFooterGrid.Height = roomyFooter ? 56 : 40;
 
         foreach (var child in ModeSelectorGrid.Children)
         {
