@@ -507,23 +507,49 @@
                     <Border
                         Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Surface, Mode=OneWay}"
                         CornerRadius="12" />
+                    <!-- Full-opacity scenic panel; darkness only via left gradient overlays. -->
                     <Border
                         CornerRadius="12"
-                        Opacity="0.55"
                         IsHitTestVisible="False"
                         Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                         <Border.Background>
-                            <ImageBrush AlignmentX="Center" AlignmentY="Center" Stretch="UniformToFill">
+                            <ImageBrush AlignmentX="Right" AlignmentY="Center" Stretch="UniformToFill">
                                 <ImageBrush.ImageSource>
-                                    <BitmapImage DecodePixelWidth="360" UriSource="ms-appx:///Assets/Bathurst/right-panel-panorama.jpg" />
+                                    <BitmapImage
+                                        DecodePixelWidth="480"
+                                        DecodePixelHeight="854"
+                                        UriSource="ms-appx:///Assets/Bathurst/right-panel-panorama.jpg" />
                                 </ImageBrush.ImageSource>
                             </ImageBrush>
                         </Border.Background>
                     </Border>
                     <Border
-                        Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=PanelScrim, Mode=OneWay}"
                         CornerRadius="12"
-                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        IsHitTestVisible="False"
+                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <GradientStop Color="#E6101216" Offset="0" />
+                                <GradientStop Color="#B3101216" Offset="0.28" />
+                                <GradientStop Color="#66101216" Offset="0.48" />
+                                <GradientStop Color="#22101216" Offset="0.68" />
+                                <GradientStop Color="#00101216" Offset="0.88" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Border
+                        CornerRadius="12"
+                        IsHitTestVisible="False"
+                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                <GradientStop Color="#66101216" Offset="0" />
+                                <GradientStop Color="#00101216" Offset="0.22" />
+                                <GradientStop Color="#00101216" Offset="0.72" />
+                                <GradientStop Color="#99101216" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
                     <Grid Padding="10,8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
