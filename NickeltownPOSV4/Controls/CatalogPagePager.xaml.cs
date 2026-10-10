@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace NickeltownPOSV4.Controls;
 
@@ -42,9 +43,50 @@ public sealed partial class CatalogPagePager : UserControl
         typeof(CatalogPagePager),
         new PropertyMetadata(true));
 
+    public static readonly DependencyProperty UseDarkChromeProperty = DependencyProperty.Register(
+        nameof(UseDarkChrome),
+        typeof(bool),
+        typeof(CatalogPagePager),
+        new PropertyMetadata(false, OnUseDarkChromeChanged));
+
     public CatalogPagePager()
     {
         InitializeComponent();
+        Loaded += (_, _) => ApplyChrome();
+    }
+
+    private static void OnUseDarkChromeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is CatalogPagePager pager)
+        {
+            pager.ApplyChrome();
+        }
+    }
+
+    private void ApplyChrome()
+    {
+        if (PagerChrome is null || PageLabelText is null)
+        {
+            return;
+        }
+
+        if (UseDarkChrome)
+        {
+            PagerChrome.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x1B, 0x1F, 0x25));
+            PagerChrome.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xC4, 0xCA, 0xD2));
+            PageLabelText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xF5, 0xF5, 0xF5));
+        }
+        else if (Application.Current?.Resources.TryGetValue("PosSurfaceBrush", out var surface) == true &&
+                 surface is Brush surfaceBrush &&
+                 Application.Current.Resources.TryGetValue("PosBorderBrush", out var border) == true &&
+                 border is Brush borderBrush &&
+                 Application.Current.Resources.TryGetValue("PosTextPrimaryBrush", out var text) == true &&
+                 text is Brush textBrush)
+        {
+            PagerChrome.Background = surfaceBrush;
+            PagerChrome.BorderBrush = borderBrush;
+            PageLabelText.Foreground = textBrush;
+        }
     }
 
     public ICommand? PreviousCommand
@@ -81,5 +123,12 @@ public sealed partial class CatalogPagePager : UserControl
     {
         get => (bool)GetValue(IsNextEnabledProperty);
         set => SetValue(IsNextEnabledProperty, value);
+    }
+
+    /// <summary>When true, uses a dark charcoal pill with white label (Bathurst Race Day).</summary>
+    public bool UseDarkChrome
+    {
+        get => (bool)GetValue(UseDarkChromeProperty);
+        set => SetValue(UseDarkChromeProperty, value);
     }
 }

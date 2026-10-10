@@ -144,4 +144,22 @@ public sealed class BathurstTabsThemeTests
         Assert.NotEqual(BathurstTabsTheme.BalanceGood, BathurstTabsTheme.BalanceColor(TabBalanceTier.Negative));
         Assert.Equal(BathurstTabsTheme.BalanceNegative, BathurstTabsTheme.BalanceColor(TabBalanceTier.Negative));
     }
+
+    [Fact]
+    public void CardBackgroundIndex_IsStable_ForSameTabId()
+    {
+        var a = ViewModels.TabsBoardCellViewModel.StableBackgroundIndex("tab-abc", 4);
+        var b = ViewModels.TabsBoardCellViewModel.StableBackgroundIndex("tab-abc", 4);
+        var c = ViewModels.TabsBoardCellViewModel.StableBackgroundIndex("tab-xyz", 4);
+        Assert.Equal(a, b);
+        Assert.InRange(a, 0, 3);
+        Assert.InRange(c, 0, 3);
+    }
+
+    [Fact]
+    public void FreeItemTile_IsDeepBlue_NotBrightPrimary()
+    {
+        Assert.Equal(0xFF1A2744u, BathurstTabsTheme.FreeItemTile);
+        Assert.NotEqual(0xFF2F6FEDu, BathurstTabsTheme.FreeItemTile);
+    }
 }

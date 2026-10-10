@@ -12,6 +12,7 @@
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
     <Border
+        x:Name="PagerChrome"
         Height="40"
         Padding="4,2"
         HorizontalAlignment="Center"
@@ -29,6 +30,7 @@
                 <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE72B;" />
             </Button>
             <TextBlock
+                x:Name="PageLabelText"
                 MinWidth="96"
                 Padding="4,0"
                 VerticalAlignment="Center"

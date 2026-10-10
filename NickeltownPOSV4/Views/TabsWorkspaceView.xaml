@@ -115,53 +115,7 @@
         <Grid Grid.Row="0">
             <controls:PosWorkspaceHeader
                 Subtitle="Bar Tabs"
-                Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}">
-                <controls:PosWorkspaceHeader.RightContent>
-                    <Border
-                        MinHeight="44"
-                        MinWidth="148"
-                        Padding="4"
-                        Background="{StaticResource PosHeaderBackgroundBrush}"
-                        BorderBrush="{StaticResource PosBorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="22"
-                        Visibility="{Binding CanToggleBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                        <Grid ColumnSpacing="4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border
-                                Grid.Column="0"
-                                MinHeight="36"
-                                Background="{StaticResource PosAccentBrush}"
-                                CornerRadius="18">
-                                <Button
-                                    MinHeight="36"
-                                    HorizontalAlignment="Stretch"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Command="{Binding SetBathurstThemeCommand}"
-                                    CommandParameter="False"
-                                    Foreground="{StaticResource PosOnAccentForegroundBrush}">
-                                    <TextBlock FontWeight="Bold" Text="Normal" />
-                                </Button>
-                            </Border>
-                            <Button
-                                Grid.Column="1"
-                                MinHeight="36"
-                                MinWidth="68"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Command="{Binding SetBathurstThemeCommand}"
-                                CommandParameter="True"
-                                Foreground="{StaticResource PosOnDarkSecondaryForegroundBrush}">
-                                <TextBlock FontWeight="SemiBold" Text="Bathurst" />
-                            </Button>
-                        </Grid>
-                    </Border>
-                </controls:PosWorkspaceHeader.RightContent>
-            </controls:PosWorkspaceHeader>
+                Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
             <controls:BathurstTabsHeader
                 Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
         </Grid>
@@ -266,16 +220,29 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left tab board -->
-            <Grid Grid.Column="0">
+            <Grid x:Name="BoardColumnGrid" Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="40" />
+                    <RowDefinition x:Name="BoardFooterRowDef" Height="40" />
                 </Grid.RowDefinitions>
 
                 <Border
                     Grid.Row="0"
                     Margin="0,0,0,4"
-                    Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Canvas, Mode=OneWay}">
+                    Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Canvas, Mode=OneWay}"
+                    CornerRadius="10">
+                    <Grid>
+                        <Image
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            IsHitTestVisible="False"
+                            Opacity="0.18"
+                            Stretch="UniformToFill"
+                            Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <Image.Source>
+                                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/board-backdrop.jpg" DecodePixelWidth="720" />
+                            </Image.Source>
+                        </Image>
             <ItemsControl
                 IsTabStop="False"
                 ItemsSource="{Binding PageSlots, Mode=OneWay}">
@@ -302,6 +269,14 @@
                                         Stroke="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=AddBorder, Mode=OneWay}"
                                         StrokeDashArray="6,4"
                                         StrokeThickness="2" />
+                                    <Image
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        IsHitTestVisible="False"
+                                        Opacity="0.16"
+                                        Source="{Binding CardBackgroundUri, Mode=OneWay}"
+                                        Stretch="UniformToFill"
+                                        Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <FontIcon
@@ -385,6 +360,15 @@
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
+                                        <Image
+                                            Grid.RowSpan="2"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            IsHitTestVisible="False"
+                                            Opacity="0.18"
+                                            Source="{Binding CardBackgroundUri, Mode=OneWay}"
+                                            Stretch="UniformToFill"
+                                            Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Border
                                             Grid.Row="0"
                                             Background="{Binding TabStripBrushSource, Converter={StaticResource TabCardStripBrushConverter}, Mode=OneWay}"
@@ -443,18 +427,26 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+                    </Grid>
                 </Border>
 
-                <!-- Board footer: undo last transaction (confirm + PIN) + pagination -->
-                <Grid Grid.Row="1" Height="40" VerticalAlignment="Top">
+                <!-- Board footer: undo + Race Day Theme (admin) + pagination -->
+                <Grid
+                    x:Name="BoardFooterGrid"
+                    Grid.Row="1"
+                    Height="40"
+                    VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button
+                        x:Name="UndoLastButton"
                         Grid.Column="0"
                         MinWidth="108"
+                        MinHeight="36"
                         Padding="10,4"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
@@ -466,25 +458,67 @@
                             <TextBlock FontWeight="SemiBold" Text="Undo Last Transaction" />
                         </StackPanel>
                     </Button>
-                    <controls:CatalogPagePager
+                    <Button
+                        x:Name="RaceDayThemeButton"
                         Grid.Column="1"
+                        Width="44"
+                        Height="44"
+                        MinWidth="44"
+                        MinHeight="44"
+                        Margin="8,0,0,0"
+                        Padding="0"
+                        VerticalAlignment="Center"
+                        Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionDark, Mode=OneWay}"
+                        BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Border, Mode=OneWay}"
+                        BorderThickness="1"
+                        Command="{Binding OpenRaceDayThemeDialogCommand}"
+                        CornerRadius="8"
+                        ToolTipService.ToolTip="Race Day Theme"
+                        Visibility="{Binding CanToggleBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            FontSize="18"
+                            Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=TextPrimary, Mode=OneWay}"
+                            Glyph="&#xE790;" />
+                    </Button>
+                    <controls:CatalogPagePager
+                        x:Name="BoardPager"
+                        Grid.Column="2"
                         HorizontalAlignment="Center"
-                        VerticalAlignment="Top"
+                        VerticalAlignment="Center"
                         NextCommand="{Binding NextPageCommand}"
                         PageLabel="{Binding PageInfo, Mode=OneWay}"
-                        PreviousCommand="{Binding PreviousPageCommand}" />
+                        PreviousCommand="{Binding PreviousPageCommand}"
+                        UseDarkChrome="{Binding IsBathurstTheme, Mode=OneWay}" />
                 </Grid>
             </Grid>
 
             <!-- Right selected tab panel -->
             <Border
                 Grid.Column="2"
-                Padding="10,8"
-                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Surface, Mode=OneWay}"
                 BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Border, Mode=OneWay}"
                 BorderThickness="1"
                 CornerRadius="12">
                 <Grid>
+                    <Border
+                        Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Surface, Mode=OneWay}"
+                        CornerRadius="12" />
+                    <Image
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        IsHitTestVisible="False"
+                        Opacity="0.55"
+                        Stretch="UniformToFill"
+                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <Image.Source>
+                            <BitmapImage UriSource="ms-appx:///Assets/Bathurst/right-panel-panorama.jpg" DecodePixelWidth="360" />
+                        </Image.Source>
+                    </Image>
+                    <Border
+                        Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=PanelScrim, Mode=OneWay}"
+                        CornerRadius="12"
+                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Grid Padding="10,8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -639,9 +673,12 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Button
+                                x:Name="AddDrinksMemberButton"
                                 Grid.Row="0"
                                 Grid.Column="0"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionPrimary, Mode=OneWay}"
                                 Command="{Binding OpenDrinksPanelCommand}"
+                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                                 Style="{StaticResource TabsActionPrimaryStyle}">
                                 <StackPanel HorizontalAlignment="Center" Spacing="3">
                                     <Image Width="22" Height="22">
@@ -653,9 +690,12 @@
                                 </StackPanel>
                             </Button>
                             <Button
+                                x:Name="AddFundsMemberButton"
                                 Grid.Row="0"
                                 Grid.Column="1"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionSuccess, Mode=OneWay}"
                                 Command="{Binding OpenFundsPanelCommand}"
+                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                                 Style="{StaticResource TabsActionSuccessStyle}">
                                 <StackPanel HorizontalAlignment="Center" Spacing="3">
                                     <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE8C7;" />
@@ -663,9 +703,14 @@
                                 </StackPanel>
                             </Button>
                             <Button
+                                x:Name="HistoryMemberButton"
                                 Grid.Row="1"
                                 Grid.Column="0"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionDark, Mode=OneWay}"
+                                BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Border, Mode=OneWay}"
+                                BorderThickness="1"
                                 Command="{Binding OpenTabHistoryPanelCommand}"
+                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                                 Style="{StaticResource TabsActionDarkStyle}">
                                 <StackPanel HorizontalAlignment="Center" Spacing="3">
                                     <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE8A1;" />
@@ -673,9 +718,14 @@
                                 </StackPanel>
                             </Button>
                             <Button
+                                x:Name="EditTabMemberButton"
                                 Grid.Row="1"
                                 Grid.Column="1"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionDark, Mode=OneWay}"
+                                BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Border, Mode=OneWay}"
+                                BorderThickness="1"
                                 Command="{Binding EditTabCommand}"
+                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                                 Style="{StaticResource TabsActionSecondaryStyle}">
                                 <StackPanel HorizontalAlignment="Center" Spacing="3">
                                     <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE70F;" />
@@ -683,11 +733,14 @@
                                 </StackPanel>
                             </Button>
                             <Button
+                                x:Name="ArchiveMemberButton"
                                 Grid.Row="2"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="2"
                                 Margin="0,0,0,0"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionDanger, Mode=OneWay}"
                                 Command="{Binding ArchiveSelectedCommand}"
+                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                                 Style="{StaticResource TabsActionDangerStyle}"
                                 Visibility="{Binding CanAdminArchiveTab, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
@@ -712,7 +765,9 @@
                             <Button
                                 Grid.Row="0"
                                 Grid.Column="0"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionPrimary, Mode=OneWay}"
                                 Command="{Binding OpenDrinksPanelCommand}"
+                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                                 Style="{StaticResource TabsActionPrimaryStyle}">
                                 <StackPanel HorizontalAlignment="Center" Spacing="3">
                                     <Image Width="22" Height="22">
@@ -737,7 +792,11 @@
                                 Grid.Row="1"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="2"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionDark, Mode=OneWay}"
+                                BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Border, Mode=OneWay}"
+                                BorderThickness="1"
                                 Command="{Binding EditTabCommand}"
+                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                                 Style="{StaticResource TabsActionSecondaryStyle}">
                                 <StackPanel HorizontalAlignment="Center" Spacing="3">
                                     <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="18" Glyph="&#xE70F;" />
@@ -757,6 +816,7 @@
                                 <TextBlock Text="Restore Tab" />
                             </StackPanel>
                         </Button>
+                    </Grid>
                     </Grid>
                 </Grid>
             </Border>
