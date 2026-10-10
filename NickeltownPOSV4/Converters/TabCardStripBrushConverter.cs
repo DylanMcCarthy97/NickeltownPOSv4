@@ -21,10 +21,10 @@ public sealed class TabCardStripBrushConverter : IValueConverter
         if (value is TabsBoardCellViewModel cell)
         {
             var isGuest = cell.TabIsGuest;
-            var tier = cell.DisplayBalanceTier;
+            var cellTier = cell.DisplayBalanceTier;
             return cell.IsBathurstTheme
-                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(isGuest, tier))
-                : Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(tier));
+                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(isGuest, cellTier))
+                : Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(cellTier));
         }
 
         if (value is TabCardModel tab)
@@ -34,11 +34,11 @@ public sealed class TabCardStripBrushConverter : IValueConverter
                 : Lookup(TabBalanceTierBrushes.StripResourceKey(tab));
         }
 
-        if (value is TabBalanceTier tier)
+        if (value is TabBalanceTier balanceTier)
         {
             return BathurstTabsTheme.IsEnabled
-                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.BalanceColor(tier))
-                : Lookup(TabBalanceTierBrushes.StripResourceKey(tier));
+                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.BalanceColor(balanceTier))
+                : Lookup(TabBalanceTierBrushes.StripResourceKey(balanceTier));
         }
 
         return Lookup(TabBalanceTierBrushes.StripResourceKey(TabBalanceTier.Settled));
