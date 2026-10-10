@@ -6,32 +6,32 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Height="88"
-    MinHeight="88"
-    MaxHeight="88">
+    Height="112"
+    MinHeight="112"
+    MaxHeight="112">
 
     <!--
-      Full-width Race Day banner.
-      Artwork is a single continuous 1024×88 photo (exactly two cars).
-      Titles, circuit outline and slogan are live overlays — not burned into the asset.
+      Full-width Race Day banner (112px).
+      Artwork is a single continuous photo (exactly two cars).
+      Titles, circuit outline and slogan are live overlays.
     -->
     <Grid Background="#FF101216">
         <Image
             HorizontalAlignment="Stretch"
             VerticalAlignment="Center"
-            Height="88"
+            Height="112"
             IsHitTestVisible="False"
             Stretch="Uniform">
             <Image.Source>
                 <BitmapImage
                     DecodePixelWidth="1024"
-                    UriSource="ms-appx:///Assets/Bathurst/BathurstBanner1024x88.png" />
+                    UriSource="ms-appx:///Assets/Bathurst/BathurstBanner1024x112.png" />
             </Image.Source>
         </Image>
 
         <Image
-            Width="52"
-            Height="88"
+            Width="56"
+            Height="112"
             HorizontalAlignment="Left"
             IsHitTestVisible="False"
             Opacity="0.38"
@@ -41,9 +41,8 @@
             </Image.Source>
         </Image>
 
-        <!-- Left zone: circuit outline + NICKELTOWN POS / BATHURST / 1000 -->
         <Grid
-            Margin="10,4,0,6"
+            Margin="12,6,0,8"
             HorizontalAlignment="Left"
             VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
@@ -53,15 +52,15 @@
 
             <Image
                 Grid.Column="0"
-                Width="96"
-                Height="64"
-                Margin="0,4,8,0"
+                Width="110"
+                Height="78"
+                Margin="0,2,10,0"
                 VerticalAlignment="Center"
                 IsHitTestVisible="False"
                 Stretch="Uniform">
                 <Image.Source>
                     <BitmapImage
-                        DecodePixelWidth="192"
+                        DecodePixelWidth="220"
                         UriSource="ms-appx:///Assets/Bathurst/mount-panorama-outline.png" />
                 </Image.Source>
             </Image>
@@ -71,7 +70,7 @@
                 VerticalAlignment="Center"
                 Spacing="-2">
                 <TextBlock
-                    FontSize="9"
+                    FontSize="10"
                     FontWeight="SemiBold"
                     Foreground="#FFF5F5F5"
                     Opacity="0.92"
@@ -79,15 +78,15 @@
                     Text="NICKELTOWN POS" />
                 <TextBlock
                     Margin="0,-1,0,0"
-                    FontSize="26"
+                    FontSize="30"
                     FontStyle="Italic"
                     FontWeight="Bold"
                     Foreground="#FFFFFFFF"
                     CharacterSpacing="-20"
                     Text="BATHURST" />
                 <TextBlock
-                    Margin="2,-8,0,0"
-                    FontSize="36"
+                    Margin="2,-6,0,0"
+                    FontSize="42"
                     FontStyle="Italic"
                     FontWeight="Bold"
                     Foreground="#FFE32636"
@@ -96,15 +95,14 @@
             </StackPanel>
         </Grid>
 
-        <!-- Right zone: slogan over Mount Panorama scenery -->
         <StackPanel
-            Margin="0,0,16,0"
+            Margin="0,0,18,0"
             HorizontalAlignment="Right"
             VerticalAlignment="Center"
             Spacing="-2">
             <TextBlock
                 HorizontalAlignment="Right"
-                FontSize="12"
+                FontSize="13"
                 FontStyle="Italic"
                 FontWeight="Bold"
                 Foreground="#FFFFFFFF"
@@ -112,7 +110,7 @@
                 Text="GREATEST RACE" />
             <TextBlock
                 HorizontalAlignment="Right"
-                FontSize="17"
+                FontSize="19"
                 FontStyle="Italic"
                 FontWeight="Bold"
                 Foreground="#FFE32636"

@@ -16,11 +16,17 @@ public sealed class PathToImageSourceConverter : IValueConverter
         }
 
         var s = raw.Trim();
+        var decodeWidth = 220;
+        if (parameter is string p && int.TryParse(p.Trim(), out var parsed) && parsed > 0)
+        {
+            decodeWidth = parsed;
+        }
+
         try
         {
             if (Uri.TryCreate(s, UriKind.Absolute, out var absolute))
             {
-                return new BitmapImage(absolute) { DecodePixelWidth = 200 };
+                return new BitmapImage(absolute) { DecodePixelWidth = decodeWidth };
             }
 
             var full = Path.GetFullPath(s);
@@ -30,7 +36,7 @@ public sealed class PathToImageSourceConverter : IValueConverter
             }
 
             var fileUri = new Uri(full);
-            return new BitmapImage(fileUri) { DecodePixelWidth = 200 };
+            return new BitmapImage(fileUri) { DecodePixelWidth = decodeWidth };
         }
         catch (UriFormatException)
         {
