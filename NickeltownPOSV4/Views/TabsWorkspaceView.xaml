@@ -274,12 +274,12 @@
                                         StrokeDashArray="6,4"
                                         StrokeThickness="2" />
                                     <Image
-                                        Opacity="0.36"
+                                        Opacity="0.40"
                                         Stretch="Uniform"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
                                         IsHitTestVisible="False"
-                                        Source="{Binding CardBackgroundUri, Converter={StaticResource PathToImage}, ConverterParameter=360, Mode=OneWay}"
+                                        Source="{Binding CardBackgroundUri, Converter={StaticResource PathToImage}, ConverterParameter=466, Mode=OneWay}"
                                         Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -364,15 +364,21 @@
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
-                                        <!-- Assets match card aspect with full car + blurred edge fill; Uniform paints edge-to-edge. -->
+                                        <!-- Card assets are pre-composed at cell aspect with Uniform-contain cars (no stretch). -->
+                                        <Rectangle
+                                            Grid.RowSpan="2"
+                                            Fill="#FF12151A"
+                                            RadiusX="12"
+                                            RadiusY="12"
+                                            IsHitTestVisible="False" />
                                         <Image
                                             Grid.RowSpan="2"
-                                            Opacity="0.38"
+                                            Opacity="0.42"
                                             Stretch="Uniform"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
                                             IsHitTestVisible="False"
-                                            Source="{Binding CardBackgroundUri, Converter={StaticResource PathToImage}, ConverterParameter=360, Mode=OneWay}"
+                                            Source="{Binding CardBackgroundUri, Converter={StaticResource PathToImage}, ConverterParameter=466, Mode=OneWay}"
                                             Visibility="{Binding HasCardBackground, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Border
                                             Grid.Row="0"
