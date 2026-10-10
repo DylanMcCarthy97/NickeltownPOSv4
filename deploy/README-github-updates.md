@@ -25,8 +25,11 @@ Or PowerShell from repo root:
 2. Double-click the .msix on the bar -> Install.
 3. Open Nickeltown POS.
 4. Admin -> Pit updates.
-5. Update feed (paste once):
-   https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/deploy
+5. Update feed (paste once). Prefer the rolling GitHub release feed (avoids raw/CDN staleness):
+   https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/update-feed
+   Alternate (raw on main):
+   https://raw.githubusercontent.com/DylanMcCarthy97/NickeltownPOSv4/main/deploy
+   Paste the folder URL only — not `update-manifest.json` itself.
 6. Check on startup ON. Auto install ON for kiosk.
 7. Save.
 

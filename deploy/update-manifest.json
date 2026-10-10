@@ -1,6 +1,6 @@
 {
   "version": "1.0.7.32",
   "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.32/NickeltownPOSV4_1.0.7.32_x64.msix",
-  "releaseNotes": "Bathurst banner rebuilt as one continuous photo with exactly two cars, Mount Panorama outline, NICKELTOWN POS branding and live titles. Card cars use Uniform proportions with dark breathing room; right sunset panel unchanged.",
+  "releaseNotes": "Update feed now ships on the rolling GitHub release tag update-feed (and on each versioned release) so tills are not stuck on a stale raw/CDN copy. Paste https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/update-feed into Admin → Pit updates.",
   "mandatory": false
 }

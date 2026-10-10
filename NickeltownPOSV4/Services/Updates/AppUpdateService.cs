@@ -147,7 +147,7 @@ public sealed class AppUpdateService : IAppUpdateService
 
     internal static string BuildManifestPath(string feedBaseUrl)
     {
-        var basePath = feedBaseUrl.Trim().TrimEnd('/', '\\');
+        var basePath = NormalizeFeedBase(feedBaseUrl);
         if (basePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             || basePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
@@ -157,6 +157,29 @@ public sealed class AppUpdateService : IAppUpdateService
         }
 
         return Path.Combine(basePath, "update-manifest.json");
+    }
+
+    /// <summary>
+    /// Accepts either the feed folder URL or a full .../update-manifest.json URL pasted by mistake.
+    /// </summary>
+    internal static string NormalizeFeedBase(string feedBaseUrl)
+    {
+        var basePath = feedBaseUrl.Trim().TrimEnd('/', '\\');
+        const string manifestName = "update-manifest.json";
+        if (basePath.EndsWith(manifestName, StringComparison.OrdinalIgnoreCase))
+        {
+            basePath = basePath[..^manifestName.Length].TrimEnd('/', '\\');
+        }
+
+        // Drop any accidental query/fragment on the base before we append our own nocache stamp.
+        if (Uri.TryCreate(basePath, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+        {
+            var builder = new UriBuilder(uri) { Query = string.Empty, Fragment = string.Empty };
+            basePath = builder.Uri.AbsoluteUri.TrimEnd('/');
+        }
+
+        return basePath;
     }
 
     internal static string ResolvePackageUri(string feedBaseUrl, string packageUri)

@@ -57,7 +57,9 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
     }
 
     public string FeedBaseUrlSummary =>
-        string.IsNullOrWhiteSpace(FeedBaseUrl) ? "Tap to enter the update feed" : FeedBaseUrl;
+        string.IsNullOrWhiteSpace(FeedBaseUrl)
+            ? $"Tap to enter — e.g. {AppUpdateConfig.RecommendedFeedBaseUrl}"
+            : FeedBaseUrl;
 
     public bool CheckOnStartup
     {
@@ -112,8 +114,11 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
 
     private async Task EditFeedUrlAsync()
     {
+        var seed = string.IsNullOrWhiteSpace(FeedBaseUrl)
+            ? AppUpdateConfig.RecommendedFeedBaseUrl
+            : FeedBaseUrl;
         var result = await _inputOverlay
-            .ShowKeyboardAsync(FeedBaseUrl ?? string.Empty, "Update feed (folder, https://, or UNC)")
+            .ShowKeyboardAsync(seed, "Update feed (folder, https://, or UNC)")
             .ConfigureAwait(true);
         if (result is null)
         {
