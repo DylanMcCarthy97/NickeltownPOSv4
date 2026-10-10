@@ -17,7 +17,7 @@ public sealed class BalanceTierToBrushConverter : IValueConverter
         if (value is TabsBoardCellViewModel cell)
         {
             tier = cell.DisplayBalanceTier;
-            bathurst = cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled;
+            bathurst = cell.IsBathurstTheme;
         }
         else if (value is TabBalanceTier boundTier)
         {

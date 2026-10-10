@@ -10,7 +10,19 @@ public sealed class BathurstOrThemeBrushConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         var token = parameter as string ?? "Canvas";
-        if (value is true || BathurstTabsTheme.IsEnabled)
+        // Bound IsBathurstTheme wins; do not OR the static flag or Race Day chrome sticks after disable.
+        if (value is true)
+        {
+            return BathurstTabsBrushes.Token(token);
+        }
+
+        if (value is false)
+        {
+            return BathurstTabsBrushes.LookupPos(BathurstTabsBrushes.PosKey(token));
+        }
+
+        // Unbound / unexpected: fall back to installation preference.
+        if (BathurstTabsTheme.IsEnabled)
         {
             return BathurstTabsBrushes.Token(token);
         }

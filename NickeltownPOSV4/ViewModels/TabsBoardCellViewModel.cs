@@ -18,8 +18,23 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
     private TabCardModel? _tab;
     private TabsBoardCellKind _kind = TabsBoardCellKind.Tab;
     private bool _isBathurstTheme;
+    private int _boardSlotIndex;
 
     public TabsBoardCellKind Kind => _kind;
+
+    /// <summary>0–8 board slot used to rotate Bathurst card artwork across the page.</summary>
+    public int BoardSlotIndex
+    {
+        get => _boardSlotIndex;
+        set
+        {
+            if (SetProperty(ref _boardSlotIndex, value))
+            {
+                OnPropertyChanged(nameof(CardBackgroundUri));
+                OnPropertyChanged(nameof(HasCardBackground));
+            }
+        }
+    }
 
     public TabCardModel? Tab => _tab;
 
@@ -79,8 +94,9 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
         IsNewGuestCell ? "Create guest tab" : "Create member / family tab";
 
     /// <summary>
-    /// Stable Bathurst card artwork URI. Assigned from tab id hash so backgrounds
-    /// do not reshuffle on refresh; independent of financial status.
+    /// Bathurst card artwork URI. Rotates through the four cars by board slot
+    /// (0→01, 1→02, 2→03, 3→04, 4→01…) so adjacent cards do not cluster on one image.
+    /// Null when Race Day is off so the normal light card chrome shows through.
     /// </summary>
     public string? CardBackgroundUri
     {
@@ -101,12 +117,25 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
                 return null;
             }
 
-            return BathurstCardBackgrounds[StableBackgroundIndex(Tab.Id, BathurstCardBackgrounds.Length)];
+            return BathurstCardBackgrounds[AlternatingBackgroundIndex(BoardSlotIndex, BathurstCardBackgrounds.Length)];
         }
     }
 
     public bool HasCardBackground => !string.IsNullOrEmpty(CardBackgroundUri);
 
+    /// <summary>Round-robin index for card artwork; slot 0→0, 1→1, … wrapping at <paramref name="count"/>.</summary>
+    internal static int AlternatingBackgroundIndex(int boardSlotIndex, int count)
+    {
+        if (count <= 0)
+        {
+            return 0;
+        }
+
+        var slot = boardSlotIndex % count;
+        return slot < 0 ? slot + count : slot;
+    }
+
+    /// <summary>Legacy hash helper kept for tests that assert determinism of the old algorithm.</summary>
     internal static int StableBackgroundIndex(string tabId, int count)
     {
         if (count <= 0)

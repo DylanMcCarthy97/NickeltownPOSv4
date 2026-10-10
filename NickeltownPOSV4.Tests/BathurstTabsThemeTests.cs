@@ -157,6 +157,18 @@ public sealed class BathurstTabsThemeTests
     }
 
     [Fact]
+    public void CardBackgroundIndex_Alternates_ByBoardSlot()
+    {
+        Assert.Equal(0, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(0, 4));
+        Assert.Equal(1, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(1, 4));
+        Assert.Equal(2, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(2, 4));
+        Assert.Equal(3, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(3, 4));
+        Assert.Equal(0, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(4, 4));
+        Assert.Equal(1, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(5, 4));
+        Assert.Equal(2, ViewModels.TabsBoardCellViewModel.AlternatingBackgroundIndex(8, 4));
+    }
+
+    [Fact]
     public void FreeItemTile_IsDeepBlue_NotBrightPrimary()
     {
         Assert.Equal(0xFF1A2744u, BathurstTabsTheme.FreeItemTile);

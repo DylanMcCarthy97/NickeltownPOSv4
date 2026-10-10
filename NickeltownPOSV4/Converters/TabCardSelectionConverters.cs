@@ -28,12 +28,13 @@ public sealed class TabSelectedBackgroundConverter : IValueConverter
     {
         if (value is TabsBoardCellViewModel cell)
         {
-            return (cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled, cell.TabIsSelected);
+            // Prefer the cell flag (keeps chrome in sync when toggling Race Day off).
+            return (cell.IsBathurstTheme, cell.TabIsSelected);
         }
 
         if (value is string key && key.Length > 0)
         {
-            var bathurst = key[0] == 'B' || BathurstTabsTheme.IsEnabled;
+            var bathurst = key[0] == 'B';
             var selected = key.Contains(":S:", StringComparison.Ordinal);
             return (bathurst, selected);
         }
