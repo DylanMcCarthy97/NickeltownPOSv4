@@ -188,7 +188,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
         for (var i = 0; i < PageSize; i++)
         {
-            PageSlots.Add(new TabsBoardCellViewModel());
+            PageSlots.Add(new TabsBoardCellViewModel { BoardSlotIndex = i });
         }
 
         UpdateWelcomeFromSession();

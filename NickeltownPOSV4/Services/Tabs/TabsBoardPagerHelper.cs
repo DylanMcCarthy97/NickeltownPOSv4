@@ -52,6 +52,7 @@ internal static class TabsBoardPagerHelper
         for (var i = 0; i < slots.Count; i++)
         {
             slots[i].Clear();
+            slots[i].BoardSlotIndex = i;
         }
 
         var tabCount = boardTabs.Count;

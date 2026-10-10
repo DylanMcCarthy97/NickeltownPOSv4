@@ -11,8 +11,8 @@ namespace NickeltownPOSV4.Converters;
 /// <summary>Top accent strip on tab cards from balance/guest status.</summary>
 public sealed class TabCardStripBrushConverter : IValueConverter
 {
-    public static Brush ResolveStripBrush(bool isGuest, TabBalanceTier tier) =>
-        BathurstTabsTheme.IsEnabled
+    public static Brush ResolveStripBrush(bool isGuest, TabBalanceTier tier, bool? bathurst = null) =>
+        (bathurst ?? BathurstTabsTheme.IsEnabled)
             ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(isGuest, tier))
             : Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(tier));
 
@@ -20,7 +20,7 @@ public sealed class TabCardStripBrushConverter : IValueConverter
     {
         if (value is TabsBoardCellViewModel cell)
         {
-            return ResolveStripBrush(cell.TabIsGuest, cell.DisplayBalanceTier);
+            return ResolveStripBrush(cell.TabIsGuest, cell.DisplayBalanceTier, cell.IsBathurstTheme);
         }
 
         if (value is TabCardModel tab)
