@@ -1,9 +1,20 @@
+using System;
 using NickeltownPOSV4.Models;
 
 namespace NickeltownPOSV4.ViewModels;
 
 public sealed class TabsBoardCellViewModel : ObservableViewModel
 {
+    private static readonly string[] BathurstCardBackgrounds =
+    {
+        "ms-appx:///Assets/Bathurst/card-bg-01.jpg",
+        "ms-appx:///Assets/Bathurst/card-bg-02.jpg",
+        "ms-appx:///Assets/Bathurst/card-bg-03.jpg",
+        "ms-appx:///Assets/Bathurst/card-bg-04.jpg",
+    };
+
+    private const string BathurstNewTabBackground = "ms-appx:///Assets/Bathurst/card-bg-new.jpg";
+
     private TabCardModel? _tab;
     private TabsBoardCellKind _kind = TabsBoardCellKind.Tab;
     private bool _isBathurstTheme;
@@ -66,6 +77,54 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
 
     public string AddCardSubtitle =>
         IsNewGuestCell ? "Create guest tab" : "Create member / family tab";
+
+    /// <summary>
+    /// Stable Bathurst card artwork URI. Assigned from tab id hash so backgrounds
+    /// do not reshuffle on refresh; independent of financial status.
+    /// </summary>
+    public string? CardBackgroundUri
+    {
+        get
+        {
+            if (!IsBathurstTheme)
+            {
+                return null;
+            }
+
+            if (IsNewMemberCell)
+            {
+                return BathurstNewTabBackground;
+            }
+
+            if (!IsTabCell || Tab is null)
+            {
+                return null;
+            }
+
+            return BathurstCardBackgrounds[StableBackgroundIndex(Tab.Id, BathurstCardBackgrounds.Length)];
+        }
+    }
+
+    public bool HasCardBackground => !string.IsNullOrEmpty(CardBackgroundUri);
+
+    internal static int StableBackgroundIndex(string tabId, int count)
+    {
+        if (count <= 0)
+        {
+            return 0;
+        }
+
+        unchecked
+        {
+            var hash = 2166136261u;
+            foreach (var ch in tabId.AsSpan())
+            {
+                hash = (hash ^ ch) * 16777619u;
+            }
+
+            return (int)(hash % (uint)count);
+        }
+    }
 
     public void Clear()
     {
@@ -142,6 +201,8 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
         OnPropertyChanged(nameof(TabIsGuest));
         OnPropertyChanged(nameof(IsBathurstTheme));
         OnPropertyChanged(nameof(CardChromeKey));
+        OnPropertyChanged(nameof(CardBackgroundUri));
+        OnPropertyChanged(nameof(HasCardBackground));
         OnPropertyChanged(string.Empty);
     }
 }

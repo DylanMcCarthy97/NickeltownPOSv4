@@ -26,12 +26,13 @@ public static class BathurstTabsTheme
     public static uint Canvas { get; } = 0xFF101216;
     public static uint Surface { get; } = 0xFF1B1F25;
     public static uint SurfaceAlt { get; } = 0xFF161A20;
-    public static uint Card { get; } = 0xFF1B1F25;
-    public static uint CardSelected { get; } = 0xFF22181A;
-    public static uint Border { get; } = 0xFF3A404A;
+    public static uint Card { get; } = 0xFF14181E;
+    public static uint CardSelected { get; } = 0xFF1A1416;
+    /// <summary>Fine light-grey card / control border.</summary>
+    public static uint Border { get; } = 0xFFC4CAD2;
     public static uint Accent { get; } = 0xFFE32636;
     public static uint AccentDeep { get; } = 0xFF8B1E28;
-    public static uint ModeBar { get; } = 0xFF1B1F25;
+    public static uint ModeBar { get; } = 0xCC1B1F25;
     public static uint ModeSelected { get; } = 0xFFE32636;
     public static uint TextPrimary { get; } = 0xFFF5F5F5;
     public static uint TextSecondary { get; } = 0xFFB8BEC7;
@@ -39,8 +40,15 @@ public static class BathurstTabsTheme
     public static uint BalanceLow { get; } = 0xFFFFC268;
     public static uint BalanceNegative { get; } = 0xFFFF7575;
     public static uint BalanceSettled { get; } = 0xFFC4CAD2;
-    public static uint FreeItemTile { get; } = 0xFF2F6FED;
-    public static uint Overlay { get; } = 0xE6101216;
+    /// <summary>Dark / deep-blue racing free-item tiles.</summary>
+    public static uint FreeItemTile { get; } = 0xFF1A2744;
+    public static uint Overlay { get; } = 0xCC101216;
+    public static uint PanelScrim { get; } = 0xB3101216;
+    public static uint ActionPrimary { get; } = 0xFFE32636;
+    public static uint ActionSuccess { get; } = 0xFF16A34A;
+    public static uint ActionDark { get; } = 0xFF1B1F25;
+    public static uint ActionDanger { get; } = 0xFFE32636;
+    public static uint PagerSurface { get; } = 0xFF1B1F25;
 
     public static uint BalanceColor(TabBalanceTier tier) =>
         tier switch

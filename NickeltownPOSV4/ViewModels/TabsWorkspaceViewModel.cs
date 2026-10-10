@@ -233,6 +233,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         RecordQuickFreeItemCommand = new AsyncRelayCommand<QuickFreeItemButtonViewModel>(RecordQuickFreeItemAsync);
         UndoComplimentaryToastCommand = new AsyncRelayCommand(UndoComplimentaryToastAsync, () => FreeItemToastCanUndo);
         SetBathurstThemeCommand = new AsyncRelayCommand<object?>(SetBathurstThemeAsync, _ => CanToggleBathurstTheme);
+        OpenRaceDayThemeDialogCommand = new AsyncRelayCommand(OpenRaceDayThemeDialogAsync, () => CanToggleBathurstTheme);
 
         _addDrinksWorkspaceNavigator.SetHandler(OnAddDrinksWorkspaceCloseRequested);
         ApplyBathurstFlagToCells();
@@ -242,6 +243,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     public bool CanToggleBathurstTheme => _bathurstTheme.CanToggle;
 
     public IAsyncRelayCommand<object?> SetBathurstThemeCommand { get; }
+
+    public IAsyncRelayCommand OpenRaceDayThemeDialogCommand { get; }
 
     private async Task InitializeBathurstThemeAsync()
     {
@@ -261,6 +264,43 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         SyncBathurstFromService();
     }
 
+    private async Task OpenRaceDayThemeDialogAsync()
+    {
+        if (!CanToggleBathurstTheme)
+        {
+            return;
+        }
+
+        var xamlRoot = _windowHandle.GetXamlRoot();
+        if (xamlRoot is null)
+        {
+            return;
+        }
+
+        var state = IsBathurstTheme
+            ? "Bathurst Race Day is currently enabled for every user on this till. It stays on across logout, user changes, and restarts until an administrator disables it."
+            : "Bathurst Race Day is currently disabled. Enabling applies to every user on this installation and stays on until an administrator disables it.";
+
+        var dialog = PosContentDialogHelper.Create(
+            xamlRoot,
+            "Race Day Theme",
+            state,
+            primaryButtonText: "Enable Bathurst",
+            closeButtonText: "Close",
+            defaultButton: ContentDialogButton.Close);
+        dialog.SecondaryButtonText = "Disable Bathurst";
+
+        var result = await dialog.ShowAsync().AsTask().ConfigureAwait(true);
+        if (result == ContentDialogResult.Primary)
+        {
+            await SetBathurstThemeAsync(true).ConfigureAwait(true);
+        }
+        else if (result == ContentDialogResult.Secondary)
+        {
+            await SetBathurstThemeAsync(false).ConfigureAwait(true);
+        }
+    }
+
     private void OnBathurstThemeChanged(object? sender, EventArgs e) => SyncBathurstFromService();
 
     private void SyncBathurstFromService()
@@ -268,6 +308,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         IsBathurstTheme = _bathurstTheme.IsEnabled;
         OnPropertyChanged(nameof(CanToggleBathurstTheme));
         SetBathurstThemeCommand.NotifyCanExecuteChanged();
+        OpenRaceDayThemeDialogCommand.NotifyCanExecuteChanged();
         ApplyBathurstFlagToCells();
         NotifyBalanceVisuals();
     }
@@ -390,6 +431,13 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         if (e.PropertyName is nameof(IUserSessionService.DisplayName) or nameof(IUserSessionService.IsSignedIn))
         {
             UpdateWelcomeFromSession();
+        }
+
+        if (e.PropertyName is nameof(IUserSessionService.IsAdmin) or nameof(IUserSessionService.IsSignedIn) or null or "")
+        {
+            OnPropertyChanged(nameof(CanToggleBathurstTheme));
+            SetBathurstThemeCommand.NotifyCanExecuteChanged();
+            OpenRaceDayThemeDialogCommand.NotifyCanExecuteChanged();
         }
 
         if (e.PropertyName is nameof(IUserSessionService.IsAdmin))
