@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NickeltownPOSV4.Models.Settings;
 using NickeltownPOSV4.Services.Settings;
 using Windows.Management.Deployment;
 
@@ -57,7 +58,7 @@ public sealed class AppUpdateService : IAppUpdateService
 
         var cfg = await _config.LoadAsync(cancellationToken).ConfigureAwait(false);
         var feedBaseUrl = string.IsNullOrWhiteSpace(cfg.FeedBaseUrl)
-            ? Models.Settings.AppUpdateConfig.BuiltInFeedBaseUrl
+            ? AppUpdateConfig.BuiltInFeedBaseUrl
             : cfg.FeedBaseUrl.Trim();
 
         try
