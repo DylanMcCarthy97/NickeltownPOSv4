@@ -1,6 +1,6 @@
 {
   "version": "1.0.7.30",
   "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.30/NickeltownPOSV4_1.0.7.30_x64.msix",
-  "releaseNotes": "Bathurst card backgrounds keep correct car proportions (UniformToFill cover crops). Pagination arrows use dark charcoal states so enabled/disabled are both readable.",
+  "releaseNotes": "Bathurst banner recomposed to left stacked BATHURST/1000, grouped centre cars, and GREATEST RACE ON EARTH over Mount Panorama. Right selected-tab panel uses full-opacity sunset gantry/track art with left gradient overlays only (no full black scrim).",
   "mandatory": false
 }
