@@ -509,6 +509,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public async Task RefreshTabsFromDatabaseAsync()
     {
+        await _bathurstTheme.ReloadAsync().ConfigureAwait(true);
+        IsBathurstTheme = _bathurstTheme.IsEnabled;
         try
         {
             var rows = await _tabQuery.GetOpenTabCardsAsync().ConfigureAwait(true);

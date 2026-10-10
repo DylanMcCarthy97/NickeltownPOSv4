@@ -12,4 +12,6 @@ public interface IBathurstTabsThemeService
     event EventHandler? Changed;
 
     Task SetEnabledAsync(bool enabled, CancellationToken cancellationToken = default);
+
+    Task ReloadAsync(CancellationToken cancellationToken = default);
 }

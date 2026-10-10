@@ -52,4 +52,29 @@ public sealed class BathurstTabsThemeService : IBathurstTabsThemeService
             .ConfigureAwait(true);
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    public async Task ReloadAsync(CancellationToken cancellationToken = default)
+    {
+        bool enabled;
+        try
+        {
+            var stored = await _settings.GetAsync<BathurstTabsThemeSettings>(BathurstTabsTheme.SettingsKey, cancellationToken)
+                .ConfigureAwait(true);
+            enabled = stored?.Enabled ?? false;
+        }
+        catch
+        {
+            enabled = false;
+        }
+
+        if (_enabled == enabled)
+        {
+            BathurstTabsTheme.IsEnabled = _enabled;
+            return;
+        }
+
+        _enabled = enabled;
+        BathurstTabsTheme.IsEnabled = enabled;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 }

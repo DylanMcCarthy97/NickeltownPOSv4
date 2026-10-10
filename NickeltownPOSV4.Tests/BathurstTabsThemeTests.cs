@@ -67,6 +67,20 @@ public sealed class BathurstTabsThemeTests
     }
 
     [Fact]
+    public async Task Reload_PicksUpExternalSettingChange()
+    {
+        var store = new MemorySettings();
+        var theme = new BathurstTabsThemeService(store);
+        Assert.False(theme.IsEnabled);
+
+        await store.SetAsync(BathurstTabsTheme.SettingsKey, new BathurstTabsThemeSettings { Enabled = true });
+        await theme.ReloadAsync();
+
+        Assert.True(theme.IsEnabled);
+        Assert.True(BathurstTabsTheme.IsEnabled);
+    }
+
+    [Fact]
     public void SettingsKey_DoesNotRequireSchemaChange()
     {
         Assert.Equal("ui.bathurst_tabs_theme.v1", BathurstTabsTheme.SettingsKey);
