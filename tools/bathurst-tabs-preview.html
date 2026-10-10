@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Bathurst Tabs geometry preview (1024×768)</title>
+  <style>
+    :root {
+      --canvas: #101216;
+      --card: #1b1f25;
+      --text: #f5f5f5;
+      --muted: #b8bec7;
+      --red: #e32636;
+      --credit: #6de58b;
+      --low: #ffc268;
+      --owing: #ff7575;
+      --settled: #c4cad2;
+      --gap: 8px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #333;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+    }
+    h1 { color: #eee; font-size: 16px; margin: 0; }
+    .frame {
+      width: 1024px;
+      height: 768px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 0 1px #000;
+      display: grid;
+      grid-template-rows: 88px 52px minmax(0, 1fr) 64px;
+      background: var(--canvas);
+      color: var(--text);
+    }
+    .frame.normal {
+      grid-template-rows: 56px 70px minmax(0, 1fr) 64px;
+      background: #f3f5fa;
+      color: #0f172a;
+    }
+    header.bathurst {
+      position: relative;
+      height: 88px;
+      overflow: hidden;
+      background: #101216;
+    }
+    header.bathurst img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    header.bathurst .titles {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 0 8px;
+    }
+    header.bathurst .titles .mid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      text-align: center;
+    }
+    header.bathurst .brand { font-size: 10px; font-weight: 600; }
+    header.bathurst .title { font-size: 26px; font-weight: 800; color: var(--red); letter-spacing: 0.02em; }
+    header.bathurst .sub { font-size: 9px; font-weight: 600; color: var(--muted); }
+    .toggle {
+      margin-top: 2px;
+      display: flex;
+      min-height: 44px;
+      min-width: 168px;
+      border-radius: 22px;
+      background: rgba(16,18,22,0.8);
+      border: 1px solid rgba(255,255,255,0.4);
+      padding: 4px;
+      align-items: center;
+    }
+    .toggle span {
+      flex: 1;
+      text-align: center;
+      min-height: 36px;
+      line-height: 36px;
+      border-radius: 18px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .toggle .on { background: var(--red); color: #fff; }
+    .toggle .off { color: var(--muted); }
+    header.normal-h {
+      height: 56px;
+      background: #0f172a;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      font-size: 13px;
+    }
+    .cats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      padding: 0 8px;
+      align-items: center;
+    }
+    .frame.normal .cats { padding: 2px 10px 0; gap: 0; }
+    .cat {
+      height: 44px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      background: var(--card);
+      border: 1px solid #3a404a;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .cat.active { background: var(--red); border-color: var(--red); }
+    .frame.normal .cat { height: 50px; border-radius: 12px; background: #fff; color: #0f172a; }
+    .frame.normal .cat.active { background: #2563eb; color: #fff; }
+    .badge {
+      min-width: 22px; padding: 2px 6px; border-radius: 10px;
+      background: rgba(255,255,255,0.2); font-size: 12px; font-weight: 700;
+    }
+    .workspace {
+      padding: 8px;
+      display: grid;
+      grid-template-columns: 688px 8px 312px;
+      min-height: 0;
+      height: 100%;
+    }
+    .frame.normal .workspace {
+      padding: 4px 10px;
+      grid-template-columns: 7fr 12px 3fr;
+    }
+    .left {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 44px;
+      gap: 8px;
+      min-width: 0;
+    }
+    .frame.normal .left { grid-template-rows: minmax(0,1fr) 40px; gap: 4px; }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      min-height: 0;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid #3a404a;
+      border-radius: 6px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 4px;
+      border-radius: 6px 6px 0 0;
+      background: var(--credit);
+    }
+    .card.low::before { background: var(--low); }
+    .card.settled::before { background: var(--settled); }
+    .card.selected {
+      border: 2px solid var(--red);
+      box-shadow: 0 0 0 2px rgba(227,38,54,0.25);
+    }
+    .card .name { font-size: 17px; font-weight: 600; text-align: center; line-height: 1.15; max-height: 2.3em; overflow: hidden; }
+    .card .bal { font-size: 34px; font-weight: 700; text-align: center; color: var(--credit); margin-top: auto; }
+    .card.low .bal { color: var(--low); }
+    .card.settled .bal { color: var(--settled); }
+    .card .status { font-size: 13px; font-weight: 600; text-align: center; color: inherit; }
+    .card .bal + .status { color: var(--credit); }
+    .card.low .status { color: var(--low); }
+    .card.settled .status { color: var(--settled); }
+    .card .meta { font-size: 12px; color: var(--muted); text-align: center; margin-top: auto; }
+    .newtab {
+      border: 2px dashed var(--red);
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--red);
+      font-weight: 700;
+    }
+    .newtab .plus {
+      width: 48px; height: 48px; border-radius: 24px;
+      background: rgba(227,38,54,0.25);
+      display: grid; place-items: center; font-size: 28px;
+    }
+    .footer-row {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 44px;
+    }
+    .footer-row button, .pager {
+      background: #2a2f38; color: var(--text); border: 0; border-radius: 8px;
+      min-height: 40px; padding: 0 12px; font-weight: 600;
+    }
+    .right {
+      background: var(--card);
+      border: 1px solid #3a404a;
+      border-radius: 6px;
+      padding: 8px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0,1fr) auto;
+      gap: 8px;
+      min-width: 0;
+    }
+    .free-title, .sel-title { font-size: 10px; font-weight: 700; color: var(--red); letter-spacing: 0.04em; }
+    .free-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .free {
+      min-height: 64px; background: #2f6fed; border-radius: 6px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; text-align: center; padding: 4px;
+    }
+    .sel-name { font-size: 16px; font-weight: 700; line-height: 1.2; }
+    .sel-bal { font-size: 28px; font-weight: 800; color: var(--credit); }
+    .sel-status { font-size: 11px; font-weight: 700; color: var(--credit); }
+    .meta-l { font-size: 9px; color: var(--muted); }
+    .meta-v { font-size: 11px; font-weight: 600; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .actions button {
+      min-height: 48px; border: 0; border-radius: 6px; color: #fff; font-weight: 700; font-size: 12px;
+    }
+    .a-red { background: var(--red); }
+    .a-green { background: #2f9e5f; }
+    .a-dark { background: #2a2f38; }
+    .a-arch { grid-column: 1 / -1; background: #8b1e28; }
+    nav {
+      height: 64px; background: #1b1f25; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 10px; color: var(--muted); font-size: 12px;
+    }
+    .frame.normal nav { background: #0f172a; color: #cbd5e1; }
+    .nav-items { display: flex; gap: 8px; }
+    .nav-items div {
+      min-height: 56px; min-width: 72px; border-radius: 10px;
+      display: grid; place-items: center; font-weight: 600;
+    }
+    .nav-items .active { background: var(--red); color: #fff; }
+    .frame.normal .nav-items .active { background: #2563eb; }
+    .note { color: #bbb; font-size: 12px; max-width: 1024px; }
+  </style>
+</head>
+<body>
+  <h1>Bathurst mode — geometry preview (not the WinUI runtime)</h1>
+  <p class="note">1024×768 shell: header 88, category 52, workspace fills remainder, bottom nav 64. Banner uses shipped <code>BathurstBanner1024x88.png</code>.</p>
+  <div class="frame" id="bathurst">
+    <header class="bathurst">
+      <img src="BathurstBanner1024x88.png" alt="Bathurst banner art" />
+      <div class="titles">
+        <div></div>
+        <div class="mid">
+          <div class="brand">NICKELTOWN POS</div>
+          <div class="title">BATHURST 1000</div>
+          <div class="sub">RACE DAY EDITION</div>
+        </div>
+        <div class="toggle" style="justify-self:end"><span class="off">Normal</span><span class="on">Bathurst</span></div>
+      </div>
+    </header>
+    <div class="cats">
+      <div class="cat active">Member Tabs <span class="badge">15</span></div>
+      <div class="cat">Guest Tabs <span class="badge">0</span></div>
+      <div class="cat">Archived Tabs <span class="badge">0</span></div>
+    </div>
+    <div class="workspace">
+      <div class="left">
+        <div class="board">
+          <div class="card"><div class="name">McCarthy, Dylan &amp; Venessa</div><div class="bal">$62.50</div><div class="status">CREDIT</div><div class="meta">41 drinks • Last activity: 2 Oct</div></div>
+          <div class="card low"><div class="name">Sample, Long Family Name Here</div><div class="bal">$8.00</div><div class="status">LOW CREDIT</div><div class="meta">3 drinks • Last activity: 1 Oct</div></div>
+          <div class="card settled"><div class="name">Zero, Balance</div><div class="bal">$0.00</div><div class="status">SETTLED</div><div class="meta">0 drinks</div></div>
+          <div class="card selected"><div class="name">Patten, Godfrey &amp; Charlee</div><div class="bal">$62.50</div><div class="status">CREDIT</div><div class="meta">12 drinks • Last activity: 2 Oct</div></div>
+          <div class="card"><div class="name">Jones, A</div><div class="bal">$120.00</div><div class="status">CREDIT</div><div class="meta">2 drinks</div></div>
+          <div class="card"><div class="name">Smith, B</div><div class="bal">$45.00</div><div class="status">CREDIT</div><div class="meta">7 drinks</div></div>
+          <div class="newtab"><div class="plus">+</div><div>New Tab</div><div style="font-size:11px;font-weight:500;color:var(--muted)">Create member / family tab</div></div>
+          <div class="card"><div class="name">Taylor, C</div><div class="bal">$15.00</div><div class="status">CREDIT</div><div class="meta">1 drink</div></div>
+          <div class="card"><div class="name">Wilson, D</div><div class="bal">$90.00</div><div class="status">CREDIT</div><div class="meta">9 drinks</div></div>
+        </div>
+        <div class="footer-row">
+          <button type="button">↶ Undo Last Transaction</button>
+          <div class="pager">&lt; Page 2 of 2 &gt;</div>
+          <span></span>
+        </div>
+      </div>
+      <div></div>
+      <aside class="right">
+        <div>
+          <div class="free-title">FREE ITEMS</div>
+          <div class="free-row" style="margin-top:4px">
+            <div class="free">WATER<br/><span style="font-size:9px;opacity:.9">Today 2</span></div>
+            <div class="free">APPLE POPTOP<br/><span style="font-size:9px;opacity:.9">Today 0</span></div>
+            <div class="free">APPLE &amp; BLACKCURRANT<br/><span style="font-size:9px;opacity:.9">Today 1</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="sel-title">SELECTED TAB</div>
+          <div class="sel-name">Patten, Godfrey &amp; Charlee</div>
+        </div>
+        <div>
+          <div class="meta-l">CURRENT BALANCE</div>
+          <div class="sel-bal">$62.50</div>
+          <div class="sel-status">CREDIT</div>
+          <div class="meta-l" style="margin-top:8px">LAST UPDATED</div>
+          <div class="meta-v">2 Oct</div>
+          <div class="meta-l" style="margin-top:4px">LAST ACTIVITY</div>
+          <div class="meta-v">Hahn 3.5 x 1</div>
+        </div>
+        <div class="actions">
+          <button class="a-red" type="button">Add Drinks</button>
+          <button class="a-green" type="button">Add Funds</button>
+          <button class="a-dark" type="button">History</button>
+          <button class="a-dark" type="button">Edit Tab</button>
+          <button class="a-arch" type="button">Archive Tab</button>
+        </div>
+      </aside>
+    </div>
+    <nav>
+      <div class="nav-items">
+        <div class="active">Tabs</div>
+        <div>Pitstop</div>
+        <div>Reports</div>
+        <div>Admin</div>
+        <div>Settings</div>
+      </div>
+      <div>Dylan · Online (Square)</div>
+    </nav>
+  </div>
+
+  <h1>Normal mode — chrome heights (56 / 70 / * / 64)</h1>
+  <div class="frame normal" id="normal">
+    <header class="normal-h">
+      <div>Nickeltown POS<br/><span style="font-size:11px">Bar Tabs</span></div>
+      <div class="toggle" style="background:#111827"><span class="on" style="background:#2563eb">Normal</span><span class="off">Bathurst</span></div>
+    </header>
+    <div class="cats">
+      <div class="cat active">Member Tabs <span class="badge">15</span></div>
+      <div class="cat">Guest Tabs <span class="badge">0</span></div>
+      <div class="cat">Archived Tabs <span class="badge">0</span></div>
+    </div>
+    <div class="workspace">
+      <div class="left">
+        <div class="board" style="gap:6px">
+          <div class="card" style="background:#fff;border-color:#d0d9e6;color:#0f172a"><div class="name" style="font-size:14px">Example Tab</div><div class="bal" style="font-size:29px;color:#16a34a">$10.00</div><div class="status" style="color:#16a34a;font-size:10px">CREDIT</div></div>
+          <div class="card" style="background:#fff;border-color:#d0d9e6"></div>
+          <div class="card" style="background:#fff;border-color:#d0d9e6"></div>
+          <div class="card" style="background:#fff;border-color:#d0d9e6"></div>
+          <div class="card" style="background:#fff;border-color:#d0d9e6"></div>
+          <div class="card" style="background:#fff;border-color:#d0d9e6"></div>
+          <div class="newtab" style="color:#2563eb;border-color:#2563eb;background:#f8faff"><div class="plus" style="background:#dbeafe;color:#2563eb">+</div>New Tab</div>
+          <div class="card" style="background:#fff;border-color:#d0d9e6"></div>
+          <div class="card" style="background:#fff;border-color:#d0d9e6"></div>
+        </div>
+        <div class="footer-row" style="height:40px"><button type="button" style="background:#e2e8f0;color:#0f172a">Undo Last Transaction</button><div class="pager" style="background:#e2e8f0;color:#0f172a">Page 1 of 1</div><span></span></div>
+      </div>
+      <div></div>
+      <aside class="right" style="background:#fff;border-color:#d0d9e6;color:#0f172a">
+        <div class="free-title" style="color:#2563eb">FREE ITEMS</div>
+        <div class="sel-title" style="color:#2563eb">SELECTED TAB</div>
+        <div class="meta-v">Select a tab</div>
+        <div class="actions">
+          <button class="a-red" style="background:#2563eb" type="button">Add Drinks</button>
+          <button class="a-green" type="button">Add Funds</button>
+          <button class="a-dark" type="button">History</button>
+          <button class="a-dark" type="button">Edit Tab</button>
+          <button class="a-arch" type="button">Archive Tab</button>
+        </div>
+      </aside>
+    </div>
+    <nav>
+      <div class="nav-items"><div class="active">Tabs</div><div>Pitstop</div><div>Reports</div><div>Admin</div><div>Settings</div></div>
+      <div>Normal theme chrome</div>
+    </nav>
+  </div>
+  <script>
+    function measure(id) {
+      const el = document.getElementById(id);
+      const r = el.getBoundingClientRect();
+      const overflowX = el.scrollWidth > el.clientWidth;
+      const overflowY = el.scrollHeight > el.clientHeight;
+      console.log(id, {w: r.width, h: r.height, overflowX, overflowY, scrollW: el.scrollWidth, scrollH: el.scrollHeight});
+      return { id, w: r.width, h: r.height, overflowX, overflowY };
+    }
+    window.__measures = [measure('bathurst'), measure('normal')];
+    document.title = 'measures:' + JSON.stringify(window.__measures);
+  </script>
+</body>
+</html>

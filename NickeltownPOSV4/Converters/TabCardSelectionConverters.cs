@@ -6,59 +6,21 @@ using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Converters;
 
-
-
 public sealed class TabSelectedBackgroundConverter : IValueConverter
-
 {
-
     public object Convert(object value, Type targetType, object parameter, string language)
-
     {
-
         if (value is true)
-
         {
-
-            return LookupBrush("PosTabCardSelectedFill");
-
+            return TabsThemeBrushLookup.Resolve("PosTabCardSelectedFill");
         }
 
-
-
-        return LookupBrush("PosSurfaceBrush");
-
+        return TabsThemeBrushLookup.Resolve("PosSurfaceBrush");
     }
-
-
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
-
         throw new NotSupportedException();
-
-
-
-    private static Brush LookupBrush(string key)
-
-    {
-
-        if (Application.Current?.Resources.TryGetValue(key, out var o) == true && o is Brush b)
-
-        {
-
-            return b;
-
-        }
-
-
-
-        return new SolidColorBrush(Microsoft.UI.Colors.White);
-
-    }
-
 }
-
-
 
 public sealed class TabSelectedBorderBrushConverter : IValueConverter
 {
@@ -66,56 +28,33 @@ public sealed class TabSelectedBorderBrushConverter : IValueConverter
     {
         if (value is TabsBoardCellViewModel { TabIsSelected: true, Tab: { } tab })
         {
+            if (TabsThemeBrushLookup.IsBathurstActive)
+            {
+                return TabsThemeBrushLookup.Resolve("PosSelectedCardBorderBrush");
+            }
+
             return TabCardStripBrushConverter.ResolveStripBrush(tab.IsGuest, tab.BalanceTier);
         }
 
-        return LookupBrush("PosBorderBrush");
+        return TabsThemeBrushLookup.Resolve("PosBorderBrush");
     }
-
-
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
-
         throw new NotSupportedException();
-
-
-
-    private static Brush LookupBrush(string key)
-
-    {
-
-        if (Application.Current?.Resources.TryGetValue(key, out var o) == true && o is Brush b)
-
-        {
-
-            return b;
-
-        }
-
-
-
-        return new SolidColorBrush(Microsoft.UI.Colors.Gray);
-
-    }
-
 }
-
-
 
 public sealed class TabSelectedBorderThicknessConverter : IValueConverter
-
 {
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is true)
+        {
+            return TabsThemeBrushLookup.IsBathurstActive ? new Thickness(2) : new Thickness(3);
+        }
 
-    public object Convert(object value, Type targetType, object parameter, string language) =>
-
-        value is true ? new Thickness(3) : new Thickness(1);
-
-
+        return new Thickness(1);
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
-
         throw new NotSupportedException();
-
 }
-
-

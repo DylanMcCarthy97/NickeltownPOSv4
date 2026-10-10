@@ -9,7 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
 using NickeltownPOSV4.Models;
-
+using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.ViewModels;
 
 
@@ -195,17 +195,20 @@ public sealed partial class WorkspacePage : Page
 
     private void UpdateRouteLayout(WorkspacePageViewModel vm)
     {
+        var tabsTheme = App.Services.GetRequiredService<ITabsVisualThemeService>();
         if (vm.IsTabsRoute)
         {
             ClassicWorkspacePanel.Visibility = Visibility.Collapsed;
             TabsWorkspaceHost.Visibility = Visibility.Visible;
             PitstopRetailHost.Visibility = Visibility.Collapsed;
+            tabsTheme.SetTabsRouteActive(true);
         }
         else if (vm.IsPitstopRoute)
         {
             ClassicWorkspacePanel.Visibility = Visibility.Collapsed;
             TabsWorkspaceHost.Visibility = Visibility.Collapsed;
             PitstopRetailHost.Visibility = Visibility.Visible;
+            tabsTheme.SetTabsRouteActive(false);
             var pitVm = App.Services.GetRequiredService<PitstopRetailViewModel>();
             _ = pitVm.RefreshCatalogFromDatabaseAsync();
         }
@@ -214,6 +217,7 @@ public sealed partial class WorkspacePage : Page
             ClassicWorkspacePanel.Visibility = Visibility.Visible;
             TabsWorkspaceHost.Visibility = Visibility.Collapsed;
             PitstopRetailHost.Visibility = Visibility.Collapsed;
+            tabsTheme.SetTabsRouteActive(false);
         }
     }
 

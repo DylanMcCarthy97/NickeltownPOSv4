@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Controls;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Converters;
 using NickeltownPOSV4.Services.Complimentary;
 using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.Views;
@@ -71,6 +72,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private readonly IWindowHandleProvider _windowHandle;
 
     private readonly IComplimentaryItemService _complimentary;
+
+    private readonly ITabsVisualThemeService _tabsVisualTheme;
 
     private readonly ComplimentaryItemTapGuard _freeItemTapGuard = new();
 
@@ -149,7 +152,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         IAuthenticationService authentication,
         IAuthSignOutService signOut,
         IWindowHandleProvider windowHandle,
-        IComplimentaryItemService complimentary)
+        IComplimentaryItemService complimentary,
+        ITabsVisualThemeService tabsVisualTheme)
     {
         _tabQuery = tabQuery;
         _refreshBus = refreshBus;
@@ -173,6 +177,9 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         _authentication = authentication;
         _windowHandle = windowHandle;
         _complimentary = complimentary;
+        _tabsVisualTheme = tabsVisualTheme;
+        TabsThemeBrushLookup.Bind(_tabsVisualTheme);
+        _tabsVisualTheme.Changed += OnTabsVisualThemeChanged;
         _guestCloseoutOpen.OpenRequested += OnGuestCloseoutOpenRequested;
 
         _session.PropertyChanged += OnShellSessionPropertyChanged;
@@ -224,8 +231,62 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         SignOutCommand = new RelayCommand(SignOutFromTabs);
         RecordQuickFreeItemCommand = new AsyncRelayCommand<QuickFreeItemButtonViewModel>(RecordQuickFreeItemAsync);
         UndoComplimentaryToastCommand = new AsyncRelayCommand(UndoComplimentaryToastAsync, () => FreeItemToastCanUndo);
+        ToggleBathurstThemeCommand = new AsyncRelayCommand(ToggleBathurstThemeAsync);
 
         _addDrinksWorkspaceNavigator.SetHandler(OnAddDrinksWorkspaceCloseRequested);
+        _ = InitializeTabsVisualThemeAsync();
+    }
+
+    public bool IsBathurstTheme => _tabsVisualTheme.IsBathurstPreferred;
+
+    public bool IsBathurstVisualActive => _tabsVisualTheme.IsBathurstVisualActive;
+
+    public double CardNameFontSize => IsBathurstTheme ? 17.5 : 14;
+
+    public double CardBalanceFontSize => IsBathurstTheme ? 34 : 29;
+
+    public double CardStatusFontSize => IsBathurstTheme ? 13.5 : 10;
+
+    public double CardFooterFontSize => IsBathurstTheme ? 12.5 : 10;
+
+    public double FreeItemMinHeight => IsBathurstTheme ? 64 : 78;
+
+    public double SideActionMinHeight => IsBathurstTheme ? 48 : 64;
+
+    public double ModeSegmentMinHeight => IsBathurstTheme ? 44 : 50;
+
+    public IAsyncRelayCommand ToggleBathurstThemeCommand { get; }
+
+    private async Task InitializeTabsVisualThemeAsync()
+    {
+        await _tabsVisualTheme.InitializeAsync().ConfigureAwait(true);
+        NotifyBathurstThemeProperties();
+    }
+
+    private async Task ToggleBathurstThemeAsync()
+    {
+        await _tabsVisualTheme.SetBathurstPreferredAsync(!_tabsVisualTheme.IsBathurstPreferred).ConfigureAwait(true);
+    }
+
+    private void OnTabsVisualThemeChanged(object? sender, EventArgs e) => NotifyBathurstThemeProperties();
+
+    private void NotifyBathurstThemeProperties()
+    {
+        OnPropertyChanged(nameof(IsBathurstTheme));
+        OnPropertyChanged(nameof(IsBathurstVisualActive));
+        OnPropertyChanged(nameof(CardNameFontSize));
+        OnPropertyChanged(nameof(CardBalanceFontSize));
+        OnPropertyChanged(nameof(CardStatusFontSize));
+        OnPropertyChanged(nameof(CardFooterFontSize));
+        OnPropertyChanged(nameof(FreeItemMinHeight));
+        OnPropertyChanged(nameof(SideActionMinHeight));
+        OnPropertyChanged(nameof(ModeSegmentMinHeight));
+        OnPropertyChanged(nameof(BoardMode));
+        OnPropertyChanged(nameof(SelectedBalanceTier));
+        foreach (var cell in PageSlots)
+        {
+            cell.NotifySelectionChanged();
+        }
     }
 
     private bool ToolbarActionsEnabled =>

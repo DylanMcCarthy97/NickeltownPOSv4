@@ -1,5 +1,4 @@
 using System;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using NickeltownPOSV4.Models;
@@ -21,12 +20,7 @@ public sealed class TabsModeSegmentBrushConverter : IValueConverter
                        };
 
         var brushKey = selected ? "PosModeSegmentSelectedBrush" : "PosModeSegmentIdleBrush";
-        if (Application.Current?.Resources.TryGetValue(brushKey, out var o) == true && o is Brush b)
-        {
-            return b;
-        }
-
-        return new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        return TabsThemeBrushLookup.Resolve(brushKey);
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
@@ -49,27 +43,17 @@ public sealed class TabsModeSegmentForegroundConverter : IValueConverter
 
         if (selected)
         {
-            return Lookup("PosOnAccentForegroundBrush");
+            return TabsThemeBrushLookup.Resolve("PosOnAccentForegroundBrush");
         }
 
         if (parameter is string p && p == "Guest")
         {
-            return Lookup("PosGuestBrush");
+            return TabsThemeBrushLookup.Resolve("PosGuestBrush");
         }
 
-        return Lookup("PosTextPrimaryBrush");
+        return TabsThemeBrushLookup.Resolve("PosTextPrimaryBrush");
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
         throw new NotSupportedException();
-
-    private static Brush Lookup(string key)
-    {
-        if (Application.Current?.Resources.TryGetValue(key, out var o) == true && o is Brush b)
-        {
-            return b;
-        }
-
-        return new SolidColorBrush(Microsoft.UI.Colors.Gray);
-    }
 }

@@ -6,6 +6,7 @@ These rules keep layouts stable on the club touchscreen POS. Follow them for new
 
 - **Resolution:** 1024×768 (landscape touchscreen).
 - **Theme:** Light POS theme is primary (reduces glare on TCXWave panels).
+- **Bar Tabs Bathurst:** Optional Race Day visual on Bar Tabs only (header 88 / category 52 / workspace 564 / bottom nav 64). Toggle Normal↔Bathurst in the Tabs header; preference key `tabs_visual_theme.v1`. Does not change global POS themes or other routes.
 - **Input:** Touch-first; mouse/keyboard are secondary.
 
 ## Layout
