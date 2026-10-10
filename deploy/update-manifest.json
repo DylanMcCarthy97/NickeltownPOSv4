@@ -1,6 +1,6 @@
 {
-  "version": "1.0.7.23",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.23/NickeltownPOSV4_1.0.7.23_x64.msix",
+  "version": "1.0.7.25",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v1.0.7.25/NickeltownPOSV4_1.0.7.25_x64.msix",
   "releaseNotes": "Bar Tabs has an optional Bathurst 1000 race-day theme. Tap THEME in the header to turn it on or off. Other pages are unchanged.",
   "mandatory": false
 }
