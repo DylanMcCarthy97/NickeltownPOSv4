@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Settings;
+using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.Services.Updates;
 using NickeltownPOSV4.ViewModels.Settings;
 using NickeltownPOSV4.Views.Settings;
@@ -13,6 +14,7 @@ internal static class ServiceCollectionSettingsExtensions
     {
         services.AddSingleton<ISquareTerminalSession, SquareSdkTerminalSession>();
         services.AddSingleton<IAppSettingsRepository, SqliteAppSettingsRepository>();
+        services.AddSingleton<ITabsVisualThemeService, TabsVisualThemeService>();
         services.AddSingleton<IEmailConfigService, EmailConfigService>();
         services.AddSingleton<IEmailConfigImportService, EmailConfigImportService>();
         services.AddSingleton<IEmailConfigFilePicker, WinUIEmailConfigFilePicker>();
