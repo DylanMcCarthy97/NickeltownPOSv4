@@ -78,25 +78,25 @@
                     Opacity="0.92"
                     CharacterSpacing="40"
                     Text="NICKELTOWN POS" />
-                <!-- No negative CharacterSpacing: italic glyphs overhang and get clipped. -->
+                <!-- Trailing spaces + padding reserve italic overhang so the final T is not clipped. -->
                 <TextBlock
                     Margin="0,0,0,0"
-                    Padding="0,0,14,0"
+                    Padding="0,2,22,2"
                     FontSize="28"
                     FontStyle="Italic"
                     FontWeight="Bold"
                     Foreground="#FFFFFFFF"
-                    Text="BATHURST"
+                    Text="BATHURST  "
                     TextTrimming="None"
                     TextWrapping="NoWrap" />
                 <TextBlock
                     Margin="2,-4,0,0"
-                    Padding="0,0,14,0"
+                    Padding="0,0,22,2"
                     FontSize="38"
                     FontStyle="Italic"
                     FontWeight="Bold"
                     Foreground="#FFE32636"
-                    Text="1000"
+                    Text="1000  "
                     TextTrimming="None"
                     TextWrapping="NoWrap" />
             </StackPanel>
