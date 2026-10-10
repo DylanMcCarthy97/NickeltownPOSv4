@@ -16,6 +16,12 @@ public static class SquareCardFeeCalculator
             return (0m, 0m, 0m);
         }
 
+        if (feePercent <= 0m)
+        {
+            var exact = decimal.Round(baseTotal, 2, MidpointRounding.AwayFromZero);
+            return (exact, exact, 0m);
+        }
+
         var rate = feePercent / 100m;
         var unroundedCardTotal = baseTotal * (1m + rate);
         var roundedCardTotal = RoundToNearestFiveCents(unroundedCardTotal);

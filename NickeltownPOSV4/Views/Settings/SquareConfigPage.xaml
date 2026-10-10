@@ -49,7 +49,7 @@
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Square Terminal credentials, location, device, and catalog variations." />
+                        Text="Square Terminal credentials, and the on/off switch for the 1.7% card surcharge." />
                 </StackPanel>
                 <Button
                     Grid.Column="2"
@@ -134,6 +134,30 @@
                         Foreground="{StaticResource PosTextPrimaryBrush}"
                         Text="Catalog &amp; card fees" />
 
+                    <Border
+                        Padding="12,10"
+                        Background="{StaticResource SettingsCardElevatedBgBrush}"
+                        CornerRadius="10">
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CARD SURCHARGE ON / OFF" />
+                            <ToggleSwitch
+                                MinWidth="180"
+                                IsOn="{Binding CardSurchargeEnabled, Mode=TwoWay}"
+                                OffContent="Off"
+                                OnContent="On" />
+                            <TextBlock
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding CardSurchargeStatusText, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Turn this Off from 1 October so customers are not charged the 1.7% Square fee. Press Save Square configuration at the bottom."
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Border>
+
                     <StackPanel Spacing="3">
                         <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="BAR TAB CARD VARIATION ID" />
                         <Button Command="{Binding EditBarTabVariationIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
@@ -154,11 +178,11 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="CARD SURCHARGE %" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SURCHARGE PERCENTAGE" />
                             <TextBlock
                                 FontSize="11"
                                 Foreground="{StaticResource PosTextSecondaryBrush}"
-                                Text="Square fee on card payments (default 1.7%)."
+                                Text="Percentage when surcharge is enabled"
                                 TextWrapping="WrapWholeWords" />
                         </StackPanel>
                         <Button

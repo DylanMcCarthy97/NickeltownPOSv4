@@ -29,7 +29,7 @@ public sealed class PitstopSurchargeConfigLoader
         try
         {
             var sq = await _squareConfig.LoadAsync(cancellationToken).ConfigureAwait(false);
-            if (sq.PitstopTerminalCardSurchargePercent is > 0 and < 100)
+            if (sq.PitstopTerminalCardSurchargePercent is >= 0 and < 100)
             {
                 return decimal.Round(sq.PitstopTerminalCardSurchargePercent, 2, MidpointRounding.AwayFromZero);
             }
@@ -37,7 +37,7 @@ public sealed class PitstopSurchargeConfigLoader
             var p = await _appSettings
                 .GetAsync<PitstopPosPreferences>(PitstopPosPreferencesKey, cancellationToken)
                 .ConfigureAwait(false);
-            if (p?.CardSurchargePercent is > 0 and < 100)
+            if (p?.CardSurchargePercent is >= 0 and < 100)
             {
                 return decimal.Round(p.CardSurchargePercent, 2, MidpointRounding.AwayFromZero);
             }
