@@ -1005,9 +1005,15 @@ namespace NickeltownPOSV4.Themes
 
         public static void Apply(UiThemeId id)
         {
+            // Bathurst Race Day is a Bar Tabs-only preference (tabs_visual_theme.v1),
+            // not a global Appearance theme. Map legacy Bathurst1000 selections to Light.
+            if (id == UiThemeId.Bathurst1000)
+            {
+                id = UiThemeId.Light;
+            }
+
             CurrentThemeId = id;
             _palette = PaletteFor(id);
-            BathurstTabsTheme.IsEnabled = id == UiThemeId.Bathurst1000;
             ThemeChanged?.Invoke(null, EventArgs.Empty);
         }
 

@@ -42,17 +42,17 @@ public sealed partial class TabsWorkspaceView : UserControl
     private void ApplyBathurstChrome()
     {
         var bathurst = DataContext is TabsWorkspaceViewModel { IsBathurstTheme: true };
-        HeaderRowDef.Height = new GridLength(bathurst ? 176 : 56);
-        ModeRowDef.Height = new GridLength(bathurst ? 46 : 70);
-        ModeSelectorGrid.Height = bathurst ? 46 : 70;
-        ModeSelectorGrid.Margin = bathurst ? new Thickness(0) : new Thickness(10, 2, 10, 0);
+        HeaderRowDef.Height = new GridLength(bathurst ? 88 : 56);
+        ModeRowDef.Height = new GridLength(bathurst ? 52 : 70);
+        ModeSelectorGrid.Height = bathurst ? 52 : 70;
+        ModeSelectorGrid.Margin = bathurst ? new Thickness(8, 0, 8, 0) : new Thickness(10, 2, 10, 0);
 
         foreach (var child in ModeSelectorGrid.Children)
         {
             if (child is Button button)
             {
-                button.CornerRadius = bathurst ? new CornerRadius(0) : new CornerRadius(12);
-                button.MinHeight = bathurst ? 46 : 50;
+                button.CornerRadius = bathurst ? new CornerRadius(6) : new CornerRadius(12);
+                button.MinHeight = bathurst ? 44 : 50;
             }
         }
     }

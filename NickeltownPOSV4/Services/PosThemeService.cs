@@ -11,7 +11,6 @@ public sealed class PosThemeService : IPosThemeService
 {
     private static readonly IReadOnlyList<UiThemeId> RecommendedThemeOrder =
     [
-        UiThemeId.Bathurst1000,
         UiThemeId.Light,
         UiThemeId.Cream,
         UiThemeId.Warm,
@@ -46,7 +45,6 @@ public sealed class PosThemeService : IPosThemeService
 
     public string GetDisplayName(UiThemeId id) => id switch
     {
-        UiThemeId.Bathurst1000 => "Bathurst 1000 (race day)",
         UiThemeId.Light => "Light (recommended)",
         UiThemeId.Cream => "Cream (recommended)",
         UiThemeId.Warm => "Warm (recommended)",

@@ -95,12 +95,16 @@ public sealed class TabSelectedBorderThicknessConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        if (value is string key)
+        var selected = value is true
+            || (value is string key && key.Contains(":S:", StringComparison.Ordinal))
+            || (value is TabsBoardCellViewModel cell && cell.TabIsSelected);
+
+        if (!selected)
         {
-            return key.Contains(":S:", StringComparison.Ordinal) ? new Thickness(3) : new Thickness(1);
+            return new Thickness(1);
         }
 
-        return value is true ? new Thickness(3) : new Thickness(1);
+        return BathurstTabsTheme.IsEnabled ? new Thickness(2) : new Thickness(3);
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>

@@ -12,7 +12,6 @@ using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Complimentary;
-using NickeltownPOSV4.Themes;
 using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.Views;
 using NickeltownPOSV4.Views.Panels;
@@ -73,7 +72,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     private readonly IComplimentaryItemService _complimentary;
 
-    private readonly IPosThemeService _themes;
+    private readonly IBathurstTabsThemeService _bathurstTheme;
 
     private readonly ComplimentaryItemTapGuard _freeItemTapGuard = new();
 
@@ -155,7 +154,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         IAuthSignOutService signOut,
         IWindowHandleProvider windowHandle,
         IComplimentaryItemService complimentary,
-        IPosThemeService themes)
+        IBathurstTabsThemeService bathurstTheme)
     {
         _tabQuery = tabQuery;
         _refreshBus = refreshBus;
@@ -179,9 +178,9 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         _authentication = authentication;
         _windowHandle = windowHandle;
         _complimentary = complimentary;
-        _themes = themes;
-        _isBathurstTheme = themes.CurrentThemeId == UiThemeId.Bathurst1000;
-        _themes.ThemeChanged += OnAppearanceThemeChanged;
+        _bathurstTheme = bathurstTheme;
+        _isBathurstTheme = _bathurstTheme.IsEnabled;
+        _bathurstTheme.Changed += OnBathurstThemeChanged;
         _guestCloseoutOpen.OpenRequested += OnGuestCloseoutOpenRequested;
 
         _session.PropertyChanged += OnShellSessionPropertyChanged;
@@ -233,9 +232,54 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         SignOutCommand = new RelayCommand(SignOutFromTabs);
         RecordQuickFreeItemCommand = new AsyncRelayCommand<QuickFreeItemButtonViewModel>(RecordQuickFreeItemAsync);
         UndoComplimentaryToastCommand = new AsyncRelayCommand(UndoComplimentaryToastAsync, () => FreeItemToastCanUndo);
+        SetBathurstThemeCommand = new AsyncRelayCommand<object?>(SetBathurstThemeAsync, _ => CanToggleBathurstTheme);
 
         _addDrinksWorkspaceNavigator.SetHandler(OnAddDrinksWorkspaceCloseRequested);
         ApplyBathurstFlagToCells();
+        _ = InitializeBathurstThemeAsync();
+    }
+
+    public bool CanToggleBathurstTheme => _bathurstTheme.CanToggle;
+
+    public IAsyncRelayCommand<object?> SetBathurstThemeCommand { get; }
+
+    private async Task InitializeBathurstThemeAsync()
+    {
+        await _bathurstTheme.InitializeAsync().ConfigureAwait(true);
+        SyncBathurstFromService();
+    }
+
+    private async Task SetBathurstThemeAsync(object? parameter)
+    {
+        var enable = parameter switch
+        {
+            bool b => b,
+            string s when bool.TryParse(s, out var parsed) => parsed,
+            _ => !_bathurstTheme.IsEnabled,
+        };
+        await _bathurstTheme.SetEnabledAsync(enable).ConfigureAwait(true);
+        SyncBathurstFromService();
+    }
+
+    private void OnBathurstThemeChanged(object? sender, EventArgs e) => SyncBathurstFromService();
+
+    private void SyncBathurstFromService()
+    {
+        IsBathurstTheme = _bathurstTheme.IsEnabled;
+        OnPropertyChanged(nameof(CanToggleBathurstTheme));
+        SetBathurstThemeCommand.NotifyCanExecuteChanged();
+        ApplyBathurstFlagToCells();
+        NotifyBalanceVisuals();
+    }
+
+    private void NotifyBalanceVisuals()
+    {
+        OnPropertyChanged(nameof(BoardMode));
+        OnPropertyChanged(nameof(SelectedBalanceTier));
+        foreach (var cell in PageSlots)
+        {
+            cell.NotifySelectionChanged();
+        }
     }
 
     private bool ToolbarActionsEnabled =>
@@ -376,12 +420,6 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private void OnTabsRefreshRequested(object? sender, EventArgs e) =>
         _ = RefreshTabsFromDatabaseAsync();
 
-    private void OnAppearanceThemeChanged(object? sender, EventArgs e)
-    {
-        IsBathurstTheme = _themes.CurrentThemeId == UiThemeId.Bathurst1000;
-        ApplyBathurstFlagToCells();
-    }
-
     private void ApplyBathurstFlagToCells()
     {
         foreach (var cell in PageSlots)
@@ -465,9 +503,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         {
             if (SetProperty(ref _isBathurstTheme, value))
             {
-                OnPropertyChanged(nameof(BoardMode));
-                OnPropertyChanged(nameof(SelectedBalanceTier));
                 ApplyBathurstFlagToCells();
+                NotifyBalanceVisuals();
             }
         }
     }
@@ -503,8 +540,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public async Task RefreshTabsFromDatabaseAsync()
     {
-        IsBathurstTheme = _themes.CurrentThemeId == UiThemeId.Bathurst1000;
-        ApplyBathurstFlagToCells();
+        await _bathurstTheme.ReloadAsync().ConfigureAwait(true);
+        SyncBathurstFromService();
         try
         {
             var rows = await _tabQuery.GetOpenTabCardsAsync().ConfigureAwait(true);

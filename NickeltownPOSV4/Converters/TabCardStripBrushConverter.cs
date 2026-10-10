@@ -20,28 +20,17 @@ public sealed class TabCardStripBrushConverter : IValueConverter
     {
         if (value is TabsBoardCellViewModel cell)
         {
-            var isGuest = cell.TabIsGuest;
-            var cellTier = cell.DisplayBalanceTier;
-            if (cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled)
-            {
-                return BathurstTabsBrushes.FromArgb(0x00000000);
-            }
-
-            return Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(cellTier));
+            return ResolveStripBrush(cell.TabIsGuest, cell.DisplayBalanceTier);
         }
 
         if (value is TabCardModel tab)
         {
-            return BathurstTabsTheme.IsEnabled
-                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(tab.IsGuest, tab.BalanceTier))
-                : Lookup(TabBalanceTierBrushes.StripResourceKey(tab));
+            return ResolveStripBrush(tab.IsGuest, tab.BalanceTier);
         }
 
         if (value is TabBalanceTier balanceTier)
         {
-            return BathurstTabsTheme.IsEnabled
-                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.BalanceColor(balanceTier))
-                : Lookup(TabBalanceTierBrushes.StripResourceKey(balanceTier));
+            return ResolveStripBrush(isGuest: false, balanceTier);
         }
 
         return Lookup(TabBalanceTierBrushes.StripResourceKey(TabBalanceTier.Settled));
