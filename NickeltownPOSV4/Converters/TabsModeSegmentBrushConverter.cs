@@ -23,9 +23,7 @@ public sealed class TabsModeSegmentBrushConverter : IValueConverter
 
         if (BathurstTabsTheme.IsEnabled)
         {
-            return selected
-                ? BathurstTabsBrushes.Token("AccentDeep")
-                : BathurstTabsBrushes.Token("ModeBar");
+            return BathurstTabsBrushes.Token(selected ? "AccentDeep" : "ModeBar");
         }
 
         var brushKey = selected ? "PosModeSegmentSelectedBrush" : "PosModeSegmentIdleBrush";
@@ -57,9 +55,7 @@ public sealed class TabsModeSegmentForegroundConverter : IValueConverter
 
         if (BathurstTabsTheme.IsEnabled)
         {
-            return selected
-                ? BathurstTabsBrushes.Token("OnAccent")
-                : BathurstTabsBrushes.Token("TextPrimary");
+            return BathurstTabsBrushes.Token("OnAccent");
         }
 
         if (selected)

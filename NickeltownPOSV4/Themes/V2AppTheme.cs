@@ -856,14 +856,14 @@ namespace NickeltownPOSV4.Themes
 
         private static readonly ThemePalette Bathurst1000Palette = new ThemePalette
         {
-            Background = Color.FromArgb(255, 0x0B, 0x0B, 0x0D),
-            Card = Color.FromArgb(255, 0x16, 0x16, 0x18),
-            CardAlt = Color.FromArgb(255, 0x1A, 0x1A, 0x1E),
-            Border = Color.FromArgb(255, 0x3A, 0x3A, 0x40),
+            Background = Color.FromArgb(255, 0x05, 0x05, 0x07),
+            Card = Color.FromArgb(255, 0x14, 0x14, 0x16),
+            CardAlt = Color.FromArgb(255, 0x10, 0x10, 0x12),
+            Border = Color.FromArgb(255, 0x2A, 0x2A, 0x30),
             Accent = Color.FromArgb(255, 0xE1, 0x06, 0x00),
             AccentHover = Color.FromArgb(255, 0xFF, 0x2A, 0x1F),
-            TextPrimary = Color.FromArgb(255, 0xF8, 0xFA, 0xFC),
-            TextSecondary = Color.FromArgb(255, 0xA1, 0xA1, 0xAA),
+            TextPrimary = Color.FromArgb(255, 0xFF, 0xFF, 0xFF),
+            TextSecondary = Color.FromArgb(255, 0xB4, 0xB4, 0xBC),
             Success = Color.FromArgb(255, 0x22, 0xC5, 0x5E),
             Danger = Color.FromArgb(255, 0xEF, 0x44, 0x44),
             Warning = Color.FromArgb(255, 0xF5, 0x9E, 0x0B),

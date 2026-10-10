@@ -6,84 +6,80 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Height="168">
+    Height="176">
 
-    <Grid Background="#FF0B0B0D">
+    <Grid Background="#FF050507">
         <Image
             HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch"
+            VerticalAlignment="Center"
             IsHitTestVisible="False"
             Stretch="UniformToFill">
             <Image.Source>
                 <BitmapImage UriSource="ms-appx:///Assets/Bathurst/bathurst-header.jpg" DecodePixelWidth="1920" />
             </Image.Source>
         </Image>
-        <Border Background="#66000000" IsHitTestVisible="False" />
+        <Border Background="#40000000" IsHitTestVisible="False" />
         <Image
-            Height="16"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Top"
-            IsHitTestVisible="False"
-            Stretch="Fill">
-            <Image.Source>
-                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-strip.png" DecodePixelHeight="16" />
-            </Image.Source>
-        </Image>
-        <Image
-            Width="44"
+            Width="52"
             HorizontalAlignment="Left"
-            VerticalAlignment="Stretch"
-            Margin="0,16,0,4"
+            VerticalAlignment="Top"
+            Height="72"
+            Margin="0,0,0,0"
             IsHitTestVisible="False"
-            Opacity="0.9"
+            Opacity="0.95"
             Stretch="UniformToFill">
             <Image.Source>
-                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="88" />
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="104" />
             </Image.Source>
         </Image>
         <Image
-            Width="44"
+            Width="52"
             HorizontalAlignment="Right"
-            VerticalAlignment="Stretch"
-            Margin="0,16,0,4"
+            VerticalAlignment="Top"
+            Height="72"
             IsHitTestVisible="False"
-            Opacity="0.9"
+            Opacity="0.95"
             Stretch="UniformToFill">
             <Image.Source>
-                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="88" />
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="104" />
             </Image.Source>
         </Image>
-        <Border
-            Height="4"
-            VerticalAlignment="Bottom"
-            Background="#FFE10600"
-            IsHitTestVisible="False" />
 
-        <Grid Padding="52,20,52,16">
+        <Grid Padding="20,18,24,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="0">
-                <TextBlock
-                    FontSize="12"
-                    FontWeight="SemiBold"
-                    Foreground="#FFE2E8F0"
-                    Text="NICKELTOWN POS" />
-                <TextBlock
-                    Margin="0,-6,0,0"
-                    CharacterSpacing="80"
-                    FontSize="48"
-                    FontWeight="Black"
-                    Foreground="#FFFFFFFF"
-                    Text="BATHURST 1000" />
-                <TextBlock
-                    Margin="0,-2,0,0"
-                    FontSize="13"
-                    FontWeight="Bold"
-                    Foreground="#FFF8FAFC"
-                    Text="RACE DAY EDITION  |  11 OCTOBER 2026" />
+            <StackPanel
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <Image
+                    Width="92"
+                    Height="92"
+                    VerticalAlignment="Center"
+                    IsHitTestVisible="False"
+                    Stretch="Uniform">
+                    <Image.Source>
+                        <SvgImageSource UriSource="ms-appx:///Assets/Bathurst/mount-panorama-outline.svg" />
+                    </Image.Source>
+                </Image>
+                <StackPanel VerticalAlignment="Center" Spacing="-8">
+                    <TextBlock
+                        CharacterSpacing="60"
+                        FontSize="42"
+                        FontWeight="Black"
+                        Foreground="#FFFFFFFF"
+                        Text="BATHURST" />
+                    <TextBlock
+                        CharacterSpacing="120"
+                        FontSize="42"
+                        FontWeight="Black"
+                        Foreground="#FFFFFFFF"
+                        Text="1000" />
+                </StackPanel>
             </StackPanel>
 
             <StackPanel
@@ -93,27 +89,18 @@
                 Spacing="2">
                 <TextBlock
                     HorizontalAlignment="Right"
-                    CharacterSpacing="40"
-                    FontSize="14"
+                    CharacterSpacing="80"
+                    FontSize="16"
                     FontWeight="Bold"
                     Foreground="#FFFFFFFF"
                     Text="MOUNT PANORAMA" />
                 <TextBlock
                     HorizontalAlignment="Right"
-                    FontSize="11"
+                    CharacterSpacing="40"
+                    FontSize="13"
                     FontWeight="SemiBold"
-                    Foreground="#FFE2E8F0"
+                    Foreground="#FFF8FAFC"
                     Text="GREATEST RACE ON EARTH" />
-                <Image
-                    Width="148"
-                    Height="48"
-                    HorizontalAlignment="Right"
-                    IsHitTestVisible="False"
-                    Stretch="Uniform">
-                    <Image.Source>
-                        <SvgImageSource UriSource="ms-appx:///Assets/Bathurst/mount-panorama-outline.svg" />
-                    </Image.Source>
-                </Image>
             </StackPanel>
         </Grid>
     </Grid>

@@ -1,30 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 170" fill="none">
-  <!-- Stylised Mount Panorama circuit outline for the Bathurst race-day header. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
   <path
-    d="M28 132
-       H206
-       C224 132 236 124 238 110
-       L248 72
-       C252 56 246 44 230 38
-       L176 22
-       C160 18 148 22 140 32
-       L122 56
-       C116 66 104 70 92 66
-       L62 54
-       C46 48 32 54 28 66
-       C24 80 34 90 50 94
-       L78 102
-       C90 106 94 116 88 124
-       C80 134 54 136 28 132 Z"
+    d="M38 196
+       H168
+       C186 196 198 186 202 170
+       L214 112
+       C220 86 208 70 184 62
+       L132 46
+       C116 42 104 48 96 60
+       L78 92
+       C72 104 58 108 44 100
+       L28 90
+       C16 84 10 90 12 102
+       C16 118 30 126 48 130
+       L78 138
+       C94 142 100 154 94 166
+       C84 184 58 192 38 196 Z"
     stroke="#F8FAFC"
-    stroke-width="3.2"
+    stroke-width="7"
     stroke-linejoin="round"
     stroke-linecap="round"/>
-  <path
-    d="M52 128 H198"
-    stroke="#E10600"
-    stroke-width="2"
-    stroke-linecap="round"
-    opacity="0.9"/>
-  <circle cx="206" cy="130" r="3.4" fill="#E10600"/>
 </svg>

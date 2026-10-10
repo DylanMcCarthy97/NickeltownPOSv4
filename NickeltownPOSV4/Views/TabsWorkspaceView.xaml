@@ -242,9 +242,8 @@
                     <DataTemplate>
                         <Grid Margin="3" Tapped="BoardCell_Tapped">
                             <Border
-                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=SurfaceAlt, Mode=OneWay}"
-                                BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Border, Mode=OneWay}"
-                                BorderThickness="1"
+                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Canvas, Mode=OneWay}"
+                                BorderThickness="0"
                                 CornerRadius="12"
                                 Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
 
@@ -257,30 +256,14 @@
                                         Stroke="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=AddBorder, Mode=OneWay}"
                                         StrokeDashArray="6,4"
                                         StrokeThickness="2" />
-                                    <Image
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        IsHitTestVisible="False"
-                                        Opacity="0.18"
-                                        Source="ms-appx:///Assets/Bathurst/chequered-overlay.png"
-                                        Stretch="UniformToFill"
-                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <Border
-                                                Width="48"
-                                                Height="48"
+                                            <FontIcon
                                                 HorizontalAlignment="Center"
-                                                Background="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BathurstBrush}, ConverterParameter=CountBadge, Mode=OneWay}"
-                                                CornerRadius="24">
-                                                <FontIcon
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    FontFamily="Segoe MDL2 Assets"
-                                                    FontSize="22"
-                                                    Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Accent, Mode=OneWay}"
-                                                    Glyph="&#xE710;" />
-                                            </Border>
+                                                FontFamily="Segoe MDL2 Assets"
+                                                FontSize="28"
+                                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Accent, Mode=OneWay}"
+                                                Glyph="&#xE710;" />
                                             <TextBlock
                                                 Margin="0,8,0,0"
                                                 HorizontalAlignment="Center"
@@ -308,14 +291,6 @@
                                         Stroke="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=AddGuestBorder, Mode=OneWay}"
                                         StrokeDashArray="6,4"
                                         StrokeThickness="2" />
-                                    <Image
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        IsHitTestVisible="False"
-                                        Opacity="0.18"
-                                        Source="ms-appx:///Assets/Bathurst/chequered-overlay.png"
-                                        Stretch="UniformToFill"
-                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <Border
@@ -360,26 +335,6 @@
                                 CornerRadius="12"
                                 Visibility="{Binding IsTabCell, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                 <Grid>
-                                    <Image
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        IsHitTestVisible="False"
-                                        Opacity="0.35"
-                                        Source="ms-appx:///Assets/Bathurst/carbon-fibre.png"
-                                        Stretch="UniformToFill"
-                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                                    <Image
-                                        Width="72"
-                                        Height="36"
-                                        Margin="0,8,8,0"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Top"
-                                        IsHitTestVisible="False"
-                                        Opacity="0.16"
-                                        Source="ms-appx:///Assets/Bathurst/chequered-overlay.png"
-                                        Stretch="UniformToFill"
-                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                                    <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
@@ -436,7 +391,6 @@
                                                 TextAlignment="Center"
                                                 TextTrimming="CharacterEllipsis" />
                                         </Grid>
-                                    </Grid>
                                 </Grid>
                             </Border>
                         </Grid>
@@ -489,12 +443,12 @@
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         IsHitTestVisible="False"
-                        Opacity="0.42"
+                        Opacity="0.88"
                         Source="ms-appx:///Assets/Bathurst/mount-panorama-panel.jpg"
                         Stretch="UniformToFill"
                         Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                     <Border
-                        Background="#B80B0B0D"
+                        Background="#59050507"
                         CornerRadius="11"
                         IsHitTestVisible="False"
                         Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
@@ -539,12 +493,11 @@
                                         IsEnabled="{Binding CanRecord, Mode=OneWay}"
                                         Style="{StaticResource QuickFreeItemTileStyle}">
                                             <StackPanel HorizontalAlignment="Center" Spacing="2">
-                                            <Border
-                                                Height="3"
-                                                Margin="0,0,0,2"
-                                                Background="#FFE10600"
-                                                CornerRadius="1"
-                                                Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                            <TextBlock
+                                                FontSize="22"
+                                                Text="{Binding Icon, Mode=OneWay}"
+                                                TextAlignment="Center"
+                                                Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                             <TextBlock
                                                 FontSize="11"
                                                 FontWeight="Bold"

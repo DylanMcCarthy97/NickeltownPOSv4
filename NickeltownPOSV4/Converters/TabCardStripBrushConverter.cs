@@ -22,9 +22,12 @@ public sealed class TabCardStripBrushConverter : IValueConverter
         {
             var isGuest = cell.TabIsGuest;
             var cellTier = cell.DisplayBalanceTier;
-            return cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled
-                ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(isGuest, cellTier))
-                : Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(cellTier));
+            if (cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled)
+            {
+                return BathurstTabsBrushes.FromArgb(0x00000000);
+            }
+
+            return Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(cellTier));
         }
 
         if (value is TabCardModel tab)
