@@ -740,6 +740,10 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         private set => SetProperty(ref _pageInfo, value);
     }
 
+    public bool CanPagePrevious => CurrentPage > 0;
+
+    public bool CanPageNext => CurrentPage < TotalPages - 1;
+
     public int CurrentPage =>
         BoardMode switch
         {
@@ -894,6 +898,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         }
 
         OnPropertyChanged(nameof(CurrentPage));
+        OnPropertyChanged(nameof(CanPagePrevious));
+        OnPropertyChanged(nameof(CanPageNext));
         RebuildBoardPage();
         PreviousPageCommand.NotifyCanExecuteChanged();
         NextPageCommand.NotifyCanExecuteChanged();
@@ -1016,6 +1022,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         PageInfo = TabsBoardPagerHelper.FormatPageInfo(
             page,
             TabsBoardPagerHelper.TotalPages(tabs.Count, includeAdd));
+        OnPropertyChanged(nameof(CanPagePrevious));
+        OnPropertyChanged(nameof(CanPageNext));
         PreviousPageCommand.NotifyCanExecuteChanged();
         NextPageCommand.NotifyCanExecuteChanged();
         SyncBoardCellSelection();
