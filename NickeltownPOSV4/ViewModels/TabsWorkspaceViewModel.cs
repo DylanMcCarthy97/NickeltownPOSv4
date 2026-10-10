@@ -72,7 +72,11 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     private readonly IComplimentaryItemService _complimentary;
 
+    private readonly IBathurstTabsThemeService _bathurstTheme;
+
     private readonly ComplimentaryItemTapGuard _freeItemTapGuard = new();
+
+    private bool _isBathurstTheme;
 
     private int _freeItemToastGeneration;
 
@@ -149,7 +153,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         IAuthenticationService authentication,
         IAuthSignOutService signOut,
         IWindowHandleProvider windowHandle,
-        IComplimentaryItemService complimentary)
+        IComplimentaryItemService complimentary,
+        IBathurstTabsThemeService bathurstTheme)
     {
         _tabQuery = tabQuery;
         _refreshBus = refreshBus;
@@ -173,6 +178,9 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         _authentication = authentication;
         _windowHandle = windowHandle;
         _complimentary = complimentary;
+        _bathurstTheme = bathurstTheme;
+        _isBathurstTheme = bathurstTheme.IsEnabled;
+        _bathurstTheme.Changed += OnBathurstThemeChanged;
         _guestCloseoutOpen.OpenRequested += OnGuestCloseoutOpenRequested;
 
         _session.PropertyChanged += OnShellSessionPropertyChanged;
@@ -224,8 +232,10 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
         SignOutCommand = new RelayCommand(SignOutFromTabs);
         RecordQuickFreeItemCommand = new AsyncRelayCommand<QuickFreeItemButtonViewModel>(RecordQuickFreeItemAsync);
         UndoComplimentaryToastCommand = new AsyncRelayCommand(UndoComplimentaryToastAsync, () => FreeItemToastCanUndo);
+        ToggleBathurstThemeCommand = new AsyncRelayCommand(ToggleBathurstThemeAsync);
 
         _addDrinksWorkspaceNavigator.SetHandler(OnAddDrinksWorkspaceCloseRequested);
+        ApplyBathurstFlagToCells();
     }
 
     private bool ToolbarActionsEnabled =>
@@ -366,6 +376,20 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private void OnTabsRefreshRequested(object? sender, EventArgs e) =>
         _ = RefreshTabsFromDatabaseAsync();
 
+    private void OnBathurstThemeChanged(object? sender, EventArgs e) =>
+        IsBathurstTheme = _bathurstTheme.IsEnabled;
+
+    private async Task ToggleBathurstThemeAsync() =>
+        await _bathurstTheme.SetEnabledAsync(!_bathurstTheme.IsEnabled).ConfigureAwait(true);
+
+    private void ApplyBathurstFlagToCells()
+    {
+        foreach (var cell in PageSlots)
+        {
+            cell.IsBathurstTheme = IsBathurstTheme;
+        }
+    }
+
     private void OnGuestCloseoutOpenRequested(object? sender, EventArgs e) => OpenGuestCloseoutPanel();
 
     public IAsyncRelayCommand RefreshFromDatabaseCommand { get; }
@@ -433,6 +457,26 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     public IAsyncRelayCommand<QuickFreeItemButtonViewModel> RecordQuickFreeItemCommand { get; }
 
     public IAsyncRelayCommand UndoComplimentaryToastCommand { get; }
+
+    public IAsyncRelayCommand ToggleBathurstThemeCommand { get; }
+
+    public bool IsBathurstTheme
+    {
+        get => _isBathurstTheme;
+        private set
+        {
+            if (SetProperty(ref _isBathurstTheme, value))
+            {
+                OnPropertyChanged(nameof(BathurstThemeToggleLabel));
+                OnPropertyChanged(nameof(BoardMode));
+                OnPropertyChanged(nameof(SelectedBalanceTier));
+                ApplyBathurstFlagToCells();
+            }
+        }
+    }
+
+    public string BathurstThemeToggleLabel =>
+        IsBathurstTheme ? "BATHURST" : "RACE DAY";
 
     public ObservableCollection<QuickFreeItemButtonViewModel> QuickFreeItems { get; } = new();
 
@@ -886,6 +930,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
             page,
             includeAdd,
             addKind);
+        ApplyBathurstFlagToCells();
 
         PageInfo = TabsBoardPagerHelper.FormatPageInfo(
             page,

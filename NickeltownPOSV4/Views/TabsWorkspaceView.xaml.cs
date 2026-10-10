@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using NickeltownPOSV4.Models;
 using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Views;
@@ -13,15 +12,39 @@ public sealed partial class TabsWorkspaceView : UserControl
     {
         InitializeComponent();
         DataContext = App.Services.GetRequiredService<TabsWorkspaceViewModel>();
+        ApplyBathurstChrome();
         Loaded += OnLoaded;
+        DataContextChanged += OnDataContextChanged;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        ApplyBathurstChrome();
         if (DataContext is TabsWorkspaceViewModel vm)
         {
+            vm.PropertyChanged -= OnWorkspacePropertyChanged;
+            vm.PropertyChanged += OnWorkspacePropertyChanged;
             await vm.RefreshTabsFromDatabaseAsync().ConfigureAwait(true);
         }
+    }
+
+    private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args) =>
+        ApplyBathurstChrome();
+
+    private void OnWorkspacePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TabsWorkspaceViewModel.IsBathurstTheme) or null or "")
+        {
+            ApplyBathurstChrome();
+        }
+    }
+
+    private void ApplyBathurstChrome()
+    {
+        var bathurst = DataContext is TabsWorkspaceViewModel { IsBathurstTheme: true };
+        HeaderRowDef.Height = new GridLength(bathurst ? 82 : 56);
+        ModeRowDef.Height = new GridLength(bathurst ? 54 : 70);
+        ModeSelectorGrid.Height = bathurst ? 52 : 70;
     }
 
     private void BoardCell_Tapped(object sender, TappedRoutedEventArgs e)

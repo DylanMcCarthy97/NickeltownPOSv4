@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="NickeltownPOSV4.Controls.BathurstTabsHeader"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Height="82">
+
+    <Grid>
+        <Image
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsHitTestVisible="False"
+            Source="ms-appx:///Assets/Bathurst/bathurst-header.jpg"
+            Stretch="UniformToFill" />
+        <Border Background="#B30B0B0D" IsHitTestVisible="False" />
+        <Image
+            Height="8"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Top"
+            IsHitTestVisible="False"
+            Source="ms-appx:///Assets/Bathurst/chequered-strip.png"
+            Stretch="Fill" />
+        <Border
+            Height="3"
+            VerticalAlignment="Bottom"
+            Background="#FFE10600"
+            IsHitTestVisible="False" />
+
+        <Grid Padding="10,10,8,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="0">
+                <TextBlock
+                    FontSize="10"
+                    FontWeight="SemiBold"
+                    Foreground="#FFCBD5E1"
+                    Text="Nickeltown POS" />
+                <TextBlock
+                    Margin="0,-2,0,0"
+                    CharacterSpacing="60"
+                    FontSize="26"
+                    FontWeight="Black"
+                    Foreground="#FFF8FAFC"
+                    Text="BATHURST 1000" />
+                <TextBlock
+                    Margin="0,-2,0,0"
+                    FontSize="10"
+                    FontWeight="SemiBold"
+                    Foreground="#FFE8E8E8"
+                    Text="RACE DAY EDITION | 11 OCTOBER 2026" />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="1"
+                Margin="8,0,10,0"
+                VerticalAlignment="Center"
+                Spacing="2">
+                <TextBlock
+                    HorizontalAlignment="Right"
+                    FontSize="9"
+                    FontWeight="Bold"
+                    Foreground="#FFF8FAFC"
+                    Text="MOUNT PANORAMA" />
+                <Image
+                    Width="118"
+                    Height="52"
+                    HorizontalAlignment="Right"
+                    IsHitTestVisible="False"
+                    Stretch="Uniform">
+                    <Image.Source>
+                        <SvgImageSource UriSource="ms-appx:///Assets/Bathurst/mount-panorama-outline.svg" />
+                    </Image.Source>
+                </Image>
+            </StackPanel>
+
+            <Button
+                Grid.Column="2"
+                MinWidth="96"
+                MinHeight="44"
+                Padding="10,6"
+                VerticalAlignment="Center"
+                Background="#E10600"
+                BorderBrush="#FFF8FAFC"
+                BorderThickness="1"
+                Command="{x:Bind ToggleCommand, Mode=OneWay}"
+                CornerRadius="8"
+                Foreground="#FFFFFFFF">
+                <StackPanel Spacing="1">
+                    <TextBlock
+                        FontSize="9"
+                        FontWeight="Bold"
+                        Text="THEME"
+                        TextAlignment="Center" />
+                    <TextBlock
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Text="BATHURST"
+                        TextAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+    </Grid>
+</UserControl>

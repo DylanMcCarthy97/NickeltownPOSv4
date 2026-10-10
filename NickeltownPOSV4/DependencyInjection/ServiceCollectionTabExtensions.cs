@@ -31,6 +31,7 @@ internal static class ServiceCollectionTabExtensions
         services.AddSingleton<ITabHistoryQuery, SqliteTabHistoryQuery>();
         services.AddSingleton<ITabWorkspaceUndoStack, TabWorkspaceUndoStack>();
         services.AddSingleton<IComplimentaryItemService, ComplimentaryItemService>();
+        services.AddSingleton<IBathurstTabsThemeService, BathurstTabsThemeService>();
         services.AddSingleton<ITabManagementRepository, SqliteTabManagementRepository>();
         services.AddSingleton<IEditTabPanelHost, EditTabPanelHost>();
 
