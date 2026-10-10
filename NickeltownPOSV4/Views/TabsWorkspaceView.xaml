@@ -274,7 +274,7 @@
                                         StrokeDashArray="6,4"
                                         StrokeThickness="2" />
                                     <Image
-                                        Opacity="0.40"
+                                        Opacity="0.55"
                                         Stretch="Uniform"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch"
@@ -364,10 +364,10 @@
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
-                                        <!-- Bathurst-only art. Do not paint a dark plate here — it sticks when Race Day is off. -->
+                                        <!-- Bathurst-only art (precomposed contain cars). Hidden when Race Day is off. -->
                                         <Image
                                             Grid.RowSpan="2"
-                                            Opacity="0.42"
+                                            Opacity="0.55"
                                             Stretch="Uniform"
                                             HorizontalAlignment="Stretch"
                                             VerticalAlignment="Stretch"
@@ -473,8 +473,8 @@
                         Margin="8,0,0,0"
                         Padding="0"
                         VerticalAlignment="Center"
-                        Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=ActionDark, Mode=OneWay}"
-                        BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Border, Mode=OneWay}"
+                        Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Accent, Mode=OneWay}"
+                        BorderBrush="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=Accent, Mode=OneWay}"
                         BorderThickness="1"
                         Command="{Binding OpenRaceDayThemeDialogCommand}"
                         CornerRadius="8"
@@ -483,7 +483,7 @@
                         <FontIcon
                             FontFamily="Segoe MDL2 Assets"
                             FontSize="18"
-                            Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=TextPrimary, Mode=OneWay}"
+                            Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=OnAccent, Mode=OneWay}"
                             Glyph="&#xE790;" />
                     </Button>
                     <controls:CatalogPagePager
