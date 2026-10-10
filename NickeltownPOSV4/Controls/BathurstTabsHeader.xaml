@@ -10,67 +10,101 @@
     MinHeight="88"
     MaxHeight="88">
 
-    <!-- Full-width Race Day banner: continuous photo + live left title / right slogan. -->
+    <!--
+      Full-width Race Day banner.
+      Artwork is a single continuous 1024×88 photo (exactly two cars).
+      Titles, circuit outline and slogan are live overlays — not burned into the asset.
+    -->
     <Grid Background="#FF101216">
         <Image
             HorizontalAlignment="Stretch"
             VerticalAlignment="Center"
             Height="88"
             IsHitTestVisible="False"
-            Stretch="UniformToFill">
+            Stretch="Uniform">
             <Image.Source>
                 <BitmapImage
-                    DecodePixelHeight="88"
                     DecodePixelWidth="1024"
                     UriSource="ms-appx:///Assets/Bathurst/BathurstBanner1024x88.png" />
             </Image.Source>
         </Image>
 
-        <!-- Soft left chequered accent; title stays live XAML over the dark flag zone. -->
         <Image
-            Width="56"
+            Width="52"
             Height="88"
             HorizontalAlignment="Left"
             IsHitTestVisible="False"
-            Opacity="0.42"
+            Opacity="0.38"
             Stretch="Fill">
             <Image.Source>
                 <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-edge.png" />
             </Image.Source>
         </Image>
 
-        <!-- Left ~40%: stacked italic BATHURST / red 1000 -->
-        <StackPanel
-            Margin="28,0,0,0"
+        <!-- Left zone: circuit outline + NICKELTOWN POS / BATHURST / 1000 -->
+        <Grid
+            Margin="10,4,0,6"
             HorizontalAlignment="Left"
-            VerticalAlignment="Center"
-            Spacing="-4">
-            <TextBlock
-                FontSize="28"
-                FontStyle="Italic"
-                FontWeight="Bold"
-                Foreground="#FFFFFFFF"
-                CharacterSpacing="-20"
-                Text="BATHURST" />
-            <TextBlock
-                Margin="2,-6,0,0"
-                FontSize="40"
-                FontStyle="Italic"
-                FontWeight="Bold"
-                Foreground="#FFE32636"
-                CharacterSpacing="-40"
-                Text="1000" />
-        </StackPanel>
+            VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        <!-- Right ~25%: slogan over Mount Panorama scenery -->
+            <Image
+                Grid.Column="0"
+                Width="96"
+                Height="64"
+                Margin="0,4,8,0"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Stretch="Uniform">
+                <Image.Source>
+                    <BitmapImage
+                        DecodePixelWidth="192"
+                        UriSource="ms-appx:///Assets/Bathurst/mount-panorama-outline.png" />
+                </Image.Source>
+            </Image>
+
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Spacing="-2">
+                <TextBlock
+                    FontSize="9"
+                    FontWeight="SemiBold"
+                    Foreground="#FFF5F5F5"
+                    Opacity="0.92"
+                    CharacterSpacing="40"
+                    Text="NICKELTOWN POS" />
+                <TextBlock
+                    Margin="0,-1,0,0"
+                    FontSize="26"
+                    FontStyle="Italic"
+                    FontWeight="Bold"
+                    Foreground="#FFFFFFFF"
+                    CharacterSpacing="-20"
+                    Text="BATHURST" />
+                <TextBlock
+                    Margin="2,-8,0,0"
+                    FontSize="36"
+                    FontStyle="Italic"
+                    FontWeight="Bold"
+                    Foreground="#FFE32636"
+                    CharacterSpacing="-40"
+                    Text="1000" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Right zone: slogan over Mount Panorama scenery -->
         <StackPanel
-            Margin="0,0,18,0"
+            Margin="0,0,16,0"
             HorizontalAlignment="Right"
             VerticalAlignment="Center"
             Spacing="-2">
             <TextBlock
                 HorizontalAlignment="Right"
-                FontSize="13"
+                FontSize="12"
                 FontStyle="Italic"
                 FontWeight="Bold"
                 Foreground="#FFFFFFFF"
@@ -78,7 +112,7 @@
                 Text="GREATEST RACE" />
             <TextBlock
                 HorizontalAlignment="Right"
-                FontSize="18"
+                FontSize="17"
                 FontStyle="Italic"
                 FontWeight="Bold"
                 Foreground="#FFE32636"
