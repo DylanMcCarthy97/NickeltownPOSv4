@@ -19,6 +19,15 @@ public sealed class BalanceTierToBrushConverter : IValueConverter
             tier = cell.DisplayBalanceTier;
             bathurst = cell.IsBathurstTheme;
         }
+        else if (value is string key && key.Length > 2)
+        {
+            // BalanceForegroundKey: "B:Negative" / "N:Low" / …
+            bathurst = key[0] == 'B';
+            var tierName = key.Length > 2 ? key[2..] : nameof(TabBalanceTier.Good);
+            tier = Enum.TryParse<TabBalanceTier>(tierName, ignoreCase: true, out var parsed)
+                ? parsed
+                : TabBalanceTier.Good;
+        }
         else if (value is TabBalanceTier boundTier)
         {
             tier = boundTier;
@@ -33,8 +42,9 @@ public sealed class BalanceTierToBrushConverter : IValueConverter
             return BathurstTabsBrushes.FromArgb(BathurstTabsTheme.BalanceColor(tier));
         }
 
-        var key = TabBalanceTierBrushes.BalanceResourceKey(tier);
-        if (Microsoft.UI.Xaml.Application.Current?.Resources.TryGetValue(key, out var o) == true && o is Brush b)
+        var resourceKey = TabBalanceTierBrushes.BalanceResourceKey(tier);
+        if (Microsoft.UI.Xaml.Application.Current?.Resources.TryGetValue(resourceKey, out var o) == true
+            && o is Brush b)
         {
             return b;
         }

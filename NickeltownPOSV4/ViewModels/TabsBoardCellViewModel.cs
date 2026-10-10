@@ -11,6 +11,8 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
         "ms-appx:///Assets/Bathurst/card-bg-02.jpg",
         "ms-appx:///Assets/Bathurst/card-bg-03.jpg",
         "ms-appx:///Assets/Bathurst/card-bg-04.jpg",
+        "ms-appx:///Assets/Bathurst/card-bg-05.jpg",
+        "ms-appx:///Assets/Bathurst/card-bg-06.jpg",
     };
 
     private const string BathurstNewTabBackground = "ms-appx:///Assets/Bathurst/card-bg-new.jpg";
@@ -57,6 +59,13 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
     public string TabStatusLabel => Tab?.BalanceStatusLabel ?? string.Empty;
 
     public TabBalanceTier DisplayBalanceTier => Tab?.BalanceTier ?? TabBalanceTier.Good;
+
+    /// <summary>
+    /// Binding key for amount/status colour. Includes theme + tier so converters
+    /// re-run when either changes (OWING red, LOW amber, CREDIT green).
+    /// </summary>
+    public string BalanceForegroundKey =>
+        $"{(IsBathurstTheme ? "B" : "N")}:{DisplayBalanceTier}";
 
     /// <summary>Guest tabs use the guest strip; members use balance tier (same rules as balance text).</summary>
     public object TabStripBrushSource =>
@@ -222,6 +231,7 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
         OnPropertyChanged(nameof(TabBalanceText));
         OnPropertyChanged(nameof(TabStatusLabel));
         OnPropertyChanged(nameof(DisplayBalanceTier));
+        OnPropertyChanged(nameof(BalanceForegroundKey));
         OnPropertyChanged(nameof(TabStripBrushSource));
         OnPropertyChanged(nameof(TabActivityLine));
         OnPropertyChanged(nameof(TabLastUpdatedText));

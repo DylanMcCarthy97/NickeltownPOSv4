@@ -56,14 +56,13 @@ public sealed class AppUpdateService : IAppUpdateService
         }
 
         var cfg = await _config.LoadAsync(cancellationToken).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(cfg.FeedBaseUrl))
-        {
-            return AppUpdateCheckResult.Skipped("No update feed configured.");
-        }
+        var feedBaseUrl = string.IsNullOrWhiteSpace(cfg.FeedBaseUrl)
+            ? Models.Settings.AppUpdateConfig.BuiltInFeedBaseUrl
+            : cfg.FeedBaseUrl.Trim();
 
         try
         {
-            var manifestPath = BuildManifestPath(cfg.FeedBaseUrl);
+            var manifestPath = BuildManifestPath(feedBaseUrl);
             var manifest = await LoadManifestAsync(manifestPath, cancellationToken).ConfigureAwait(false);
             if (manifest is null)
             {
@@ -75,7 +74,7 @@ public sealed class AppUpdateService : IAppUpdateService
                 return AppUpdateCheckResult.Failed("Update manifest is incomplete.");
             }
 
-            manifest.PackageUri = ResolvePackageUri(cfg.FeedBaseUrl, manifest.PackageUri);
+            manifest.PackageUri = ResolvePackageUri(feedBaseUrl, manifest.PackageUri);
 
             if (!AppVersionInfo.IsRemoteNewer(manifest.Version))
             {

@@ -275,7 +275,7 @@
                                         StrokeThickness="2" />
                                     <Image
                                         Opacity="0.55"
-                                        Stretch="Uniform"
+                                        Stretch="UniformToFill"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch"
                                         IsHitTestVisible="False"
@@ -364,11 +364,11 @@
                                             <RowDefinition Height="4" />
                                             <RowDefinition Height="*" />
                                         </Grid.RowDefinitions>
-                                        <!-- Bathurst-only art (precomposed contain cars). Hidden when Race Day is off. -->
+                                        <!-- Bathurst-only art (cover-fit cars, edge-to-edge). Hidden when Race Day is off. -->
                                         <Image
                                             Grid.RowSpan="2"
                                             Opacity="0.55"
-                                            Stretch="Uniform"
+                                            Stretch="UniformToFill"
                                             HorizontalAlignment="Stretch"
                                             VerticalAlignment="Stretch"
                                             IsHitTestVisible="False"
@@ -405,14 +405,14 @@
                                                     HorizontalAlignment="Center"
                                                     FontSize="34"
                                                     FontWeight="Bold"
-                                                    Foreground="{Binding Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
+                                                    Foreground="{Binding BalanceForegroundKey, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
                                                     Text="{Binding TabBalanceText, Mode=OneWay}"
                                                     TextAlignment="Center" />
                                                 <TextBlock
                                                     HorizontalAlignment="Center"
                                                     FontSize="13"
                                                     FontWeight="SemiBold"
-                                                    Foreground="{Binding Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
+                                                    Foreground="{Binding BalanceForegroundKey, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
                                                     Text="{Binding TabStatusLabel, Mode=OneWay}"
                                                     TextAlignment="Center" />
                                             </StackPanel>
