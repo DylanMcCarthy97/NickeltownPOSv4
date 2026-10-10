@@ -190,6 +190,37 @@ jobs:
         path: ${{ steps.find_msix.outputs.MSIX_PATH }}
         if-no-files-found: error
 
+    - name: Build update-manifest.json
+      if: steps.get_version.outputs.PUBLISH == 'true'
+      id: manifest
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $tag = "${{ steps.get_version.outputs.TAG }}"
+        $msixName = "${{ steps.find_msix.outputs.MSIX_NAME }}"
+        $packageUri = "https://github.com/${{ github.repository }}/releases/download/$tag/$msixName"
+        $manifestPath = Join-Path $env:GITHUB_WORKSPACE "update-manifest.json"
+
+        $existingNotes = $null
+        if (Test-Path "deploy/update-manifest.json") {
+          try { $existingNotes = (Get-Content "deploy/update-manifest.json" -Raw | ConvertFrom-Json).releaseNotes } catch { }
+        }
+        $releaseNotes = if ($existingNotes -and $existingNotes -notmatch '^Release \d') {
+          $existingNotes
+        } else {
+          "Release $version"
+        }
+
+        $json = [ordered]@{
+          version = $version
+          packageUri = $packageUri
+          releaseNotes = $releaseNotes
+          mandatory = $false
+        } | ConvertTo-Json
+        [System.IO.File]::WriteAllText($manifestPath, $json + "`n", [System.Text.UTF8Encoding]::new($false))
+        Get-Content $manifestPath
+        "MANIFEST_PATH=$manifestPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
     - name: Publish GitHub Release
       if: steps.get_version.outputs.PUBLISH == 'true'
       shell: pwsh
@@ -199,6 +230,7 @@ jobs:
         $tag = "${{ steps.get_version.outputs.TAG }}"
         $version = "${{ steps.get_version.outputs.VERSION }}"
         $msix = "${{ steps.find_msix.outputs.MSIX_PATH }}"
+        $manifest = "${{ steps.manifest.outputs.MANIFEST_PATH }}"
         $title = "v$version"
         $notes = @"
         ## Release $version
@@ -207,14 +239,29 @@ jobs:
 
         ### Install
         Download the ``.msix`` below and open it. Existing installs update in place when signed with the same certificate.
+
+        ### Till update feed
+        Prefer: ``https://github.com/${{ github.repository }}/releases/download/update-feed``
+        Or: ``https://raw.githubusercontent.com/${{ github.repository }}/main/deploy``
         "@
 
         $existing = gh release view $tag 2>$null
         if ($LASTEXITCODE -eq 0) {
-          Write-Host "Release $tag already exists — uploading/replacing MSIX asset"
-          gh release upload $tag $msix --clobber
+          Write-Host "Release $tag already exists — uploading/replacing assets"
+          gh release upload $tag $msix $manifest --clobber
         } else {
-          gh release create $tag $msix --title $title --notes $notes
+          gh release create $tag $msix $manifest --title $title --notes $notes
+        }
+
+        # Rolling feed release: stable URL tills can keep forever.
+        $feedTag = "update-feed"
+        $feedNotes = "Rolling update-manifest.json for tills. Current package: $version"
+        $feedExisting = gh release view $feedTag 2>$null
+        if ($LASTEXITCODE -eq 0) {
+          gh release upload $feedTag $manifest --clobber
+          gh release edit $feedTag --notes $feedNotes
+        } else {
+          gh release create $feedTag $manifest --title "Till update feed" --notes $feedNotes --latest=false
         }
 
     - name: Commit and push update feed
@@ -230,27 +277,10 @@ jobs:
 
         $version = "${{ steps.get_version.outputs.VERSION }}"
         $tag = "${{ steps.get_version.outputs.TAG }}"
-        $msixName = "${{ steps.find_msix.outputs.MSIX_NAME }}"
-        $packageUri = "https://github.com/${{ github.repository }}/releases/download/$tag/$msixName"
+        $manifestSource = "${{ steps.manifest.outputs.MANIFEST_PATH }}"
         $manifestPath = "deploy/update-manifest.json"
 
-        $existingNotes = $null
-        if (Test-Path $manifestPath) {
-          try { $existingNotes = (Get-Content $manifestPath -Raw | ConvertFrom-Json).releaseNotes } catch { }
-        }
-        $releaseNotes = if ($existingNotes -and $existingNotes -notmatch '^Release \d') {
-          $existingNotes
-        } else {
-          "Release $version"
-        }
-
-        $json = [ordered]@{
-          version = $version
-          packageUri = $packageUri
-          releaseNotes = $releaseNotes
-          mandatory = $false
-        } | ConvertTo-Json
-        [System.IO.File]::WriteAllText((Resolve-Path $manifestPath).Path, $json + "`n", [System.Text.UTF8Encoding]::new($false))
+        Copy-Item $manifestSource $manifestPath -Force
         Get-Content $manifestPath
 
         git add deploy/update-manifest.json
@@ -259,4 +289,11 @@ jobs:
         } else {
           git commit -m "Point update feed at $tag"
           git push origin main
+        }
+
+        # Best-effort CDN bust for jsDelivr mirrors of main/deploy.
+        try {
+          Invoke-RestMethod -Uri "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/deploy/update-manifest.json" -Method Get | Out-Host
+        } catch {
+          Write-Host "jsDelivr purge skipped: $($_.Exception.Message)"
         }
