@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace NickeltownPOSV4.Services;
 
-/// <summary>Bar Tabs-only Bathurst race-day theme. Independent of the global POS appearance.</summary>
+/// <summary>Bar Tabs race-day overlay, driven by the Bathurst 1000 Appearances theme.</summary>
 public interface IBathurstTabsThemeService
 {
     bool IsEnabled { get; }

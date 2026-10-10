@@ -22,7 +22,7 @@ public sealed class TabCardStripBrushConverter : IValueConverter
         {
             var isGuest = cell.TabIsGuest;
             var cellTier = cell.DisplayBalanceTier;
-            return cell.IsBathurstTheme
+            return cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled
                 ? BathurstTabsBrushes.FromArgb(BathurstTabsTheme.StripColor(isGuest, cellTier))
                 : Lookup(isGuest ? "PosTabStripGuestBrush" : TabBalanceTierBrushes.StripResourceKey(cellTier));
         }

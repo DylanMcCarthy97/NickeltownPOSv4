@@ -54,6 +54,10 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
         }
     }
 
+    /// <summary>Changes when Bathurst mode or selection changes so card converters re-run.</summary>
+    public string CardChromeKey =>
+        $"{(IsBathurstTheme ? "B" : "N")}:{(TabIsSelected ? "S" : "U")}:{(TabIsGuest ? "G" : "M")}:{DisplayBalanceTier}";
+
     public bool TabIsSelected => Tab?.IsSelected ?? false;
 
     public bool TabIsGuest => Tab?.IsGuest ?? false;
@@ -136,6 +140,8 @@ public sealed class TabsBoardCellViewModel : ObservableViewModel
         OnPropertyChanged(nameof(TabFooterLine));
         OnPropertyChanged(nameof(TabIsSelected));
         OnPropertyChanged(nameof(TabIsGuest));
+        OnPropertyChanged(nameof(IsBathurstTheme));
+        OnPropertyChanged(nameof(CardChromeKey));
         OnPropertyChanged(string.Empty);
     }
 }

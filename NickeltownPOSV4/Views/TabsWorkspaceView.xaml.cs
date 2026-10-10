@@ -42,9 +42,12 @@ public sealed partial class TabsWorkspaceView : UserControl
     private void ApplyBathurstChrome()
     {
         var bathurst = DataContext is TabsWorkspaceViewModel { IsBathurstTheme: true };
-        HeaderRowDef.Height = new GridLength(bathurst ? 82 : 56);
-        ModeRowDef.Height = new GridLength(bathurst ? 54 : 70);
-        ModeSelectorGrid.Height = bathurst ? 52 : 70;
+        HeaderRowDef.Height = new GridLength(bathurst ? 168 : 56);
+        ModeRowDef.Height = new GridLength(bathurst ? 50 : 70);
+        ModeSelectorGrid.Height = bathurst ? 48 : 70;
+        RootLayout.Background = bathurst
+            ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 11, 11, 13))
+            : RootLayout.Background;
     }
 
     private void BoardCell_Tapped(object sender, TappedRoutedEventArgs e)

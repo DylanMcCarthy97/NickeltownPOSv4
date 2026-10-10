@@ -10,7 +10,7 @@ public sealed class BathurstOrThemeBrushConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         var token = parameter as string ?? "Canvas";
-        if (value is true)
+        if (value is true || BathurstTabsTheme.IsEnabled)
         {
             return BathurstTabsBrushes.Token(token);
         }

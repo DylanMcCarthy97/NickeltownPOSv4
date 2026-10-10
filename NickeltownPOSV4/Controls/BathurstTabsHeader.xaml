@@ -6,88 +6,107 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Height="82">
+    Height="168">
 
-    <Grid>
+    <Grid Background="#FF0B0B0D">
         <Image
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             IsHitTestVisible="False"
-            Source="ms-appx:///Assets/Bathurst/bathurst-header.jpg"
-            Stretch="UniformToFill" />
-        <Border Background="#B30B0B0D" IsHitTestVisible="False" />
+            Stretch="UniformToFill">
+            <Image.Source>
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/bathurst-header.jpg" DecodePixelWidth="1920" />
+            </Image.Source>
+        </Image>
+        <Border Background="#66000000" IsHitTestVisible="False" />
         <Image
-            Height="8"
+            Height="16"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Top"
             IsHitTestVisible="False"
-            Source="ms-appx:///Assets/Bathurst/chequered-strip.png"
-            Stretch="Fill" />
+            Stretch="Fill">
+            <Image.Source>
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-strip.png" DecodePixelHeight="16" />
+            </Image.Source>
+        </Image>
+        <Image
+            Width="44"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Stretch"
+            Margin="0,16,0,4"
+            IsHitTestVisible="False"
+            Opacity="0.9"
+            Stretch="UniformToFill">
+            <Image.Source>
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="88" />
+            </Image.Source>
+        </Image>
+        <Image
+            Width="44"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Stretch"
+            Margin="0,16,0,4"
+            IsHitTestVisible="False"
+            Opacity="0.9"
+            Stretch="UniformToFill">
+            <Image.Source>
+                <BitmapImage UriSource="ms-appx:///Assets/Bathurst/chequered-flag.png" DecodePixelWidth="88" />
+            </Image.Source>
+        </Image>
         <Border
-            Height="3"
+            Height="4"
             VerticalAlignment="Bottom"
             Background="#FFE10600"
             IsHitTestVisible="False" />
 
-        <Grid Padding="10,10,8,8">
+        <Grid Padding="52,20,52,16">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Image
-                Grid.Column="0"
-                Width="28"
-                Height="52"
-                Margin="0,0,8,0"
-                VerticalAlignment="Center"
-                IsHitTestVisible="False"
-                Source="ms-appx:///Assets/Bathurst/chequered-flag.png"
-                Stretch="UniformToFill" />
-
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="0">
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="0">
                 <TextBlock
-                    FontSize="10"
+                    FontSize="12"
                     FontWeight="SemiBold"
-                    Foreground="#FFCBD5E1"
-                    Text="Nickeltown POS" />
+                    Foreground="#FFE2E8F0"
+                    Text="NICKELTOWN POS" />
                 <TextBlock
-                    Margin="0,-2,0,0"
-                    CharacterSpacing="60"
-                    FontSize="26"
+                    Margin="0,-6,0,0"
+                    CharacterSpacing="80"
+                    FontSize="48"
                     FontWeight="Black"
-                    Foreground="#FFF8FAFC"
+                    Foreground="#FFFFFFFF"
                     Text="BATHURST 1000" />
                 <TextBlock
                     Margin="0,-2,0,0"
-                    FontSize="10"
-                    FontWeight="SemiBold"
-                    Foreground="#FFE8E8E8"
-                    Text="RACE DAY EDITION | 11 OCTOBER 2026" />
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="#FFF8FAFC"
+                    Text="RACE DAY EDITION  |  11 OCTOBER 2026" />
             </StackPanel>
 
             <StackPanel
-                Grid.Column="2"
-                Margin="8,0,10,0"
+                Grid.Column="1"
                 VerticalAlignment="Center"
+                HorizontalAlignment="Right"
                 Spacing="2">
                 <TextBlock
                     HorizontalAlignment="Right"
-                    FontSize="9"
+                    CharacterSpacing="40"
+                    FontSize="14"
                     FontWeight="Bold"
-                    Foreground="#FFF8FAFC"
+                    Foreground="#FFFFFFFF"
                     Text="MOUNT PANORAMA" />
                 <TextBlock
                     HorizontalAlignment="Right"
-                    FontSize="8"
+                    FontSize="11"
                     FontWeight="SemiBold"
-                    Foreground="#FFCBD5E1"
+                    Foreground="#FFE2E8F0"
                     Text="GREATEST RACE ON EARTH" />
                 <Image
-                    Width="108"
-                    Height="36"
+                    Width="148"
+                    Height="48"
                     HorizontalAlignment="Right"
                     IsHitTestVisible="False"
                     Stretch="Uniform">
@@ -96,32 +115,6 @@
                     </Image.Source>
                 </Image>
             </StackPanel>
-
-            <Button
-                Grid.Column="3"
-                MinWidth="96"
-                MinHeight="44"
-                Padding="10,6"
-                VerticalAlignment="Center"
-                Background="#E10600"
-                BorderBrush="#FFF8FAFC"
-                BorderThickness="1"
-                Command="{x:Bind ToggleCommand, Mode=OneWay}"
-                CornerRadius="8"
-                Foreground="#FFFFFFFF">
-                <StackPanel Spacing="1">
-                    <TextBlock
-                        FontSize="9"
-                        FontWeight="Bold"
-                        Text="THEME"
-                        TextAlignment="Center" />
-                    <TextBlock
-                        FontSize="12"
-                        FontWeight="Bold"
-                        Text="BATHURST"
-                        TextAlignment="Center" />
-                </StackPanel>
-            </Button>
         </Grid>
     </Grid>
 </UserControl>

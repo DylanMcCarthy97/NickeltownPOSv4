@@ -11,10 +11,7 @@ public sealed class TabSelectedBackgroundConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        var bathurst = value is TabsBoardCellViewModel { IsBathurstTheme: true }
-                       || (value is true && BathurstTabsTheme.IsEnabled);
-
-        var selected = value is TabsBoardCellViewModel { TabIsSelected: true } || value is true;
+        var (bathurst, selected) = ReadChrome(value);
 
         if (bathurst)
         {
@@ -26,6 +23,28 @@ public sealed class TabSelectedBackgroundConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
         throw new NotSupportedException();
+
+    internal static (bool Bathurst, bool Selected) ReadChrome(object value)
+    {
+        if (value is TabsBoardCellViewModel cell)
+        {
+            return (cell.IsBathurstTheme || BathurstTabsTheme.IsEnabled, cell.TabIsSelected);
+        }
+
+        if (value is string key && key.Length > 0)
+        {
+            var bathurst = key[0] == 'B' || BathurstTabsTheme.IsEnabled;
+            var selected = key.Contains(":S:", StringComparison.Ordinal);
+            return (bathurst, selected);
+        }
+
+        if (value is true)
+        {
+            return (BathurstTabsTheme.IsEnabled, true);
+        }
+
+        return (BathurstTabsTheme.IsEnabled, false);
+    }
 
     private static Brush LookupBrush(string key)
     {
@@ -42,21 +61,17 @@ public sealed class TabSelectedBorderBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        if (value is TabsBoardCellViewModel cell)
+        var (bathurst, selected) = TabSelectedBackgroundConverter.ReadChrome(value);
+        if (bathurst)
         {
-            if (cell.IsBathurstTheme)
-            {
-                return cell.TabIsSelected
-                    ? BathurstTabsBrushes.Token("SelectedOutline")
-                    : BathurstTabsBrushes.Token("Border");
-            }
+            return selected
+                ? BathurstTabsBrushes.Token("SelectedOutline")
+                : BathurstTabsBrushes.Token("Border");
+        }
 
-            if (cell.TabIsSelected && cell.Tab is { } tab)
-            {
-                return TabCardStripBrushConverter.ResolveStripBrush(tab.IsGuest, tab.BalanceTier);
-            }
-
-            return LookupBrush("PosBorderBrush");
+        if (value is TabsBoardCellViewModel { TabIsSelected: true, Tab: { } tab })
+        {
+            return TabCardStripBrushConverter.ResolveStripBrush(tab.IsGuest, tab.BalanceTier);
         }
 
         return LookupBrush("PosBorderBrush");
@@ -78,8 +93,15 @@ public sealed class TabSelectedBorderBrushConverter : IValueConverter
 
 public sealed class TabSelectedBorderThicknessConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language) =>
-        value is true ? new Thickness(3) : new Thickness(1);
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is string key)
+        {
+            return key.Contains(":S:", StringComparison.Ordinal) ? new Thickness(3) : new Thickness(1);
+        }
+
+        return value is true ? new Thickness(3) : new Thickness(1);
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language) =>
         throw new NotSupportedException();

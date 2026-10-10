@@ -20,7 +20,7 @@ public static class BathurstTabsTheme
 
     public const string Branding = "Nickeltown POS";
 
-    /// <summary>Runtime flag read by Bar Tabs converters. Default is the normal theme.</summary>
+    /// <summary>True when Appearances is set to Bathurst 1000. Default is off.</summary>
     public static bool IsEnabled { get; internal set; }
 
     public static uint Canvas { get; } = 0xFF0B0B0D;

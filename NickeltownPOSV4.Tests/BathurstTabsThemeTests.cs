@@ -1,6 +1,5 @@
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
-using NickeltownPOSV4.Services.Settings;
 using NickeltownPOSV4.Themes;
 using Xunit;
 
@@ -10,43 +9,65 @@ namespace NickeltownPOSV4.Tests;
 public sealed class BathurstTabsThemeTests
 {
     [Fact]
-    public void Default_IsNormalTheme()
+    public void Default_Appearance_IsNotBathurst()
     {
-        var theme = new BathurstTabsThemeService(new MemorySettings());
+        AppTheme.Apply(UiThemeId.Light);
+        var theme = new BathurstTabsThemeService();
+
+        Assert.Equal(UiThemeId.Light, AppTheme.CurrentThemeId);
         Assert.False(theme.IsEnabled);
         Assert.False(BathurstTabsTheme.IsEnabled);
     }
 
     [Fact]
-    public async Task Enable_Persists_AndReloads()
+    public void Appearances_Bathurst1000_EnablesRaceDayOverlay()
     {
-        var store = new MemorySettings();
-        var theme = new BathurstTabsThemeService(store);
+        AppTheme.Apply(UiThemeId.Light);
+        Assert.False(BathurstTabsTheme.IsEnabled);
 
-        await theme.SetEnabledAsync(true);
+        AppTheme.Apply(UiThemeId.Bathurst1000);
 
-        Assert.True(theme.IsEnabled);
         Assert.True(BathurstTabsTheme.IsEnabled);
+        Assert.Equal(UiThemeId.Bathurst1000, AppTheme.CurrentThemeId);
 
-        var reloaded = new BathurstTabsThemeService(store);
-        Assert.True(reloaded.IsEnabled);
-        Assert.True(BathurstTabsTheme.IsEnabled);
+        AppTheme.Apply(UiThemeId.Light);
+        Assert.False(BathurstTabsTheme.IsEnabled);
     }
 
     [Fact]
-    public async Task Disable_AfterRaceDay_RestoresNormalDefault()
+    public void Appearances_OtherTheme_TurnsOverlayOff()
     {
-        var store = new MemorySettings();
-        await store.SetAsync(BathurstTabsTheme.SettingsKey, new BathurstTabsThemeSettings { Enabled = true });
-        var theme = new BathurstTabsThemeService(store);
-        Assert.True(theme.IsEnabled);
+        AppTheme.Apply(UiThemeId.Bathurst1000);
+        Assert.True(BathurstTabsTheme.IsEnabled);
 
-        await theme.SetEnabledAsync(false);
+        AppTheme.Apply(UiThemeId.PitstopDark);
 
-        Assert.False(theme.IsEnabled);
         Assert.False(BathurstTabsTheme.IsEnabled);
-        var reloaded = new BathurstTabsThemeService(store);
-        Assert.False(reloaded.IsEnabled);
+        Assert.Equal(UiThemeId.PitstopDark, AppTheme.CurrentThemeId);
+    }
+
+    [Fact]
+    public void RecommendedThemes_IncludeBathurst1000()
+    {
+        var themes = new PosThemeService();
+
+        Assert.Contains(UiThemeId.Bathurst1000, themes.RecommendedThemeIds);
+        Assert.Contains("Bathurst", themes.GetDisplayName(UiThemeId.Bathurst1000), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(UiThemeId.Bathurst1000, themes.RecommendedThemeIds[0]);
+    }
+
+    [Fact]
+    public async Task Reload_FollowsCurrentAppearance()
+    {
+        AppTheme.Apply(UiThemeId.Light);
+        var theme = new BathurstTabsThemeService();
+        Assert.False(theme.IsEnabled);
+
+        AppTheme.Apply(UiThemeId.Bathurst1000);
+        await theme.ReloadAsync();
+
+        Assert.True(theme.IsEnabled);
+        Assert.True(BathurstTabsTheme.IsEnabled);
     }
 
     [Theory]
@@ -67,39 +88,9 @@ public sealed class BathurstTabsThemeTests
     }
 
     [Fact]
-    public async Task Reload_PicksUpExternalSettingChange()
-    {
-        var store = new MemorySettings();
-        var theme = new BathurstTabsThemeService(store);
-        Assert.False(theme.IsEnabled);
-
-        await store.SetAsync(BathurstTabsTheme.SettingsKey, new BathurstTabsThemeSettings { Enabled = true });
-        await theme.ReloadAsync();
-
-        Assert.True(theme.IsEnabled);
-        Assert.True(BathurstTabsTheme.IsEnabled);
-    }
-
-    [Fact]
     public void SettingsKey_DoesNotRequireSchemaChange()
     {
         Assert.Equal("ui.bathurst_tabs_theme.v1", BathurstTabsTheme.SettingsKey);
         Assert.Contains("11 OCTOBER 2026", BathurstTabsTheme.RaceDayEdition, StringComparison.Ordinal);
-    }
-
-    private sealed class MemorySettings : IAppSettingsRepository
-    {
-        private readonly Dictionary<string, object> _store = new(StringComparer.Ordinal);
-
-        public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
-            where T : class =>
-            Task.FromResult(_store.TryGetValue(key, out var value) ? (T)value : null);
-
-        public Task SetAsync<T>(string key, T value, bool isSecret = false, CancellationToken cancellationToken = default)
-            where T : class
-        {
-            _store[key] = value;
-            return Task.CompletedTask;
-        }
     }
 }

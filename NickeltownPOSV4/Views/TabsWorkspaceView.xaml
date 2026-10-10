@@ -115,28 +115,8 @@
         <Grid Grid.Row="0">
             <controls:PosWorkspaceHeader
                 Subtitle="Bar Tabs"
-                Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}">
-                <controls:PosWorkspaceHeader.RightContent>
-                    <Button
-                        MinWidth="96"
-                        MinHeight="40"
-                        Padding="10,4"
-                        Command="{Binding ToggleBathurstThemeCommand}"
-                        Style="{StaticResource TabsPagerButtonDenseStyle}"
-                        ToolTipService.ToolTip="Enable the Bathurst 1000 race-day theme on Bar Tabs only">
-                        <StackPanel>
-                            <TextBlock FontSize="9" FontWeight="SemiBold" Text="THEME" TextAlignment="Center" />
-                            <TextBlock
-                                FontSize="12"
-                                FontWeight="Bold"
-                                Text="{Binding BathurstThemeToggleLabel, Mode=OneWay}"
-                                TextAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </controls:PosWorkspaceHeader.RightContent>
-            </controls:PosWorkspaceHeader>
+                Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
             <controls:BathurstTabsHeader
-                ToggleCommand="{Binding ToggleBathurstThemeCommand}"
                 Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
         </Grid>
 
@@ -284,14 +264,14 @@
                                         Opacity="0.18"
                                         Source="ms-appx:///Assets/Bathurst/chequered-overlay.png"
                                         Stretch="UniformToFill"
-                                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <Border
                                                 Width="48"
                                                 Height="48"
                                                 HorizontalAlignment="Center"
-                                                Background="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=CountBadge, Mode=OneWay}"
+                                                Background="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BathurstBrush}, ConverterParameter=CountBadge, Mode=OneWay}"
                                                 CornerRadius="24">
                                                 <FontIcon
                                                     HorizontalAlignment="Center"
@@ -335,7 +315,7 @@
                                         Opacity="0.18"
                                         Source="ms-appx:///Assets/Bathurst/chequered-overlay.png"
                                         Stretch="UniformToFill"
-                                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Border Padding="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <Border
@@ -374,9 +354,9 @@
                             </Grid>
 
                             <Border
-                                Background="{Binding Converter={StaticResource TabSelectedBackgroundConverter}, Mode=OneWay}"
-                                BorderBrush="{Binding Converter={StaticResource TabSelectedBorderBrushConverter}, Mode=OneWay}"
-                                BorderThickness="{Binding TabIsSelected, Converter={StaticResource TabSelectedBorderThicknessConverter}}"
+                                Background="{Binding CardChromeKey, Converter={StaticResource TabSelectedBackgroundConverter}, Mode=OneWay}"
+                                BorderBrush="{Binding CardChromeKey, Converter={StaticResource TabSelectedBorderBrushConverter}, Mode=OneWay}"
+                                BorderThickness="{Binding CardChromeKey, Converter={StaticResource TabSelectedBorderThicknessConverter}, Mode=OneWay}"
                                 CornerRadius="12"
                                 Visibility="{Binding IsTabCell, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                 <Grid>
@@ -387,7 +367,7 @@
                                         Opacity="0.35"
                                         Source="ms-appx:///Assets/Bathurst/carbon-fibre.png"
                                         Stretch="UniformToFill"
-                                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Image
                                         Width="72"
                                         Height="36"
@@ -398,7 +378,7 @@
                                         Opacity="0.16"
                                         Source="ms-appx:///Assets/Bathurst/chequered-overlay.png"
                                         Stretch="UniformToFill"
-                                        Visibility="{Binding IsBathurstTheme, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                        Visibility="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="4" />
@@ -421,7 +401,7 @@
                                                 HorizontalAlignment="Center"
                                                 FontSize="14"
                                                 FontWeight="Bold"
-                                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=TextPrimary, Mode=OneWay}"
+                                                Foreground="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BathurstBrush}, ConverterParameter=TextPrimary, Mode=OneWay}"
                                                 Text="{Binding TabDisplayName, Mode=OneWay}"
                                                 TextAlignment="Center"
                                                 TextTrimming="CharacterEllipsis"
@@ -451,7 +431,7 @@
                                                 MaxLines="1"
                                                 HorizontalAlignment="Center"
                                                 FontSize="10"
-                                                Foreground="{Binding IsBathurstTheme, Converter={StaticResource BathurstBrush}, ConverterParameter=TextSecondary, Mode=OneWay}"
+                                                Foreground="{Binding DataContext.IsBathurstTheme, ElementName=TabsRoot, Converter={StaticResource BathurstBrush}, ConverterParameter=TextSecondary, Mode=OneWay}"
                                                 Text="{Binding TabFooterLine, Mode=OneWay}"
                                                 TextAlignment="Center"
                                                 TextTrimming="CharacterEllipsis" />
