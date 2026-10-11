@@ -599,7 +599,9 @@
                                 Foreground="{StaticResource PosTextPrimaryBrush}"
                                 Text="{Binding ReceiptSubtotalText, Mode=OneWay}" />
                         </Grid>
-                        <Grid ColumnSpacing="8">
+                        <Grid
+                            ColumnSpacing="8"
+                            Visibility="{Binding ShowReceiptCardFee, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -998,7 +1000,9 @@
                                         FontWeight="SemiBold"
                                         Text="{Binding CardFeeSubtotalText, Mode=OneWay}" />
                                 </Grid>
-                                <Grid ColumnSpacing="8">
+                                <Grid
+                                    ColumnSpacing="8"
+                                    Visibility="{Binding ShowCardFeeBreakdown, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />

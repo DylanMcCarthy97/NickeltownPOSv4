@@ -20,4 +20,20 @@ public sealed class SquareCardFeeCalculatorTests
         Assert.Equal(0m, total);
         Assert.Equal(0m, fee);
     }
+
+    [Fact]
+    public void CalculateCardTotal_ZeroPercent_NoSurcharge()
+    {
+        var (_, total, fee) = SquareCardFeeCalculator.CalculateCardTotal(10.00m, 0m);
+        Assert.Equal(10.00m, total);
+        Assert.Equal(0m, fee);
+    }
+
+    [Fact]
+    public void CalculateCardTotal_ZeroPercent_DoesNotRoundToFiveCents()
+    {
+        var (_, total, fee) = SquareCardFeeCalculator.CalculateCardTotal(10.03m, 0m);
+        Assert.Equal(10.03m, total);
+        Assert.Equal(0m, fee);
+    }
 }

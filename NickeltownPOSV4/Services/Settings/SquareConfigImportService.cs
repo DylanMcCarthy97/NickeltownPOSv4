@@ -91,6 +91,7 @@ public sealed class SquareConfigImportService : ISquareConfigImportService
                 Environment = NormalizeEnv(legacy.Environment),
                 BarTabCardCatalogVariationId = legacy.BarTabCardCatalogVariationId?.Trim() ?? string.Empty,
                 GuestTabCardCatalogVariationId = legacy.GuestTabCardCatalogVariationId?.Trim() ?? string.Empty,
+                PitstopTerminalCardSurchargePercent = 0m,
             };
 
             await _target.SaveAsync(config, cancellationToken).ConfigureAwait(false);
