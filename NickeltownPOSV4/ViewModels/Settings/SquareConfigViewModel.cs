@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using NickeltownPOSV4.Models.Settings;
@@ -21,7 +20,6 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
     private string _environment = "production";
     private string _barTabCardCatalogVariationId = string.Empty;
     private string _guestTabCardCatalogVariationId = string.Empty;
-    private double _cardSurchargePercent = 1.7;
     private bool _isSandbox;
 
     public SquareConfigViewModel(
@@ -46,7 +44,6 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
         EditDeviceIdCommand = new AsyncRelayCommand(EditDeviceIdAsync, () => !IsBusy);
         EditBarTabVariationIdCommand = new AsyncRelayCommand(EditBarTabVariationIdAsync, () => !IsBusy);
         EditGuestTabVariationIdCommand = new AsyncRelayCommand(EditGuestTabVariationIdAsync, () => !IsBusy);
-        EditCardSurchargePercentCommand = new AsyncRelayCommand(EditCardSurchargePercentAsync, () => !IsBusy);
 
         RefreshLegacyPathProbe();
     }
@@ -168,23 +165,6 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
     public string GuestTabVariationIdSummary =>
         string.IsNullOrWhiteSpace(GuestTabCardCatalogVariationId) ? "Tap to enter variation ID" : GuestTabCardCatalogVariationId;
 
-    public double CardSurchargePercent
-    {
-        get => _cardSurchargePercent;
-        set
-        {
-            if (SetProperty(ref _cardSurchargePercent, value))
-            {
-                OnPropertyChanged(nameof(CardSurchargePercentText));
-            }
-        }
-    }
-
-    public string CardSurchargePercentText =>
-        _cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture) + "%";
-
-    public IAsyncRelayCommand EditCardSurchargePercentCommand { get; }
-
     public IAsyncRelayCommand LoadCommand { get; }
 
     public IAsyncRelayCommand SaveCommand { get; }
@@ -211,9 +191,6 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
             IsSandbox = string.Equals(current.Environment, "sandbox", StringComparison.OrdinalIgnoreCase);
             BarTabCardCatalogVariationId = current.BarTabCardCatalogVariationId;
             GuestTabCardCatalogVariationId = current.GuestTabCardCatalogVariationId;
-            CardSurchargePercent = current.PitstopTerminalCardSurchargePercent > 0
-                ? (double)decimal.Round(current.PitstopTerminalCardSurchargePercent, 2, MidpointRounding.AwayFromZero)
-                : 1.7;
             SetStatus("Loaded.");
         }
         catch (Exception ex)
@@ -240,7 +217,7 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
                 Environment = IsSandbox ? "sandbox" : "production",
                 BarTabCardCatalogVariationId = (BarTabCardCatalogVariationId ?? string.Empty).Trim(),
                 GuestTabCardCatalogVariationId = (GuestTabCardCatalogVariationId ?? string.Empty).Trim(),
-                PitstopTerminalCardSurchargePercent = (decimal)Math.Clamp(CardSurchargePercent, 0d, 100d),
+                PitstopTerminalCardSurchargePercent = 0m,
             }).ConfigureAwait(true);
             SetStatus("Saved.");
         }
@@ -354,17 +331,6 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
         GuestTabCardCatalogVariationId = result.Trim();
     }
 
-    private async Task EditCardSurchargePercentAsync()
-    {
-        var init = decimal.Round((decimal)CardSurchargePercent, 2, MidpointRounding.AwayFromZero);
-        var result = await _inputOverlay.ShowNumpadAsync(init, "Card surcharge %", false, default).ConfigureAwait(true);
-        if (result.HasValue)
-        {
-            var v = (double)decimal.Round(result.Value, 2, MidpointRounding.AwayFromZero);
-            CardSurchargePercent = Math.Clamp(v, 0d, 100d);
-        }
-    }
-
     private void NotifyBusyChanged()
     {
         SaveCommand.NotifyCanExecuteChanged();
@@ -374,6 +340,5 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
         EditDeviceIdCommand.NotifyCanExecuteChanged();
         EditBarTabVariationIdCommand.NotifyCanExecuteChanged();
         EditGuestTabVariationIdCommand.NotifyCanExecuteChanged();
-        EditCardSurchargePercentCommand.NotifyCanExecuteChanged();
     }
 }

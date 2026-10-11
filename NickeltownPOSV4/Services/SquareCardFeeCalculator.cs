@@ -16,10 +16,16 @@ public static class SquareCardFeeCalculator
             return (0m, 0m, 0m);
         }
 
+        var exactBase = decimal.Round(baseTotal, 2, MidpointRounding.AwayFromZero);
+        if (feePercent <= 0m)
+        {
+            return (exactBase, exactBase, 0m);
+        }
+
         var rate = feePercent / 100m;
-        var unroundedCardTotal = baseTotal * (1m + rate);
+        var unroundedCardTotal = exactBase * (1m + rate);
         var roundedCardTotal = RoundToNearestFiveCents(unroundedCardTotal);
-        var surcharge = roundedCardTotal - baseTotal;
+        var surcharge = roundedCardTotal - exactBase;
         if (surcharge < 0m)
         {
             surcharge = 0m;

@@ -18,6 +18,10 @@ public sealed class AppSquareConfig
     /// <summary>Catalog variation ID for guest tab card settlements (optional).</summary>
     public string GuestTabCardCatalogVariationId { get; set; } = string.Empty;
 
-    /// <summary>Pass-through percent added to Pitstop Terminal card totals before sending to Square (e.g. 1.7 = 1.7%).</summary>
-    public decimal PitstopTerminalCardSurchargePercent { get; set; } = 1.7m;
+    /// <summary>
+    /// Legacy field. New Square card charges do not add a customer surcharge
+    /// (Australian card-payment rules). Stored as 0; older sales still keep
+    /// the surcharge amount recorded on the sale.
+    /// </summary>
+    public decimal PitstopTerminalCardSurchargePercent { get; set; }
 }

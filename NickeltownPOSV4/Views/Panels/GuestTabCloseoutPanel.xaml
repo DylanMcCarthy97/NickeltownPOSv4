@@ -121,7 +121,9 @@
                                     Style="{StaticResource GuestCloseoutFeeRowValueStyle}"
                                     Text="{Binding AmountDueText, Mode=OneWay}" />
                             </Grid>
-                            <Grid ColumnSpacing="8">
+                            <Grid
+                                ColumnSpacing="8"
+                                Visibility="{Binding ShowCardFeeBreakdown, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -296,7 +298,9 @@
                                     Style="{StaticResource GuestCloseoutFeeRowValueStyle}"
                                     Text="{Binding AmountDueText, Mode=OneWay}" />
                             </Grid>
-                            <Grid ColumnSpacing="8">
+                            <Grid
+                                ColumnSpacing="8"
+                                Visibility="{Binding ShowCardFeeBreakdown, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />

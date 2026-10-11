@@ -96,4 +96,24 @@ public sealed class PitstopSquareCheckoutBuilderTests
         Assert.StartsWith("Pitstop: ", request.Note);
         Assert.EndsWith("...", request.Note);
     }
+
+    [Fact]
+    public void TabCheckout_ZeroPercent_ChargesBaseAmountOnly()
+    {
+        var build = SquareTabCardCheckoutBuilder.Build(
+            10.03m,
+            0m,
+            "Bar Top-Up",
+            "Bar Tab",
+            null,
+            "Bar Top-Up - Test",
+            "BarTopUp",
+            "Test");
+
+        Assert.Equal(10.03m, build.BaseAmount);
+        Assert.Equal(10.03m, build.ChargeTotal);
+        Assert.Equal(0m, build.CardFee);
+        Assert.Single(build.LineItems);
+        Assert.Equal(10.03m, build.TerminalRequest.TotalAmount);
+    }
 }

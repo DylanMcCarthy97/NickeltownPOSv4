@@ -129,7 +129,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     private bool _awaitingOpenPriceEntry;
 
-    private decimal _cardSurchargePercent = 1.7m;
+    private decimal _cardSurchargePercent;
 
     private decimal _pendingCardSubtotal;
 
@@ -563,14 +563,21 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     public string CardFeeSubtotalText => _pendingCardSubtotal.ToString("0.00", CultureInfo.InvariantCulture);
 
-    public string CardFeePercentCaption => $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through";
+    public bool ShowCardFeeBreakdown => _pendingCardFee > 0m;
+
+    public string CardFeePercentCaption =>
+        _cardSurchargePercent > 0m
+            ? $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through"
+            : "No card surcharge";
 
     public string CardFeeAmountText => _pendingCardFee.ToString("0.00", CultureInfo.InvariantCulture);
 
     public string CardFeeChargeTotalText => _pendingCardChargeTotal.ToString("0.00", CultureInfo.InvariantCulture);
 
     public string CardFeeWarning =>
-        "Card payments include a Square surcharge. Confirm the customer accepts the new total before sending to Square.";
+        _cardSurchargePercent > 0m
+            ? "Card payments include a Square surcharge. Confirm the customer accepts the new total before sending to Square."
+            : "Card payment will be sent to the Square Terminal at the sale total. Confirm before proceeding.";
 
     public string CartTotalText =>
         PitstopCartHelper.GetCartTotal(CartLines).ToString("0.00", CultureInfo.InvariantCulture);
@@ -601,8 +608,12 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
     public string ReceiptSubtotalText => $"${CartTotalText}";
 
+    public bool ShowReceiptCardFee => _cardSurchargePercent > 0m;
+
     public string ReceiptCardFeeCaption =>
-        $"Card fee ({_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}%)";
+        _cardSurchargePercent > 0m
+            ? $"Card fee ({_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}%)"
+            : "Card (no surcharge)";
 
     public string ReceiptCardFeeText
     {
@@ -689,10 +700,14 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         _cardSurchargePercent = await _surchargeConfig
             .LoadCardSurchargePercentAsync(CancellationToken.None)
             .ConfigureAwait(true);
+        OnPropertyChanged(nameof(ShowReceiptCardFee));
         OnPropertyChanged(nameof(ReceiptCardFeeCaption));
         OnPropertyChanged(nameof(ReceiptCardFeeText));
         OnPropertyChanged(nameof(ReceiptCardTotalText));
         OnPropertyChanged(nameof(ReceiptCashTotalText));
+        OnPropertyChanged(nameof(CardFeePercentCaption));
+        OnPropertyChanged(nameof(CardFeeWarning));
+        OnPropertyChanged(nameof(ShowCardFeeBreakdown));
     }
 
     private void OnCheckoutOverlayChanged()
@@ -712,14 +727,17 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         ConfirmCashSaleCommand.NotifyCanExecuteChanged();
         CancelCashSheetCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(ReceiptSubtotalText));
+        OnPropertyChanged(nameof(ShowReceiptCardFee));
         OnPropertyChanged(nameof(ReceiptCardFeeCaption));
         OnPropertyChanged(nameof(ReceiptCardFeeText));
         OnPropertyChanged(nameof(ReceiptCardTotalText));
         OnPropertyChanged(nameof(ReceiptCashTotalText));
         OnPropertyChanged(nameof(CardFeeSubtotalText));
+        OnPropertyChanged(nameof(ShowCardFeeBreakdown));
         OnPropertyChanged(nameof(CardFeePercentCaption));
         OnPropertyChanged(nameof(CardFeeAmountText));
         OnPropertyChanged(nameof(CardFeeChargeTotalText));
+        OnPropertyChanged(nameof(CardFeeWarning));
         OnPropertyChanged(nameof(CashReceivedDisplay));
         OnPropertyChanged(nameof(CashSaleTotalText));
         OnPropertyChanged(nameof(CashSaleTotalCaption));

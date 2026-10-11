@@ -44,7 +44,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
     private CancellationTokenSource? _squareChargeCts;
     private CloseoutStep _step = CloseoutStep.Summary;
     private decimal _amountDue;
-    private decimal _cardSurchargePercent = 1.7m;
+    private decimal _cardSurchargePercent;
     private decimal _cardFee;
     private decimal _cardChargeTotal;
 
@@ -137,7 +137,9 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         _session.TargetTabBalance is < 0m && _cardFee > 0m;
 
     public string CardFeePercentCaption =>
-        $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through";
+        _cardSurchargePercent > 0m
+            ? $"{_cardSurchargePercent.ToString("0.##", CultureInfo.InvariantCulture)}% Square pass-through"
+            : "No card surcharge";
 
     public string CardFeeAmountText => FormatMoney(_cardFee);
 
@@ -147,7 +149,9 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         ShowCardFeeBreakdown ? $"Card ({CardFeeChargeTotalText})" : "Card";
 
     public string CardFeeWarning =>
-        "Card payments include a Square surcharge. Confirm the guest accepts the charge total before sending to Square.";
+        _cardSurchargePercent > 0m
+            ? "Card payments include a Square surcharge. Confirm the guest accepts the charge total before sending to Square."
+            : "Card payment will be sent to the Square Terminal at the tab total. Confirm before proceeding.";
 
     public string CashReceivedDisplay => _cashNumpad.AmountDisplay;
 
@@ -239,7 +243,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         OnPropertyChanged(nameof(CardFeeChargeTotalText));
         OnPropertyChanged(nameof(CardButtonCaption));
         NotifyPaymentState();
-        _ = RefreshCardPricingAsync();
+        RefreshCardPricing();
     }
 
     private void UpdateAmountDue()
@@ -247,36 +251,27 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         _amountDue = _session.TargetTabBalance is { } bal ? Math.Abs(bal) : 0m;
     }
 
-    private async Task RefreshCardPricingAsync()
+    private void RefreshCardPricing()
     {
-        try
-        {
-            var sqCfg = await _squareConfig.LoadAsync(CancellationToken.None).ConfigureAwait(true);
-            _cardSurchargePercent = sqCfg.PitstopTerminalCardSurchargePercent is > 0 and < 100
-                ? sqCfg.PitstopTerminalCardSurchargePercent
-                : 1.7m;
+        _cardSurchargePercent = 0m;
 
-            if (_session.TargetTabBalance is { } bal && bal < 0m)
-            {
-                var amount = Math.Abs(bal);
-                (_, _cardChargeTotal, _cardFee) = SquareCardFeeCalculator.CalculateCardTotal(amount, _cardSurchargePercent);
-            }
-            else
-            {
-                _cardFee = 0m;
-                _cardChargeTotal = 0m;
-            }
-
-            OnPropertyChanged(nameof(ShowCardFeeBreakdown));
-            OnPropertyChanged(nameof(CardFeePercentCaption));
-            OnPropertyChanged(nameof(CardFeeAmountText));
-            OnPropertyChanged(nameof(CardFeeChargeTotalText));
-            OnPropertyChanged(nameof(CardButtonCaption));
-        }
-        catch
+        if (_session.TargetTabBalance is { } bal && bal < 0m)
         {
-            // Keep last-known fee settings if config load fails.
+            var amount = Math.Abs(bal);
+            (_, _cardChargeTotal, _cardFee) = SquareCardFeeCalculator.CalculateCardTotal(amount, _cardSurchargePercent);
         }
+        else
+        {
+            _cardFee = 0m;
+            _cardChargeTotal = 0m;
+        }
+
+        OnPropertyChanged(nameof(ShowCardFeeBreakdown));
+        OnPropertyChanged(nameof(CardFeePercentCaption));
+        OnPropertyChanged(nameof(CardFeeAmountText));
+        OnPropertyChanged(nameof(CardFeeChargeTotalText));
+        OnPropertyChanged(nameof(CardButtonCaption));
+        OnPropertyChanged(nameof(CardFeeWarning));
     }
 
     private bool CanPay() =>
@@ -461,7 +456,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         StatusMessage = string.Empty;
         try
         {
-            await RefreshCardPricingAsync().ConfigureAwait(true);
+            RefreshCardPricing();
             var feePercent = _cardSurchargePercent;
             var sqCfg = await _squareConfig.LoadAsync(CancellationToken.None).ConfigureAwait(true);
             var catalogVariationId = sqCfg.BarTabCardCatalogVariationId?.Trim() ?? string.Empty;
