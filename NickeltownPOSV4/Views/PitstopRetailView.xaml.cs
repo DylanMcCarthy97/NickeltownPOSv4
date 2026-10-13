@@ -31,7 +31,6 @@ public sealed partial class PitstopRetailView : UserControl
         if (DataContext is PitstopRetailViewModel vm)
         {
             _ = vm.InitializeAsync();
-            _ = vm.RefreshCatalogFromDatabaseAsync();
         }
 
         EnqueueRefocusBarcode();

@@ -10,6 +10,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.Services.Settings;
 using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.Views;
@@ -195,6 +196,7 @@ public sealed class MainShellViewModel : ObservableViewModel
 
     public void InitializeShell(Frame shellFrame)
     {
+        LoginTransitionProbe.Mark("shell.init.begin");
         _navigation.AttachShellFrame(shellFrame);
         StartFooterTimers(shellFrame.DispatcherQueue);
         OnPropertyChanged(nameof(SignedInUserText));
@@ -203,6 +205,7 @@ public sealed class MainShellViewModel : ObservableViewModel
 
         // Everyone starts on Tabs; nothing in that route is restricted.
         NavigateToRoute(TabsRoute);
+        LoginTransitionProbe.Mark("shell.init.tabsRouted");
     }
 
     private void StartFooterTimers(DispatcherQueue queue)

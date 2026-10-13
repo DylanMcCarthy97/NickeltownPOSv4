@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.Themes;
 using Windows.UI;
 
@@ -76,11 +77,23 @@ public sealed class PosThemeService : IPosThemeService
         _ => id.ToString(),
     };
 
+    private bool _brushesPushed;
+
     public void Apply(UiThemeId themeId)
     {
-        AppTheme.Apply(themeId);
+        var resolved = themeId == UiThemeId.Bathurst1000 ? UiThemeId.Light : themeId;
+        if (resolved == AppTheme.CurrentThemeId && _brushesPushed)
+        {
+            LoginTransitionProbe.Mark("theme.skip." + resolved);
+            return;
+        }
+
+        LoginTransitionProbe.Mark("theme.apply." + resolved);
+        AppTheme.Apply(resolved);
         PushBrushesToApplicationResources();
+        _brushesPushed = true;
         ThemeChanged?.Invoke(this, EventArgs.Empty);
+        LoginTransitionProbe.Mark("theme.apply.done");
     }
 
     public void PushBrushesToApplicationResources()

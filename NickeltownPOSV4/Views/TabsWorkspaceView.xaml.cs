@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Views;
@@ -10,11 +11,14 @@ public sealed partial class TabsWorkspaceView : UserControl
 {
     public TabsWorkspaceView()
     {
+        LoginTransitionProbe.Mark("tabsView.ctor.begin");
         InitializeComponent();
+        LoginTransitionProbe.Mark("tabsView.ctor.xaml");
         DataContext = App.Services.GetRequiredService<TabsWorkspaceViewModel>();
         ApplyBathurstChrome();
         Loaded += OnLoaded;
         DataContextChanged += OnDataContextChanged;
+        LoginTransitionProbe.Mark("tabsView.ctor.done");
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -24,7 +28,9 @@ public sealed partial class TabsWorkspaceView : UserControl
         {
             vm.PropertyChanged -= OnWorkspacePropertyChanged;
             vm.PropertyChanged += OnWorkspacePropertyChanged;
+            LoginTransitionProbe.Mark("tabsView.refresh.begin");
             await vm.RefreshTabsFromDatabaseAsync().ConfigureAwait(true);
+            LoginTransitionProbe.Complete("tabsView.refresh.done");
         }
     }
 
@@ -33,6 +39,12 @@ public sealed partial class TabsWorkspaceView : UserControl
 
     private void OnWorkspacePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(TabsWorkspaceViewModel.IsAddDrinksWorkspaceOpen)
+            or nameof(TabsWorkspaceViewModel.CurrentAddDrinksViewModel))
+        {
+            EnsureAddDrinksHost(sender as TabsWorkspaceViewModel);
+        }
+
         if (e.PropertyName is nameof(TabsWorkspaceViewModel.IsBathurstTheme)
             or nameof(TabsWorkspaceViewModel.CanToggleBathurstTheme)
             or null
@@ -40,6 +52,21 @@ public sealed partial class TabsWorkspaceView : UserControl
         {
             ApplyBathurstChrome();
         }
+    }
+
+    private bool _addDrinksHostRealized;
+
+    private void EnsureAddDrinksHost(TabsWorkspaceViewModel? vm)
+    {
+        if (vm is not { IsAddDrinksWorkspaceOpen: true } || _addDrinksHostRealized)
+        {
+            return;
+        }
+
+        LoginTransitionProbe.Mark("addDrinks.realize.begin");
+        _ = FindName(nameof(AddDrinksHost));
+        _addDrinksHostRealized = true;
+        LoginTransitionProbe.Mark("addDrinks.realize.done");
     }
 
     private void ApplyBathurstChrome()
