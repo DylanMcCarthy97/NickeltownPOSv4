@@ -584,6 +584,8 @@ public sealed class SqliteStockEditingService : IStockEditingService
                     cancellationToken: cancellationToken));
         }
 
+        Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, itemId);
+
         tx.Commit();
         return Task.CompletedTask;
     }
@@ -637,7 +639,7 @@ public sealed class SqliteStockEditingService : IStockEditingService
             new CommandDefinition(
                 """
                 UPDATE Items
-                SET StockQty = StockQty - @quantity,
+                SET StockQty = MAX(0, StockQty - @quantity),
                     UpdatedAt = datetime('now')
                 WHERE Id = @itemId
                 """,
@@ -653,6 +655,8 @@ public sealed class SqliteStockEditingService : IStockEditingService
                 new { itemId, delta = -quantity, reference },
                 tx,
                 cancellationToken: cancellationToken));
+
+        Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, itemId);
 
         tx.Commit();
         return Task.FromResult(true);
