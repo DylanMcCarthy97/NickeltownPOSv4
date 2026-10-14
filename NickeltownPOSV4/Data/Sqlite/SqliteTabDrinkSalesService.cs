@@ -140,7 +140,9 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                     row.OrderInMerchandise,
                     row.StockMode,
                     row.ItemType,
-                    row.Name);
+                    row.Name,
+                    row.CatalogBucket,
+                    row.CatalogSubCategory);
                 if (!skipStockForSale && row.StockQty < line.Quantity)
                 {
                     tx.Rollback();
@@ -189,7 +191,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                 {
                     conn.Execute(
                         new CommandDefinition(
-                            "UPDATE Items SET StockQty = StockQty - @q, UpdatedAt = datetime('now') WHERE Id = @id",
+                            "UPDATE Items SET StockQty = MAX(0, StockQty - @q), UpdatedAt = datetime('now') WHERE Id = @id",
                             new { q = line.Quantity, id = line.ItemId },
                             tx,
                             cancellationToken: cancellationToken));
@@ -209,6 +211,8 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                             },
                             tx,
                             cancellationToken: cancellationToken));
+
+                    StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, line.ItemId);
                 }
                 else if (ShotMixerCatalog.IsShotMixerItem(row.Name, row.ItemType))
                 {
@@ -408,7 +412,9 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                     itemRow.OrderInMerchandise,
                     itemRow.StockMode,
                     itemRow.ItemType,
-                    itemRow.Name);
+                    itemRow.Name,
+                    itemRow.CatalogBucket,
+                    itemRow.CatalogSubCategory);
                 if (!skipStockForSale)
                 {
                     conn.Execute(
@@ -425,6 +431,8 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                             new { itemId = payload.ItemId, reference = stockRef },
                             tx,
                             cancellationToken: cancellationToken));
+
+                    StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, payload.ItemId);
                 }
             }
 

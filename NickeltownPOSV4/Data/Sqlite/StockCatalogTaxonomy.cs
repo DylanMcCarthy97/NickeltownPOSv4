@@ -114,6 +114,19 @@ public static class StockCatalogTaxonomy
         (NormalizeBucket(bucket) == BucketBar || NormalizeBucket(bucket) == BucketPitstop)
         && NormalizeSubCategory(bucket, subCategory).Equals("Food", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Hot food is never counted on the shelf — till sells without stock qty.</summary>
+    public static bool IsFoodSubCategory(string? bucket, string? subCategory) =>
+        NormalizeSubCategory(NormalizeBucket(bucket), subCategory)
+            .Equals("Food", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsMerchSubCategory(string? bucket, string? subCategory) =>
+        NormalizeSubCategory(NormalizeBucket(bucket), subCategory)
+            .Equals("Merch", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Default stock mode for a new/imported catalog line.</summary>
+    public static string DefaultStockModeForCategory(string? bucket, string? subCategory) =>
+        IsFoodSubCategory(bucket, subCategory) ? StockModeNotTracked : StockModeTracked;
+
     /// <summary>True when shelf quantity is maintained for this stock mode.</summary>
     public static bool MaintainsOnHandQuantity(string? stockMode) =>
         NormalizeStockMode(stockMode) is StockModeTracked or StockModeSellUntilGone;

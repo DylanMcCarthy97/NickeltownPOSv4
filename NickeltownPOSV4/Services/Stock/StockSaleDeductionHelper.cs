@@ -7,29 +7,35 @@ using NickeltownPOSV4.Services.AddDrinks;
 namespace NickeltownPOSV4.Services.Stock;
 
 /// <summary>
-/// Sale-time stock rules. <see cref="StockCatalogTaxonomy.StockMode"/> is the source of truth;
-/// food/merch categories no longer skip deduction when the item is tracked.
+/// Sale-time stock rules. <see cref="StockCatalogTaxonomy.StockMode"/> is the source of truth.
+/// Food is never deducted (hot food has no counted amounts). Sell-until-gone auto-hides at 0.
 /// </summary>
 public static class StockSaleDeductionHelper
 {
     /// <summary>
     /// When true, the sold line itself does not change on-hand qty
-    /// (order-in, not tracked, or Shot+Mixer parent — mixer component is deducted separately).
+    /// (order-in, not tracked, food, or Shot+Mixer parent — mixer component is deducted separately).
     /// </summary>
     public static bool SkipsSoldItemStockDecrement(
         int trackStock,
         int orderInMerchandise,
         string? stockMode,
         string? itemType,
-        string? itemName)
+        string? itemName,
+        string? catalogBucket = null,
+        string? catalogSubCategory = null)
     {
+        if (StockCatalogTaxonomy.IsFoodSubCategory(catalogBucket, catalogSubCategory))
+        {
+            return true;
+        }
+
         var mode = ResolveEffectiveStockMode(trackStock, orderInMerchandise, stockMode);
         if (mode is StockCatalogTaxonomy.StockModeOrderIn or StockCatalogTaxonomy.StockModeNotTracked)
         {
             return true;
         }
 
-        // Tracked / SellUntilGone: deduct even for Food (counts stay accurate).
         if (ShotMixerCatalog.IsShotMixerItem(itemName, itemType))
         {
             return true;
@@ -46,7 +52,14 @@ public static class StockSaleDeductionHelper
         string catalogSubCategory,
         string? itemType,
         string? itemName) =>
-        SkipsSoldItemStockDecrement(trackStock, orderInMerchandise, stockMode: null, itemType, itemName);
+        SkipsSoldItemStockDecrement(
+            trackStock,
+            orderInMerchandise,
+            stockMode: null,
+            itemType,
+            itemName,
+            catalogBucket,
+            catalogSubCategory);
 
     public static string ResolveEffectiveStockMode(int trackStock, int orderInMerchandise, string? stockMode)
     {
@@ -56,6 +69,34 @@ public static class StockSaleDeductionHelper
         }
 
         return StockCatalogTaxonomy.StockModeFromLegacyFlags(trackStock, orderInMerchandise, notGonnaOrderBack: 0);
+    }
+
+    /// <summary>
+    /// Sell-until-gone items hide from the till when qty hits 0, and reappear when topped up.
+    /// </summary>
+    public static void SyncSellUntilGoneActiveFromQty(
+        SqliteConnection conn,
+        SqliteTransaction tx,
+        long itemId)
+    {
+        if (itemId <= 0)
+        {
+            return;
+        }
+
+        conn.Execute(
+            """
+            UPDATE Items
+            SET IsActive = CASE WHEN COALESCE(StockQty, 0) > 0 THEN 1 ELSE 0 END,
+                UpdatedAt = datetime('now')
+            WHERE Id = @id
+              AND (
+                lower(trim(COALESCE(NULLIF(TRIM(StockMode), ''), ''))) = 'selluntilgone'
+                OR COALESCE(NotGonnaOrderBack, 0) != 0
+              )
+            """,
+            new { id = itemId },
+            tx);
     }
 
     public static void DeductMixerComponentStock(
@@ -89,5 +130,7 @@ public static class StockSaleDeductionHelper
             """,
             new { ItemId = mixerId, Delta = delta, Reason = "ShotMixerSale", Ref = movementReference },
             tx);
+
+        SyncSellUntilGoneActiveFromQty(conn, tx, mixerId);
     }
 }

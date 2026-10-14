@@ -10,12 +10,12 @@ namespace NickeltownPOSV4.Services.Stock;
 public static class StockCatalogHealthService
 {
     public const string IssueMissingChannelPrice = "Missing channel price";
-    public const string IssueSharedOnePrice = "Shared item needs both prices";
     public const string IssueInactiveWithStock = "Inactive but still has stock";
     public const string IssueDuplicateBarcode = "Duplicate barcode";
     public const string IssueTrackedNoWarn = "Tracked with no warn-below";
     public const string IssueModeFlagDrift = "Stock mode flags out of sync";
     public const string IssueMissingBarcode = "No barcode / SKU";
+    public const string IssueFoodTracked = "Food should not track stock";
 
     public static IReadOnlyList<StockCatalogHealthIssue> Evaluate(IReadOnlyList<StockEditorRow> rows)
     {
@@ -62,6 +62,9 @@ public static class StockCatalogHealthService
             }
 
             var bucket = StockCatalogTaxonomy.NormalizeBucket(row.CatalogBucket);
+            var sub = StockCatalogTaxonomy.NormalizeSubCategory(bucket, row.CatalogSubCategory);
+            var isFood = StockCatalogTaxonomy.IsFoodSubCategory(bucket, sub);
+            var isMerch = StockCatalogTaxonomy.IsMerchSubCategory(bucket, sub);
             var mode = string.IsNullOrWhiteSpace(row.StockMode)
                 ? StockCatalogTaxonomy.StockModeFromLegacyFlags(row.TrackStock, row.OrderInMerchandise, row.NotGonnaOrderBack)
                 : StockCatalogTaxonomy.NormalizeStockMode(row.StockMode);
@@ -79,9 +82,18 @@ public static class StockCatalogHealthService
                     $"Mode is {mode} but Track/OrderIn/SellUntilGone flags do not match. Save the item to repair."));
             }
 
+            if (isFood && StockCatalogTaxonomy.MaintainsOnHandQuantity(mode))
+            {
+                issues.Add(new StockCatalogHealthIssue(
+                    row.ItemId,
+                    row.Name,
+                    IssueFoodTracked,
+                    "Hot food is not counted — set stock mode to Not tracked."));
+            }
+
             if (row.IsActive == 0)
             {
-                if (row.StockQty > 0 && StockCatalogTaxonomy.MaintainsOnHandQuantity(mode))
+                if (row.StockQty > 0 && StockCatalogTaxonomy.MaintainsOnHandQuantity(mode) && !isFood)
                 {
                     issues.Add(new StockCatalogHealthIssue(
                         row.ItemId,
@@ -102,7 +114,9 @@ public static class StockCatalogHealthService
                     "Shown in Bar but has no Bar price (and not open-price)."));
             }
 
-            if (row.ShowInPitstop != 0 && row.UsesOpenPrice == 0 && !(row.PitstopPrice is > 0.00001d)
+            // Shared items may sell in Pitstop using the Bar price fallback — only flag when neither price exists.
+            if (row.ShowInPitstop != 0 && row.UsesOpenPrice == 0
+                && !(row.PitstopPrice is > 0.00001d)
                 && !(bucket == StockCatalogTaxonomy.BucketShared && row.BarPrice is > 0.00001d))
             {
                 issues.Add(new StockCatalogHealthIssue(
@@ -112,18 +126,8 @@ public static class StockCatalogHealthService
                     "Shown in Pitstop but has no Pitstop price (and not open-price)."));
             }
 
-            if (bucket == StockCatalogTaxonomy.BucketShared
-                && row.UsesOpenPrice == 0
-                && ((row.BarPrice is > 0.00001d) ^ (row.PitstopPrice is > 0.00001d)))
-            {
-                issues.Add(new StockCatalogHealthIssue(
-                    row.ItemId,
-                    row.Name,
-                    IssueSharedOnePrice,
-                    "Shared items should set both Bar and Pitstop prices when possible."));
-            }
-
-            if (StockCatalogTaxonomy.MaintainsOnHandQuantity(mode)
+            if (!isFood
+                && StockCatalogTaxonomy.MaintainsOnHandQuantity(mode)
                 && StockInventoryLevelHelper.ResolveWarnBelow(row) is null)
             {
                 issues.Add(new StockCatalogHealthIssue(
@@ -133,7 +137,9 @@ public static class StockCatalogHealthService
                     "Tracked item has no Warn Me Below — shopping list may never flag it."));
             }
 
-            if (string.IsNullOrWhiteSpace(row.Sku)
+            // Merch is sold by name on the till — barcodes are optional.
+            if (!isMerch
+                && string.IsNullOrWhiteSpace(row.Sku)
                 && !StockAlternateSkuHelper.ParseAlternateSkuList(row.AlternateSkusJson).Any())
             {
                 issues.Add(new StockCatalogHealthIssue(

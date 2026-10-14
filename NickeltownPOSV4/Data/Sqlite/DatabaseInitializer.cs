@@ -168,6 +168,85 @@ public sealed class DatabaseInitializer
     }
 
     private const string StockModeFlagSyncSettingsKey = "stock_mode_flag_sync_20261014";
+    private const string FoodNotTrackedMigrationSettingsKey = "food_not_tracked_20261014";
+    private const string SellUntilGoneActiveSyncSettingsKey = "sell_until_gone_active_sync_20261014";
+
+    /// <summary>Hot food has no counted amounts — force NotTracked for Food subcategory rows.</summary>
+    private static void RunFoodNotTrackedMigration(SqliteConnection conn)
+    {
+        var ran = conn.ExecuteScalar<long>(
+            "SELECT COUNT(*) FROM Settings WHERE Key = @k",
+            new { k = FoodNotTrackedMigrationSettingsKey });
+        if (ran > 0)
+        {
+            return;
+        }
+
+        StockCatalogTaxonomy.ApplyStockModeToFlags(
+            StockCatalogTaxonomy.StockModeNotTracked,
+            out var track,
+            out var orderIn,
+            out var notGonna,
+            out var includeWeekly,
+            out var runOut);
+
+        conn.Execute(
+            """
+            UPDATE Items
+            SET StockMode = @mode,
+                TrackStock = @track,
+                OrderInMerchandise = @orderIn,
+                NotGonnaOrderBack = @notGonna,
+                IncludeInWeeklyStockReport = @includeWeekly,
+                IsRunOutItem = @runOut,
+                UpdatedAt = datetime('now')
+            WHERE lower(trim(COALESCE(CatalogSubCategory, ''))) = 'food'
+            """,
+            new
+            {
+                mode = StockCatalogTaxonomy.StockModeNotTracked,
+                track,
+                orderIn,
+                notGonna,
+                includeWeekly,
+                runOut,
+            });
+
+        conn.Execute(
+            """
+            INSERT INTO Settings (Key, Value, IsSecret, UpdatedAt)
+            VALUES (@k, '1', 0, datetime('now'))
+            """,
+            new { k = FoodNotTrackedMigrationSettingsKey });
+    }
+
+    /// <summary>One-shot: hide sell-until-gone items that are already at 0 on hand.</summary>
+    private static void RunSellUntilGoneActiveSyncMigration(SqliteConnection conn)
+    {
+        var ran = conn.ExecuteScalar<long>(
+            "SELECT COUNT(*) FROM Settings WHERE Key = @k",
+            new { k = SellUntilGoneActiveSyncSettingsKey });
+        if (ran > 0)
+        {
+            return;
+        }
+
+        conn.Execute(
+            """
+            UPDATE Items
+            SET IsActive = CASE WHEN COALESCE(StockQty, 0) > 0 THEN 1 ELSE 0 END,
+                UpdatedAt = datetime('now')
+            WHERE lower(trim(COALESCE(NULLIF(TRIM(StockMode), ''), ''))) = 'selluntilgone'
+               OR COALESCE(NotGonnaOrderBack, 0) != 0
+            """);
+
+        conn.Execute(
+            """
+            INSERT INTO Settings (Key, Value, IsSecret, UpdatedAt)
+            VALUES (@k, '1', 0, datetime('now'))
+            """,
+            new { k = SellUntilGoneActiveSyncSettingsKey });
+    }
 
     /// <summary>
     /// Re-derive TrackStock / OrderIn / SellUntilGone flags from StockMode so sale deduction
@@ -333,6 +412,8 @@ public sealed class DatabaseInitializer
         TryAddColumn(conn, "Items", "LastStockCountDate", "ALTER TABLE Items ADD COLUMN LastStockCountDate TEXT");
         RunStockVolunteerFieldMigration(conn);
         RunStockModeFlagSyncMigration(conn);
+        RunFoodNotTrackedMigration(conn);
+        RunSellUntilGoneActiveSyncMigration(conn);
 
         conn.Execute(
             """

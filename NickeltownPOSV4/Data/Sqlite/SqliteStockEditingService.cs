@@ -822,6 +822,8 @@ public sealed class SqliteStockEditingService : IStockEditingService
                     cancellationToken: cancellationToken));
         }
 
+        Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, write.ItemId);
+
         tx.Commit();
         if (delta != 0)
         {
@@ -870,6 +872,8 @@ public sealed class SqliteStockEditingService : IStockEditingService
                 cancellationToken: cancellationToken));
 
         InsertStockPurchaseCore(conn, tx, purchase, cancellationToken);
+
+        Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, purchase.ItemId);
 
         tx.Commit();
         var itemName = SqliteActivityAudit.LoadItemName(conn, tx: null, purchase.ItemId, CancellationToken.None);
@@ -979,6 +983,8 @@ public sealed class SqliteStockEditingService : IStockEditingService
                     new { q = newQty, dt = now, id = itemId },
                     tx,
                     cancellationToken: cancellationToken));
+
+            Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, itemId);
 
             if (delta != 0)
             {

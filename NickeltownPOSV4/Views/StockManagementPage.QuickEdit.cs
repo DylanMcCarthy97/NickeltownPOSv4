@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Views;
@@ -8,7 +9,10 @@ namespace NickeltownPOSV4.Views;
 /// <summary>Volunteer quick-edit modal: qty, warn/target, mode, prices, active — without full item wizard.</summary>
 public sealed partial class StockManagementPage
 {
-    internal async Task OpenQuickEditAsync(StockListRowViewModel row)
+    internal Task OpenQuickEditAsync(StockListRowViewModel row) =>
+        OpenQuickEditAsync(row, resumeCatalogHealth: false);
+
+    internal async Task OpenQuickEditAsync(StockListRowViewModel row, bool resumeCatalogHealth)
     {
         if (_vm.SelectRowCommand.CanExecute(row))
         {
@@ -18,6 +22,11 @@ public sealed partial class StockManagementPage
         if (!_vm.HasSelection)
         {
             return;
+        }
+
+        if (resumeCatalogHealth)
+        {
+            _resumeCatalogHealthAfterQuickEdit = true;
         }
 
         var stockQtyRow = CreateEditIntegerRow(_vm.DetailStockText, "Current stock", 0, 999999);
@@ -52,12 +61,13 @@ public sealed partial class StockManagementPage
         priceGrid.ColumnDefinitions.Add(new ColumnDefinition());
         priceGrid.ColumnDefinitions.Add(new ColumnDefinition());
         var bar = Labeled("Bar price", barRow);
-        var pit = Labeled("Pitstop price", pitRow);
+        var pit = Labeled("Pitstop price (optional if Shared — uses Bar)", pitRow);
         Grid.SetColumn(bar, 0);
         Grid.SetColumn(pit, 1);
         priceGrid.Children.Add(bar);
         priceGrid.Children.Add(pit);
 
+        var isFood = StockCatalogTaxonomy.IsFoodSubCategory(_vm.DetailCatalogBucket, _vm.DetailCatalogSubCategory);
         var body = new StackPanel { Spacing = 12, MaxWidth = 720 };
         body.Children.Add(new TextBlock
         {
@@ -67,7 +77,9 @@ public sealed partial class StockManagementPage
         });
         body.Children.Add(new TextBlock
         {
-            Text = "Stock v2 quick edit — Tracked items (including Food) update counts on every sale.",
+            Text = isFood
+                ? "Food is not tracked — hot food has no counted stock amounts."
+                : "Sell until gone hides the item when stock hits 0 (comes back when topped up).",
             FontSize = 12,
             TextWrapping = TextWrapping.WrapWholeWords,
             Opacity = 0.85,
@@ -109,6 +121,11 @@ public sealed partial class StockManagementPage
                 _vm.DetailStockMode = modeBox.SelectedItem is ComboBoxItem { Tag: string mode }
                     ? mode
                     : modeBox.SelectedItem as string ?? _vm.DetailStockMode;
+                if (StockCatalogTaxonomy.IsFoodSubCategory(_vm.DetailCatalogBucket, _vm.DetailCatalogSubCategory))
+                {
+                    _vm.DetailStockMode = StockCatalogTaxonomy.StockModeNotTracked;
+                }
+
                 _vm.SyncDetailFlagsFromStockMode();
                 _vm.BarPriceText = barRow.TextBox.Text ?? string.Empty;
                 _vm.PitstopPriceText = pitRow.TextBox.Text ?? string.Empty;
@@ -119,6 +136,10 @@ public sealed partial class StockManagementPage
                     DismissInPageStockModal();
                     await _vm.LoadAsync(resetStatusMessage: false).ConfigureAwait(true);
                     _vm.SetStatusMessage("Saved " + row.Name + ".");
+                    if (_resumeCatalogHealthAfterQuickEdit)
+                    {
+                        OpenCatalogHealthFullScreen();
+                    }
                 }
             },
             dismissOnDimTap: false,

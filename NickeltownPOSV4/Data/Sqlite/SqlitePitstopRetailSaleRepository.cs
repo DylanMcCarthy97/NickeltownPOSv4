@@ -210,6 +210,8 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                           COALESCE(TrackStock, 1) AS TrackStock,
                           COALESCE(OrderInMerchandise, 0) AS OrderInMerchandise,
                           COALESCE(NULLIF(TRIM(StockMode), ''), 'Tracked') AS StockMode,
+                          COALESCE(NULLIF(TRIM(CatalogBucket), ''), 'Bar') AS CatalogBucket,
+                          COALESCE(NULLIF(TRIM(CatalogSubCategory), ''), 'Drinks') AS CatalogSubCategory,
                           ItemType,
                           Name
                         FROM Items
@@ -230,7 +232,9 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                     row.OrderInMerchandise,
                     row.StockMode,
                     row.ItemType,
-                    row.Name);
+                    row.Name,
+                    row.CatalogBucket,
+                    row.CatalogSubCategory);
                 if (!skipStockForSale && row.StockQty < line.Quantity)
                 {
                     tx.Rollback();
@@ -276,7 +280,7 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                 {
                     conn.Execute(
                         new CommandDefinition(
-                            "UPDATE Items SET StockQty = StockQty - @q, UpdatedAt = datetime('now') WHERE Id = @id",
+                            "UPDATE Items SET StockQty = MAX(0, StockQty - @q), UpdatedAt = datetime('now') WHERE Id = @id",
                             new { q = line.Quantity, id = line.ItemId },
                             tx,
                             cancellationToken: cancellationToken));
@@ -296,6 +300,8 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                             },
                             tx,
                             cancellationToken: cancellationToken));
+
+                    Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, line.ItemId);
 
                     anyLineDeductedStock = true;
                 }
@@ -758,6 +764,8 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                             tx,
                             cancellationToken: cancellationToken));
 
+                    Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, line.ItemId);
+
                     conn.Execute(
                         new CommandDefinition(
                             """
@@ -831,6 +839,10 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
         public int OrderInMerchandise { get; set; }
 
         public string StockMode { get; set; } = StockCatalogTaxonomy.StockModeTracked;
+
+        public string CatalogBucket { get; set; } = StockCatalogTaxonomy.BucketBar;
+
+        public string CatalogSubCategory { get; set; } = "Drinks";
 
         public string? ItemType { get; set; }
 
