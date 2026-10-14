@@ -52,13 +52,15 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         SendShoppingListTestCommand = new AsyncRelayCommand(SendShoppingListTestAsync, () => !IsBusy);
         ImportFromV2Command = new AsyncRelayCommand(ImportFromV2Async, () => !IsBusy);
 
-        EditSmtpServerCommand = new AsyncRelayCommand(EditSmtpServerAsync, () => !IsBusy);
-        EditSmtpPortCommand = new AsyncRelayCommand(EditSmtpPortAsync, () => !IsBusy);
-        EditSenderEmailCommand = new AsyncRelayCommand(EditSenderEmailAsync, () => !IsBusy);
-        EditSenderPasswordCommand = new AsyncRelayCommand(EditSenderPasswordAsync, () => !IsBusy);
-        EditSenderNameCommand = new AsyncRelayCommand(EditSenderNameAsync, () => !IsBusy);
-        EditRecipientsCommand = new AsyncRelayCommand(EditRecipientsAsync, () => !IsBusy);
-        EditShoppingListRecipientCommand = new AsyncRelayCommand(EditShoppingListRecipientAsync, () => !IsBusy);
+        // Edit fields stay enabled even while Load/Save runs — otherwise a missed
+        // NotifyCanExecuteChanged leaves every tap-field stuck disabled on the till.
+        EditSmtpServerCommand = new AsyncRelayCommand(EditSmtpServerAsync);
+        EditSmtpPortCommand = new AsyncRelayCommand(EditSmtpPortAsync);
+        EditSenderEmailCommand = new AsyncRelayCommand(EditSenderEmailAsync);
+        EditSenderPasswordCommand = new AsyncRelayCommand(EditSenderPasswordAsync);
+        EditSenderNameCommand = new AsyncRelayCommand(EditSenderNameAsync);
+        EditRecipientsCommand = new AsyncRelayCommand(EditRecipientsAsync);
+        EditShoppingListRecipientCommand = new AsyncRelayCommand(EditShoppingListRecipientAsync);
 
         RefreshLegacyPathProbe();
     }
@@ -269,6 +271,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         try
         {
             IsBusy = true;
+            NotifyBusyChanged();
             var current = await _config.LoadAsync().ConfigureAwait(true);
             SmtpServer = current.SmtpServer;
             SmtpPort = current.SmtpPort;
@@ -280,7 +283,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
             ShoppingListRecipientEmail = current.ShoppingListRecipientEmail ?? string.Empty;
             ShoppingListSaturdayEmailEnabled = current.ShoppingListSaturdayEmailEnabled;
             ShoppingListSkipWhenEmpty = current.ShoppingListSkipWhenEmpty;
-            SetStatus("Loaded.");
+            SetStatus("Loaded. Tap a field to edit.");
         }
         catch (Exception ex)
         {
@@ -289,6 +292,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         finally
         {
             IsBusy = false;
+            NotifyBusyChanged();
         }
     }
 

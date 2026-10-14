@@ -52,7 +52,7 @@
                         <TextBlock
                             Margin="0,2,0,0"
                             Style="{StaticResource SettingsHeroSubtitleStyle}"
-                            Text="SMTP credentials for monthly and stock emails, plus Saturday shopping-list delivery." />
+                            Text="Tap any field to edit. SMTP for monthly/stock emails, plus Saturday shopping-list delivery." />
                     </StackPanel>
                     <Button
                         Grid.Column="2"
