@@ -70,11 +70,14 @@ public static class StockSaleDeductionHelper
             return;
 
         var delta = -(Math.Max(1, meta.MixerQty) * Math.Max(1, saleQuantity));
+        // Deduct when StockMode maintains on-hand qty (Tracked / SellUntilGone), not only legacy flags.
         conn.Execute(
             """
             UPDATE Items
             SET StockQty = MAX(0, StockQty + @delta), UpdatedAt = datetime('now')
-            WHERE Id = @id AND COALESCE(TrackStock, 1) != 0 AND COALESCE(OrderInMerchandise, 0) = 0
+            WHERE Id = @id
+              AND lower(trim(COALESCE(NULLIF(TRIM(StockMode), ''), 'Tracked'))) IN ('tracked', 'selluntilgone')
+              AND COALESCE(OrderInMerchandise, 0) = 0
             """,
             new { delta, id = mixerId },
             tx);
