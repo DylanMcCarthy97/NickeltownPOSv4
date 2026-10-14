@@ -105,18 +105,26 @@ public static class StockCatalogHealthService
                 continue;
             }
 
-            if (row.ShowInBar != 0 && row.UsesOpenPrice == 0 && !(row.BarPrice is > 0.00001d))
+            // Bar price may be 0.00 (free at bar) or omitted when Pitstop has the paid price.
+            // Only flag when there is no Bar price row, not open-price, and no Pitstop price either.
+            var hasBarPriceRow = row.BarPrice is not null;
+            var hasPitstopPrice = row.PitstopPrice is > 0.00001d;
+            if (row.ShowInBar != 0
+                && row.UsesOpenPrice == 0
+                && !hasBarPriceRow
+                && !hasPitstopPrice)
             {
                 issues.Add(new StockCatalogHealthIssue(
                     row.ItemId,
                     row.Name,
                     IssueMissingChannelPrice,
-                    "Shown in Bar but has no Bar price (and not open-price)."));
+                    "Shown in Bar but has no Bar price (set 0.00 for free at bar, or add a Pitstop price)."));
             }
 
             // Shared items may sell in Pitstop using the Bar price fallback — only flag when neither price exists.
+            // Free-at-bar (0.00) does not count as a Pitstop fallback.
             if (row.ShowInPitstop != 0 && row.UsesOpenPrice == 0
-                && !(row.PitstopPrice is > 0.00001d)
+                && !hasPitstopPrice
                 && !(bucket == StockCatalogTaxonomy.BucketShared && row.BarPrice is > 0.00001d))
             {
                 issues.Add(new StockCatalogHealthIssue(
@@ -137,8 +145,9 @@ public static class StockCatalogHealthService
                     "Tracked item has no Warn Me Below — shopping list may never flag it."));
             }
 
-            // Merch is sold by name on the till — barcodes are optional.
+            // Merch and Food are sold by name on the till — barcodes are optional.
             if (!isMerch
+                && !isFood
                 && string.IsNullOrWhiteSpace(row.Sku)
                 && !StockAlternateSkuHelper.ParseAlternateSkuList(row.AlternateSkusJson).Any())
             {

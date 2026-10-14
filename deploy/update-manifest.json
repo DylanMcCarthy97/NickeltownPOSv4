@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.3",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.3/NickeltownPOSV4_2.0.0.3_x64.msix",
-  "releaseNotes": "Catalog health: Shared bar-price OK, merch barcodes optional, stay on Health while fixing. Sell-until-gone auto-hides at 0 / returns when topped up. Food is Not tracked.",
+  "version": "2.0.0.4",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.4/NickeltownPOSV4_2.0.0.4_x64.msix",
+  "releaseNotes": "Catalog health: Food barcodes optional; free-at-bar (0.00 or no Bar price when Pitstop is priced) no longer flagged as missing.",
   "mandatory": false
 }

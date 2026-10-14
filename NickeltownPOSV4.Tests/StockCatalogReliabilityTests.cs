@@ -61,7 +61,7 @@ public sealed class StockCatalogReliabilityTests
     }
 
     [Fact]
-    public void CatalogHealth_SharedBarOnlyPriceIsOk_AndMerchNeedsNoBarcode()
+    public void CatalogHealth_SharedBarOnlyPriceIsOk_AndMerchFoodNeedNoBarcode()
     {
         var rows = new List<StockEditorRow>
         {
@@ -95,11 +95,45 @@ public sealed class StockCatalogReliabilityTests
                 WarnMeBelow = 1,
                 Sku = null,
             },
+            new()
+            {
+                ItemId = 4,
+                Name = "Hot Chips Free Bar",
+                IsActive = 1,
+                ShowInBar = 1,
+                ShowInPitstop = 1,
+                CatalogBucket = StockCatalogTaxonomy.BucketPitstop,
+                CatalogSubCategory = "Food",
+                StockMode = StockCatalogTaxonomy.StockModeNotTracked,
+                TrackStock = 0,
+                BarPrice = 0,
+                PitstopPrice = 8,
+                Sku = null,
+            },
+            new()
+            {
+                ItemId = 5,
+                Name = "Free pour + Pitstop bottle",
+                IsActive = 1,
+                ShowInBar = 1,
+                ShowInPitstop = 1,
+                CatalogBucket = StockCatalogTaxonomy.BucketShared,
+                CatalogSubCategory = "Drinks",
+                StockMode = StockCatalogTaxonomy.StockModeTracked,
+                TrackStock = 1,
+                BarPrice = null,
+                PitstopPrice = 12,
+                WarnMeBelow = 2,
+                Sku = "SHARED-FREE-BAR",
+            },
         };
 
         var issues = StockCatalogHealthService.Evaluate(rows);
         Assert.DoesNotContain(issues, i => i.ItemId == 1 && i.Kind == StockCatalogHealthService.IssueMissingChannelPrice);
         Assert.DoesNotContain(issues, i => i.ItemId == 2 && i.Kind == StockCatalogHealthService.IssueMissingBarcode);
+        Assert.DoesNotContain(issues, i => i.ItemId == 4 && i.Kind == StockCatalogHealthService.IssueMissingBarcode);
+        Assert.DoesNotContain(issues, i => i.ItemId == 4 && i.Kind == StockCatalogHealthService.IssueMissingChannelPrice);
+        Assert.DoesNotContain(issues, i => i.ItemId == 5 && i.Kind == StockCatalogHealthService.IssueMissingChannelPrice);
     }
 
     [Fact]
