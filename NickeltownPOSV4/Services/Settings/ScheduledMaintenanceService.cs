@@ -1,19 +1,22 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NickeltownPOSV4.Services.Stock;
 using NickeltownPOSV4.Services.Treasurer;
 
 namespace NickeltownPOSV4.Services.Settings;
 
-/// <summary>Saturday 6 AM backup, Google Drive upload, and weekly stock email (POSBar V2 BackupManager).</summary>
+/// <summary>Saturday 6 AM backup, Google Drive upload, weekly stock email, and shopping-list email.</summary>
 public sealed class ScheduledMaintenanceService : IDisposable
 {
     private readonly IBackupService _backup;
     private readonly IReportExportService _reports;
     private readonly IEmailSender _email;
+    private readonly IShoppingListEmailService _shoppingListEmail;
     private readonly GoogleDriveBackupUploader _drive;
+    private readonly ILogger<ScheduledMaintenanceService> _logger;
     private readonly object _gate = new();
     private Timer? _backupTimer;
     private Timer? _dailyCheckTimer;
@@ -23,12 +26,16 @@ public sealed class ScheduledMaintenanceService : IDisposable
         IBackupService backup,
         IReportExportService reports,
         IEmailSender email,
-        GoogleDriveBackupUploader drive)
+        IShoppingListEmailService shoppingListEmail,
+        GoogleDriveBackupUploader drive,
+        ILogger<ScheduledMaintenanceService> logger)
     {
         _backup = backup;
         _reports = reports;
         _email = email;
+        _shoppingListEmail = shoppingListEmail;
         _drive = drive;
+        _logger = logger;
     }
 
     public void Start()
@@ -41,7 +48,6 @@ public sealed class ScheduledMaintenanceService : IDisposable
             }
 
             _started = true;
-            // TreasurerDataPaths.TryImportFromLegacyPosBarData();
             CheckAndRunMissedBackup();
             ScheduleNextBackup();
             ScheduleDailyCheck();
@@ -108,6 +114,11 @@ public sealed class ScheduledMaintenanceService : IDisposable
         {
             _ = RunScheduledBackupAsync();
         }
+        else
+        {
+            // Backup already done — still retry unclaimed Saturday emails (stock / shopping list).
+            _ = RunScheduledEmailsAsync();
+        }
     }
 
     private async Task OnBackupTimerAsync()
@@ -130,8 +141,9 @@ public sealed class ScheduledMaintenanceService : IDisposable
             zipPath = await _backup.CreateBackupAsync(TreasurerDataPaths.BackupDirectory, cancellationToken)
                 .ConfigureAwait(false);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Saturday backup zip failed.");
         }
 
         if (!string.IsNullOrEmpty(zipPath) && _drive.IsConfigured)
@@ -140,99 +152,54 @@ public sealed class ScheduledMaintenanceService : IDisposable
             {
                 await _drive.UploadBackupFileAsync(zipPath, cancellationToken).ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Saturday Google Drive upload failed.");
             }
         }
 
-        if (!TryClaimAutomatedStockEmailForToday())
-        {
-            return;
-        }
-
-        try
-        {
-            var bytes = await _reports.BuildStockSnapshotPdfAsync(cancellationToken).ConfigureAwait(false);
-            var fileName = $"Stock_Snapshot_{DateTime.Now:yyyyMMdd}.pdf";
-            await _email.SendAsync(
-                subject: $"Nickeltown POS stock snapshot - {DateTime.Now:yyyy-MM-dd}",
-                body:
-                    "Attached is the weekly stock snapshot."
-                    + Environment.NewLine + Environment.NewLine
-                    + "Sent automatically by Nickeltown POS v4 (Saturday schedule).",
-                attachments: [new EmailAttachment(fileName, bytes, "application/pdf")],
-                cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        catch
-        {
-            ReleaseAutomatedStockEmailClaimIfSendFailed();
-        }
+        await RunScheduledEmailsAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private static string? GetSaturdayStockEmailFlagPathOrNull()
+    /// <summary>Stock snapshot + shopping-list emails with independent once-per-Saturday claims.</summary>
+    public async Task RunScheduledEmailsAsync(CancellationToken cancellationToken = default)
     {
-        if (DateTime.Now.DayOfWeek != DayOfWeek.Saturday)
+        // Stock snapshot email — unchanged recipients (AppEmailConfig.RecipientEmails).
+        if (SaturdayEmailClaim.TryClaim(SaturdayEmailClaim.StockKind))
         {
-            return null;
-        }
-
-        var datePart = DateTime.Now.ToString("yyyy-MM-dd");
-        return TreasurerDataPaths.GetConfigFilePath($"saturday_weekly_stock_email_{datePart}.txt");
-    }
-
-    private static bool TryClaimAutomatedStockEmailForToday()
-    {
-        var flagPath = GetSaturdayStockEmailFlagPathOrNull();
-        if (flagPath is null)
-        {
-            return true;
-        }
-
-        var datePart = DateTime.Now.ToString("yyyy-MM-dd");
-        var mutexName = @"Global\NickeltownPOSV4_SaturdayStockEmail_" + datePart.Replace("-", string.Empty, StringComparison.Ordinal);
-
-        try
-        {
-            using var mutex = new Mutex(false, mutexName);
-            mutex.WaitOne();
             try
             {
-                if (File.Exists(flagPath))
-                {
-                    return false;
-                }
-
-                File.WriteAllText(flagPath, $"{Environment.MachineName}{Environment.NewLine}{DateTime.Now:O}{Environment.NewLine}");
-                return true;
+                var bytes = await _reports.BuildStockSnapshotPdfAsync(cancellationToken).ConfigureAwait(false);
+                var fileName = $"Stock_Snapshot_{DateTime.Now:yyyyMMdd}.pdf";
+                await _email.SendAsync(
+                    subject: $"Nickeltown POS stock snapshot - {DateTime.Now:yyyy-MM-dd}",
+                    body:
+                        "Attached is the weekly stock snapshot."
+                        + Environment.NewLine + Environment.NewLine
+                        + "Sent automatically by Nickeltown POS v4 (Saturday schedule).",
+                    attachments: [new EmailAttachment(fileName, bytes, "application/pdf")],
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+                _logger.LogInformation("Saturday stock snapshot email sent.");
             }
-            finally
+            catch (Exception ex)
             {
-                mutex.ReleaseMutex();
+                SaturdayEmailClaim.ReleaseIfSendFailed(SaturdayEmailClaim.StockKind);
+                _logger.LogError(ex, "Saturday stock snapshot email failed.");
             }
         }
-        catch
-        {
-            return false;
-        }
-    }
 
-    private static void ReleaseAutomatedStockEmailClaimIfSendFailed()
-    {
+        // Shopping-list email is independent: failure here never affects the stock report claim.
         try
         {
-            var flagPath = GetSaturdayStockEmailFlagPathOrNull();
-            if (string.IsNullOrEmpty(flagPath))
+            var shopping = await _shoppingListEmail.TrySendScheduledAsync(cancellationToken).ConfigureAwait(false);
+            if (!shopping.Succeeded && !shopping.Skipped)
             {
-                return;
-            }
-
-            if (File.Exists(flagPath))
-            {
-                File.Delete(flagPath);
+                _logger.LogWarning("Saturday shopping-list email: {Message}", shopping.Message);
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Saturday shopping-list email threw unexpectedly.");
         }
     }
 

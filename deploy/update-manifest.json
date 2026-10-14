@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.4",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.4/NickeltownPOSV4_2.0.0.4_x64.msix",
-  "releaseNotes": "Catalog health: Food barcodes optional; free-at-bar (0.00 or no Bar price when Pitstop is priced) no longer flagged as missing.",
+  "version": "2.0.0.5",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.5/NickeltownPOSV4_2.0.0.5_x64.msix",
+  "releaseNotes": "Saturday shopping-list email: separate configurable recipient, enable/skip-when-empty, compact PDF + body, Test button in Email settings. Stock report unchanged.",
   "mandatory": false
 }

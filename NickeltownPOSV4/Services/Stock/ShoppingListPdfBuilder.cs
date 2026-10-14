@@ -46,6 +46,88 @@ internal static class ShoppingListPdfBuilder
 
     private static readonly BaseColor MerchAccent = new(124, 58, 237);     // #7C3AED
 
+    /// <summary>
+    /// Compact Saturday shopping-list PDF: Buy Now + Buy Soon (+ exceptions), ideally one A4 page.
+    /// </summary>
+    public static byte[] BuildWeeklyCombined(IReadOnlyList<StockShoppingListRowViewModel> rows)
+    {
+        var ordered = rows
+            .OrderBy(r => r.SortPriority)
+            .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var buyNow = ordered
+            .Where(r => r.Status is StockVolunteerStatus.OutOfStock or StockVolunteerStatus.BuyNow)
+            .ToList();
+        var buySoon = ordered
+            .Where(r => r.Status == StockVolunteerStatus.BuySoon)
+            .ToList();
+        var exceptions = ordered.Where(r => r.HasSetupWarning).ToList();
+
+        using var ms = new MemoryStream();
+        using (var doc = new Document(PageSize.A4, 28, 28, 28, 28))
+        {
+            PdfWriter.GetInstance(doc, ms);
+            doc.Open();
+
+            AddHeader(doc, "Weekly Shopping List", BrandPrimary);
+
+            var outOfStock = buyNow.Count(r => r.Status == StockVolunteerStatus.OutOfStock);
+            var buyNowCount = buyNow.Count(r => r.Status == StockVolunteerStatus.BuyNow);
+            var totalNeed = ordered.Sum(r => r.NeedQty);
+            AddSummaryCards(doc, ordered.Count, outOfStock, buyNowCount, totalNeed, ShoppingListPdfScope.Regular);
+
+            if (ordered.Count == 0)
+            {
+                doc.Add(new Paragraph("Nothing needs buying right now.", FontFactory.GetFont(FontFactory.HELVETICA, 12, Muted))
+                {
+                    SpacingBefore = 16,
+                });
+            }
+            else
+            {
+                if (exceptions.Count > 0)
+                {
+                    doc.Add(new Paragraph(
+                        $"{exceptions.Count} item{(exceptions.Count == 1 ? "" : "s")} need pack size set before ordering.",
+                        FontFactory.GetFont(FontFactory.HELVETICA, 9f, WarnFg))
+                    {
+                        SpacingBefore = 2,
+                        SpacingAfter = 6,
+                    });
+                }
+
+                if (buyNow.Count > 0)
+                {
+                    AddSectionHeader(doc, "BUY NOW", DangerFg);
+                    AddShoppingTableCompact(doc, buyNow, DangerFg);
+                }
+
+                if (buySoon.Count > 0)
+                {
+                    AddSectionHeader(doc, "BUY SOON", WarnFg);
+                    AddShoppingTableCompact(doc, buySoon, WarnFg);
+                }
+
+                var merch = ordered.Count(r => r.IsMerch);
+                if (merch > 0)
+                {
+                    doc.Add(new Paragraph(
+                        $"Includes {merch} merchandise line{(merch == 1 ? "" : "s")}.",
+                        FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 8.5f, Muted))
+                    {
+                        SpacingBefore = 4,
+                        SpacingAfter = 2,
+                    });
+                }
+            }
+
+            AddFooter(doc, ordered.Count, totalNeed, "Weekly Shopping List");
+        }
+
+        return ms.ToArray();
+    }
+
     public static byte[] Build(IReadOnlyList<StockShoppingListRowViewModel> rows, ShoppingListPdfScope scope)
     {
         rows = scope == ShoppingListPdfScope.Merch
@@ -286,6 +368,74 @@ internal static class ShoppingListPdfBuilder
         }
 
         doc.Add(table);
+    }
+
+    /// <summary>Denser table for the weekly combined PDF (fits more lines on one A4 page).</summary>
+    private static void AddShoppingTableCompact(Document doc, IReadOnlyList<StockShoppingListRowViewModel> rows, BaseColor headerColor)
+    {
+        var table = new PdfPTable(5) { WidthPercentage = 100, SpacingAfter = 8 };
+        table.SetWidths(new float[] { 4.4f, 0.75f, 0.75f, 2.2f, 1.3f });
+        table.HeaderRows = 1;
+
+        var headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 8.5f, White);
+        AddHeaderCell(table, "ITEM", headerFont, Element.ALIGN_LEFT, headerColor);
+        AddHeaderCell(table, "HAVE", headerFont, Element.ALIGN_CENTER, headerColor);
+        AddHeaderCell(table, "NEED", headerFont, Element.ALIGN_CENTER, headerColor);
+        AddHeaderCell(table, "SUGGESTED", headerFont, Element.ALIGN_LEFT, headerColor);
+        AddHeaderCell(table, "STATUS", headerFont, Element.ALIGN_CENTER, headerColor);
+
+        int rowIndex = 0;
+        foreach (var row in rows)
+        {
+            AppendRowCompact(table, row, ref rowIndex);
+        }
+
+        doc.Add(table);
+    }
+
+    private static void AppendRowCompact(PdfPTable table, StockShoppingListRowViewModel row, ref int rowIndex)
+    {
+        var rowBg = rowIndex % 2 == 0 ? White : ZebraRow;
+        var nameFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 8.5f, TextPrimary);
+        var catFont = FontFactory.GetFont(FontFactory.HELVETICA, 7.5f, Muted);
+        var qtyFont = FontFactory.GetFont(FontFactory.HELVETICA, 8.5f, TextPrimary);
+        var needFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 8.5f, TextPrimary);
+        var suggestedFont = FontFactory.GetFont(
+            FontFactory.HELVETICA,
+            8f,
+            row.HasSetupWarning ? WarnFg : Muted);
+
+        var nameCell = new PdfPCell
+        {
+            BackgroundColor = rowBg,
+            BorderColor = BorderColor,
+            VerticalAlignment = Element.ALIGN_MIDDLE,
+            PaddingTop = 3,
+            PaddingBottom = 3,
+            PaddingLeft = 6,
+            PaddingRight = 4,
+        };
+        var nameLine = row.IsMerch ? row.Name + " (merch)" : row.Name;
+        nameCell.AddElement(new Paragraph(nameLine, nameFont) { SpacingAfter = 0 });
+        if (!string.IsNullOrWhiteSpace(row.CategoryLine))
+        {
+            nameCell.AddElement(new Paragraph(row.CategoryLine, catFont));
+        }
+
+        table.AddCell(nameCell);
+        AddBodyCell(table, row.HaveQty.ToString(CultureInfo.InvariantCulture), qtyFont, rowBg, Element.ALIGN_CENTER);
+        AddBodyCell(table, row.NeedQty.ToString(CultureInfo.InvariantCulture), needFont, rowBg, Element.ALIGN_CENTER);
+
+        var suggested = row.HasSetupWarning
+            ? "Pack size not set"
+            : (string.IsNullOrEmpty(row.SuggestedLine) ? "—" : row.SuggestedLine);
+        AddBodyCell(table, suggested, suggestedFont, rowBg, Element.ALIGN_LEFT, paddingLeft: 6);
+
+        var (statusText, statusFg, statusBg) = StatusStyle(row);
+        var pillFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7f, statusFg);
+        AddPillCell(table, statusText, pillFont, statusBg, rowBg);
+
+        rowIndex++;
     }
 
     private static void AppendRow(PdfPTable table, StockShoppingListRowViewModel row, ref int rowIndex)

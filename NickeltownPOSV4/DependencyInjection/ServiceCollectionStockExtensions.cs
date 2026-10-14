@@ -13,6 +13,7 @@ internal static class ServiceCollectionStockExtensions
         services.AddSingleton<IStockProductImageStorage, StockProductImageStorage>();
         services.AddSingleton<StockItemAdminPersistenceService>();
         services.AddSingleton<StockV2ItemImportPreviewService>();
+        services.AddSingleton<IShoppingListEmailService, ShoppingListEmailService>();
         // StockEditorPanel is legacy/unused — StockManagementPage is the stock admin surface.
         services.AddTransient<StockManagementPageViewModel>();
 
