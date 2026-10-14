@@ -98,4 +98,7 @@ public sealed partial class StockManagementPageViewModel
         var src = _all.FirstOrDefault(r => r.ItemId == itemId);
         return src is null ? null : new StockListRowViewModel(src, isAlternateRow: false);
     }
+
+    public Data.Sqlite.StockEditorRow? GetStockRowById(long itemId) =>
+        _all.FirstOrDefault(r => r.ItemId == itemId);
 }

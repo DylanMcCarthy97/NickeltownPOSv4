@@ -216,8 +216,9 @@ public static class StockInventoryLevelHelper
     public static string BuildCategoryLine(StockEditorRow row) =>
         (row.CatalogSubCategory ?? "Drinks").Trim();
 
+    /// <summary>Slim list qty — number only (status sits beside it).</summary>
     public static string FormatStockHero(StockEditorRow row) =>
-        row.StockQty + " LEFT";
+        row.StockQty.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     public static bool ShowStatusPill(StockEditorRow row) =>
         ResolveStatus(row) != StockVolunteerStatus.NotCounted;

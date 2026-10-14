@@ -67,7 +67,7 @@ public sealed partial class StockManagementPage
         });
         body.Children.Add(new TextBlock
         {
-            Text = "Quick edit — sales deduct stock when mode is Tracked or Sell until gone (including Food).",
+            Text = "Stock v2 quick edit — Tracked items (including Food) update counts on every sale.",
             FontSize = 12,
             TextWrapping = TextWrapping.WrapWholeWords,
             Opacity = 0.85,

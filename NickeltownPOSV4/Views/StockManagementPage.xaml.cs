@@ -23,6 +23,12 @@ public sealed partial class StockManagementPage : Page
 
     internal int _stockOverlayGate;
 
+    /// <summary>When set, Receive Stock opens with this item pre-selected (Stock v2 action sheet).</summary>
+    internal long? _pendingReceiveItemId;
+
+    /// <summary>When set, Count Stock starts on this item (Stock v2 action sheet).</summary>
+    internal long? _pendingCountItemId;
+
     internal const double StockModalFormMaxWidth = 860;
     internal const double StockSpecialModalFormMaxWidth = 720;
     internal const double StockSpecialModalMaxWidth = 1040;

@@ -91,8 +91,16 @@ public sealed partial class StockManagementPage
     {
         var regular = _vm.BuildShoppingListRegularRows();
         var merch = _vm.BuildShoppingListMerchRows();
+        var checkedIds = new HashSet<long>();
         var body = new StackPanel { Spacing = 10 };
         body.Children.Add(BuildShoppingListSummaryBanner(regular, merch));
+        body.Children.Add(new TextBlock
+        {
+            Text = "Tick items as you walk the aisle. Copy or email when ready.",
+            FontSize = 13,
+            Opacity = 0.75,
+            TextWrapping = TextWrapping.WrapWholeWords,
+        });
 
         if (regular.Count == 0 && merch.Count == 0)
         {
@@ -114,11 +122,11 @@ public sealed partial class StockManagementPage
         }
         else
         {
-            AppendShoppingListSection(body, "Bar & supplies", "Regular restock — drinks, food, and bar items.", regular);
-            AppendShoppingListSection(body, "Merchandise", "Ordered less often — hats, shirts, and club merch.", merch);
+            AppendShoppingListChecklistSection(body, "Bar & supplies", regular, checkedIds);
+            AppendShoppingListChecklistSection(body, "Merchandise", merch, checkedIds);
         }
 
-        var copyBtn = WorkflowButton("Copy List");
+        var copyBtn = WorkflowButton("Copy list");
         copyBtn.Click += (_, _) =>
         {
             var package = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
@@ -127,12 +135,12 @@ public sealed partial class StockManagementPage
             _vm.SetStatusMessage("Shopping list copied.");
         };
 
-        var emailBarBtn = WorkflowButton("Email Bar PDF");
+        var emailBarBtn = WorkflowButton("Email bar PDF");
         emailBarBtn.IsEnabled = regular.Count > 0;
         emailBarBtn.Click += async (_, _) =>
             await EmailShoppingListPdfAsync(regular, ShoppingListPdfScope.Regular).ConfigureAwait(true);
 
-        var emailMerchBtn = WorkflowButton("Email Merch PDF");
+        var emailMerchBtn = WorkflowButton("Email merch PDF");
         emailMerchBtn.IsEnabled = merch.Count > 0;
         emailMerchBtn.Click += async (_, _) =>
             await EmailShoppingListPdfAsync(merch, ShoppingListPdfScope.Merch).ConfigureAwait(true);
@@ -148,25 +156,111 @@ public sealed partial class StockManagementPage
         Grid.SetColumn(emailMerchBtn, 1);
         actions.Children.Add(emailRow);
 
-        return WorkflowShellWithActions("Shopping List", "What to buy", body, actions);
+        return WorkflowShellWithActions("Shopping list", "Checklist to buy", body, actions);
     }
 
-    private void AppendShoppingListSection(
+    private void AppendShoppingListChecklistSection(
         StackPanel body,
         string title,
-        string subtitle,
-        IReadOnlyList<StockShoppingListRowViewModel> rows)
+        IReadOnlyList<StockShoppingListRowViewModel> rows,
+        HashSet<long> checkedIds)
     {
         if (rows.Count == 0)
         {
             return;
         }
 
-        body.Children.Add(BuildShoppingListSectionHeader(title, subtitle, rows.Count));
+        body.Children.Add(BuildShoppingListSectionHeader(title, "Tick off as you go", rows.Count));
         foreach (var row in rows)
         {
-            body.Children.Add(BuildShoppingListRowCard(row));
+            body.Children.Add(BuildShoppingListChecklistRow(row, checkedIds));
         }
+    }
+
+    private Border BuildShoppingListChecklistRow(StockShoppingListRowViewModel row, HashSet<long> checkedIds)
+    {
+        var check = new CheckBox
+        {
+            MinWidth = 44,
+            MinHeight = 44,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsChecked = checkedIds.Contains(row.ItemId),
+        };
+        var nameBlock = new TextBlock
+        {
+            Text = row.Name,
+            FontSize = 15,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            TextWrapping = TextWrapping.WrapWholeWords,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var meta = new TextBlock
+        {
+            Text = row.HaveLine + "  →  " + row.NeedLine
+                + (string.IsNullOrEmpty(row.SuggestedLine) ? string.Empty : "  ·  " + row.SuggestedLine),
+            FontSize = 12,
+            Opacity = 0.75,
+            TextWrapping = TextWrapping.WrapWholeWords,
+        };
+        var status = new TextBlock
+        {
+            Text = row.StatusText,
+            FontSize = 12,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = ParseAccentBrush(row.StatusAccentColor),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        void ApplyCheckedStyle(bool on)
+        {
+            nameBlock.Opacity = on ? 0.45 : 1;
+            meta.Opacity = on ? 0.4 : 0.75;
+            if (on)
+            {
+                checkedIds.Add(row.ItemId);
+            }
+            else
+            {
+                checkedIds.Remove(row.ItemId);
+            }
+        }
+
+        check.Checked += (_, _) => ApplyCheckedStyle(true);
+        check.Unchecked += (_, _) => ApplyCheckedStyle(false);
+
+        var textStack = new StackPanel { Spacing = 2 };
+        textStack.Children.Add(nameBlock);
+        textStack.Children.Add(meta);
+        if (!string.IsNullOrEmpty(row.SetupHint))
+        {
+            textStack.Children.Add(new TextBlock
+            {
+                Text = row.SetupHint,
+                FontSize = 11,
+                Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 180, 83, 9)),
+            });
+        }
+
+        var grid = new Grid { ColumnSpacing = 10 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.Children.Add(check);
+        Grid.SetColumn(textStack, 1);
+        grid.Children.Add(textStack);
+        Grid.SetColumn(status, 2);
+        grid.Children.Add(status);
+
+        return new Border
+        {
+            Background = PosSurfaceBrush,
+            BorderBrush = PosBorderBrush,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(10, 8, 12, 8),
+            Margin = new Thickness(0, 0, 0, 6),
+            Child = grid,
+        };
     }
 
     private static Border BuildShoppingListSectionHeader(string title, string subtitle, int count)
@@ -451,11 +545,27 @@ public sealed partial class StockManagementPage
         var resultsHost = new StackPanel { Spacing = 8 };
         var emptyHint = new TextBlock
         {
-            Text = "Type a product name or scan a barcode to get started.",
+            Text = "Scan or search a product, enter packs bought and total paid, then save.",
             FontSize = 14,
             TextWrapping = TextWrapping.WrapWholeWords,
             Opacity = 0.72,
             Margin = new Thickness(4, 4, 4, 0),
+        };
+        var guidedBanner = new Border
+        {
+            Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 236, 253, 245)),
+            BorderBrush = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 167, 243, 208)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(12, 8, 12, 8),
+            Child = new TextBlock
+            {
+                Text = "Guided receive — one delivery at a time. On-hand qty updates when you save.",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 6, 95, 70)),
+                TextWrapping = TextWrapping.WrapWholeWords,
+            },
         };
 
         var detailPanel = new StackPanel { Spacing = 12, Visibility = Visibility.Collapsed };
@@ -738,6 +848,7 @@ public sealed partial class StockManagementPage
         };
 
         var body = new StackPanel { Spacing = 12 };
+        body.Children.Add(guidedBanner);
         body.Children.Add(searchBar);
         body.Children.Add(emptyHint);
         body.Children.Add(resultsHost);
@@ -747,7 +858,7 @@ public sealed partial class StockManagementPage
         shell.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         shell.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         shell.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        shell.Children.Add(CreateWorkflowHeader("Receive Stock", "Add stock after shopping"));
+        shell.Children.Add(CreateWorkflowHeader("Receive stock", "Guided delivery entry"));
         var scroll = new ScrollViewer
         {
             Content = body,
@@ -759,6 +870,17 @@ public sealed partial class StockManagementPage
         shell.Children.Add(scroll);
         Grid.SetRow(saveBtn, 2);
         shell.Children.Add(saveBtn);
+
+        if (_pendingReceiveItemId is long receiveId)
+        {
+            _pendingReceiveItemId = null;
+            var found = _vm.GetStockRowById(receiveId);
+            if (found is not null)
+            {
+                SelectItem(found);
+            }
+        }
+
         return shell;
     }
 
@@ -766,6 +888,25 @@ public sealed partial class StockManagementPage
     {
         var queue = _vm.BuildStockCountQueue().ToList();
         var index = 0;
+        if (_pendingCountItemId is long startId)
+        {
+            _pendingCountItemId = null;
+            var startAt = queue.FindIndex(r => r.ItemId == startId);
+            if (startAt >= 0)
+            {
+                index = startAt;
+            }
+            else
+            {
+                var one = _vm.GetStockRowById(startId);
+                if (one is not null)
+                {
+                    queue.Insert(0, one);
+                    index = 0;
+                }
+            }
+        }
+
         var pending = new List<(long ItemId, int OldQty, int NewQty)>();
         var finished = false;
         var itemName = new TextBlock
@@ -864,7 +1005,9 @@ public sealed partial class StockManagementPage
 
             var pct = Math.Clamp((double)(index + 1) / queue.Count, 0d, 1d);
             progressFill.Width = Math.Max(0, (progressTrack.ActualWidth > 0 ? progressTrack.ActualWidth : 320) * pct);
-            progressLabel.Text = "Item " + Math.Min(index + 1, queue.Count) + " of " + queue.Count;
+            var currentName = index < queue.Count ? queue[index].CatalogSubCategory : string.Empty;
+            var scope = string.IsNullOrWhiteSpace(currentName) ? string.Empty : " · " + currentName.Trim();
+            progressLabel.Text = "Counting " + Math.Min(index + 1, queue.Count) + " of " + queue.Count + scope;
         }
 
         void ShowSummary()
@@ -1061,7 +1204,7 @@ public sealed partial class StockManagementPage
         shell.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         shell.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         shell.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        shell.Children.Add(CreateWorkflowHeader("Count Stock", "Check what is on the shelf"));
+        shell.Children.Add(CreateWorkflowHeader("Count stock", "Guided shelf count — one item at a time"));
         var scroll = new ScrollViewer
         {
             Content = host,

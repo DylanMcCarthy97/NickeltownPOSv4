@@ -185,11 +185,10 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         SpecialApplyToItems.Add("Both");
         SpecialTypeOptionItems.Add(new SpecialTypeListItem { Value = "FixedPrice", Label = "Fixed price" });
         SpecialTypeOptionItems.Add(new SpecialTypeListItem { Value = "PercentOff", Label = "Percentage off" });
+        // Stock v2: four primary segments only (Drinks/Merch live under More).
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipAll, "All", "\uE8FD", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipAll)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipNeedBuying, "Need Buying", "\uE946", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipNeedBuying)));
+        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipNeedBuying, "Need buy", "\uE946", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipNeedBuying)));
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipOutOfStock, "Out", "\uE7BA", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipOutOfStock)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipDrinks, "Drinks", "\uE8F4", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipDrinks)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipMerch, "Merch", "\uE8F1", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipMerch)));
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipInactive, "Inactive", "\uE7BA", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipInactive)));
         SelectFilterCardCommand = new RelayCommand<int>(SelectFilterCard);
         OpenItemEditCommand = new RelayCommand(OpenItemEditFromSelection, () => HasSelection);

@@ -58,7 +58,8 @@ public sealed partial class StockManagementPage
         {
             _vm.SelectRowCommand.Execute(row);
             _resumeProductSetupAfterItemEdit = false;
-            await OpenQuickEditAsync(row).ConfigureAwait(true);
+            // Stock v2: row tap → action sheet (quick edit / adjust / receive / count / full edit).
+            await ShowItemActionSheetAsync(row).ConfigureAwait(true);
         }
     }
 
@@ -74,22 +75,26 @@ public sealed partial class StockManagementPage
 
     private async void StockScanBarcode_Click(object sender, RoutedEventArgs e)
     {
-        if (_vm.HasSelection && _vm.ScanBarcodePlaceholderCommand.CanExecute(null))
+        await RunWithStockOverlayGateAsync(async () =>
         {
-            await _vm.ScanBarcodePlaceholderCommand.ExecuteAsync(null).ConfigureAwait(true);
-            return;
-        }
-
-        await RunWithStockOverlayGateAsync(RunStockSearchOverlayCoreAsync).ConfigureAwait(true);
+            var r = await _inputOverlay.ShowKeyboardAsync(string.Empty, "Scan barcode").ConfigureAwait(true);
+            if (r is not null)
+            {
+                await TryHandleHomeBarcodeOrSearchAsync(r).ConfigureAwait(true);
+            }
+        }).ConfigureAwait(true);
     }
 
     private async Task RunStockSearchOverlayCoreAsync()
     {
-        var r = await _inputOverlay.ShowKeyboardAsync(_vm.SearchText ?? string.Empty, "Search products").ConfigureAwait(true);
-        if (r is not null)
+        var r = await _inputOverlay.ShowKeyboardAsync(_vm.SearchText ?? string.Empty, "Search or scan").ConfigureAwait(true);
+        if (r is null)
         {
-            _vm.SearchText = r;
+            return;
         }
+
+        // Exact barcode / unique name → action sheet; otherwise filter the list.
+        await TryHandleHomeBarcodeOrSearchAsync(r).ConfigureAwait(true);
     }
 
     private async void RefreshStock_Click(object sender, RoutedEventArgs e)
