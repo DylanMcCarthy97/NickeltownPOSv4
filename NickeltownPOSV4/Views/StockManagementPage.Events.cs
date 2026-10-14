@@ -13,8 +13,12 @@ namespace NickeltownPOSV4.Views;
 /// <summary>XAML event handlers for the stock management page chrome (not in-page modal layer).</summary>
 public sealed partial class StockManagementPage
 {
-    private void StockManagementPage_Loaded(object sender, RoutedEventArgs e) =>
+    private void StockManagementPage_Loaded(object sender, RoutedEventArgs e)
+    {
         DisableHorizontalScroll(ProductBrowserList);
+        AttachStockWedgeScan();
+        ClearStockSearchFocus();
+    }
 
     private static void DisableHorizontalScroll(FrameworkElement? element)
     {
@@ -29,6 +33,7 @@ public sealed partial class StockManagementPage
 
     private void StockManagementPage_Unloaded(object sender, RoutedEventArgs e)
     {
+        DetachStockWedgeScan();
         _vm.PropertyChanged -= Vm_PropertyChanged;
         App.Services.GetRequiredService<IBarCatalogCache>().Invalidate();
         App.Services.GetRequiredService<PosCatalogAutoRefreshService>().PulseRefresh();
@@ -63,21 +68,24 @@ public sealed partial class StockManagementPage
         }
     }
 
-    private async void StockSearchTextBox_GotFocus(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Open the on-screen keyboard only on an intentional tap.
+    /// GotFocus must NOT open it — after the overlay closes, focus returning to the
+    /// TextBox would reopen the keyboard in a loop (Toshiba stuck-keyboard bug).
+    /// </summary>
+    private async void StockSearchTextBox_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        await RunWithStockOverlayGateAsync(RunStockSearchOverlayCoreAsync).ConfigureAwait(true);
-    }
-
-    private async void StockSearchTextBox_Tapped(object sender, TappedRoutedEventArgs e)
-    {
+        e.Handled = true;
         await RunWithStockOverlayGateAsync(RunStockSearchOverlayCoreAsync).ConfigureAwait(true);
     }
 
     private async void StockScanBarcode_Click(object sender, RoutedEventArgs e)
     {
+        // Prefer wedge scan on the page; this button is a fallback for typing a code.
         await RunWithStockOverlayGateAsync(async () =>
         {
-            var r = await _inputOverlay.ShowKeyboardAsync(string.Empty, "Scan barcode").ConfigureAwait(true);
+            var r = await _inputOverlay.ShowKeyboardAsync(string.Empty, "Type barcode").ConfigureAwait(true);
+            ClearStockSearchFocus();
             if (r is not null)
             {
                 await TryHandleHomeBarcodeOrSearchAsync(r).ConfigureAwait(true);
@@ -87,7 +95,8 @@ public sealed partial class StockManagementPage
 
     private async Task RunStockSearchOverlayCoreAsync()
     {
-        var r = await _inputOverlay.ShowKeyboardAsync(_vm.SearchText ?? string.Empty, "Search or scan").ConfigureAwait(true);
+        var r = await _inputOverlay.ShowKeyboardAsync(_vm.SearchText ?? string.Empty, "Search products").ConfigureAwait(true);
+        ClearStockSearchFocus();
         if (r is null)
         {
             return;

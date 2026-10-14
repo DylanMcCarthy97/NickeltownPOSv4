@@ -76,11 +76,11 @@
                         Grid.Column="1"
                         BorderThickness="0"
                         Background="Transparent"
-                        GotFocus="StockSearchTextBox_GotFocus"
                         IsReadOnly="True"
-                        PlaceholderText="Search or scan barcode"
+                        IsTabStop="False"
+                        PlaceholderText="Search name — or just scan a barcode"
+                        PointerPressed="StockSearchTextBox_PointerPressed"
                         Style="{StaticResource PosTouchFieldTextBoxStyle}"
-                        Tapped="StockSearchTextBox_Tapped"
                         Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
                         Grid.Column="2"
