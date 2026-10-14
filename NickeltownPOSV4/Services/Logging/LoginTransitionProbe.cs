@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,7 @@ namespace NickeltownPOSV4.Services.Logging;
 
 /// <summary>
 /// Temporary Stopwatch instrumentation for the PIN-submit → main POS path.
-/// Writes to Debug and the POS log file (when <see cref="App.Services"/> is available).
+/// Writes to Debug, the daily POS log, and <c>Documents\NickeltownPOS\logs\login-transition.txt</c>.
 /// </summary>
 public static class LoginTransitionProbe
 {
@@ -18,6 +19,14 @@ public static class LoginTransitionProbe
     private static readonly List<string> Lines = new();
 
     public static string LastSummary { get; private set; } = string.Empty;
+
+    /// <summary>Single-file report to copy after a PIN login. Overwritten each attempt.</summary>
+    public static string ReportFilePath =>
+        Path.Combine(
+            Services.AppStoragePaths.GetDocumentsFolder(),
+            Services.AppStoragePaths.RootFolderName,
+            "logs",
+            "login-transition.txt");
 
     public static IReadOnlyList<string> LastLines
     {
@@ -94,6 +103,33 @@ public static class LoginTransitionProbe
             services?.GetService<ILoggerFactory>()
                 ?.CreateLogger("LoginTransition")
                 ?.LogInformation("{Message}", message);
+        }
+        catch (Exception)
+        {
+            // Probe must never affect sign-in.
+        }
+
+        try
+        {
+            if (NickeltownPOSV4.App.Services is null)
+            {
+                return;
+            }
+
+            string snapshot;
+            lock (Gate)
+            {
+                snapshot = string.Join(Environment.NewLine, Lines);
+            }
+
+            var path = ReportFilePath;
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            File.WriteAllText(path, snapshot + Environment.NewLine + LastSummary + Environment.NewLine);
         }
         catch (Exception)
         {
