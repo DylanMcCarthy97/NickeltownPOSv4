@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.Themes;
 
 namespace NickeltownPOSV4.ViewModels;
@@ -24,6 +25,8 @@ public sealed class LoginViewModel : ObservableViewModel
     private bool _isBusy;
 
     private int _pinFailScheduleId;
+
+    private int _submitGate;
 
     public LoginViewModel(
         IAuthenticationService auth,
@@ -91,6 +94,7 @@ public sealed class LoginViewModel : ObservableViewModel
             NumpadClearCommand.NotifyCanExecuteChanged();
             SubmitCommand.NotifyCanExecuteChanged();
             OnPropertyChanged(nameof(IsReadyToSubmit));
+            OnPropertyChanged(nameof(CanEnterDigits));
         }
     }
 
@@ -206,34 +210,48 @@ public sealed class LoginViewModel : ObservableViewModel
             return;
         }
 
+        if (Interlocked.Exchange(ref _submitGate, 1) != 0)
+        {
+            return;
+        }
+
+        LoginTransitionProbe.Begin("pin-submit");
         _pinFailScheduleId++;
         IsBusy = true;
         StatusMessage = string.Empty;
         try
         {
+            LoginTransitionProbe.Mark("auth.begin");
             var r = await _auth.AuthenticateByPinAsync(_pinEntry).ConfigureAwait(true);
+            LoginTransitionProbe.Mark(r.Ok ? "auth.ok" : "auth.fail");
             if (!r.Ok)
             {
                 StatusMessage = r.ErrorMessage ?? "Sign-in failed.";
                 SchedulePinClearAfterFailedAuth();
+                LoginTransitionProbe.Complete("auth.rejected");
                 return;
             }
 
             _session.SetSignedIn(r.StaffPk, r.LegacyId, r.DisplayName, r.Role, r.IsDeveloper);
+            LoginTransitionProbe.Mark("session.set");
             ApplyThemeFromAuth(r.UiTheme);
+            LoginTransitionProbe.Mark("theme.applied");
             ClearPin();
             if (r.RequiresPinChange)
             {
                 _rootNav.NavigateToForcedPinChange();
+                LoginTransitionProbe.Complete("nav.forcedPinChange");
             }
             else
             {
                 _rootNav.NavigateToMainShell();
+                LoginTransitionProbe.Mark("nav.mainShell.returned");
             }
         }
         finally
         {
             IsBusy = false;
+            Interlocked.Exchange(ref _submitGate, 0);
         }
     }
 

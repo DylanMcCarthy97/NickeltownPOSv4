@@ -986,7 +986,10 @@
             Background="{StaticResource PosCanvasBrush}"
             Visibility="{Binding IsAddDrinksWorkspaceOpen, Converter={StaticResource BoolToVis}, Mode=OneWay}"
             Canvas.ZIndex="25">
-            <panels:AddDrinksPanel DataContext="{Binding CurrentAddDrinksViewModel, Mode=OneWay}" />
+            <panels:AddDrinksPanel
+                x:Name="AddDrinksHost"
+                x:Load="False"
+                DataContext="{Binding CurrentAddDrinksViewModel, Mode=OneWay}" />
         </Grid>
     </Grid>
 </UserControl>

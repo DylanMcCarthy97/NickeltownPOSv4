@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml.Controls;
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.Themes;
 
 namespace NickeltownPOSV4.Services;
@@ -7,9 +8,15 @@ public sealed class RootNavigationCoordinator : IRootNavigationCoordinator
 {
     private readonly IPosThemeService _themes;
 
+    private readonly IUserSessionService _session;
+
     private Frame? _rootFrame;
 
-    public RootNavigationCoordinator(IPosThemeService themes) => _themes = themes;
+    public RootNavigationCoordinator(IPosThemeService themes, IUserSessionService session)
+    {
+        _themes = themes;
+        _session = session;
+    }
 
     public void Attach(Frame rootFrame) => _rootFrame = rootFrame;
 
@@ -53,6 +60,14 @@ public sealed class RootNavigationCoordinator : IRootNavigationCoordinator
             return;
         }
 
+        if (!_session.IsSignedIn)
+        {
+            NavigateToLogin();
+            return;
+        }
+
+        LoginTransitionProbe.Mark("root.nav.mainShell.begin");
         _ = _rootFrame.Navigate(typeof(Views.MainShell));
+        LoginTransitionProbe.Mark("root.nav.mainShell.returned");
     }
 }

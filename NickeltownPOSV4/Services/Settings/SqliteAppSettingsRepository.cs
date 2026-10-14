@@ -24,33 +24,35 @@ public sealed class SqliteAppSettingsRepository : IAppSettingsRepository
         _logger = logger;
     }
 
-    public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class
+    public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class =>
+        SqliteBackground.Run(() => ReadCore<T>(key), cancellationToken);
+
+    private T? ReadCore<T>(string key) where T : class
     {
-        cancellationToken.ThrowIfCancellationRequested();
         using var conn = _factory.OpenConnection();
         var row = conn.QuerySingleOrDefault<SettingsRow>(
             "SELECT Value, IsSecret FROM Settings WHERE Key = @Key",
             new { Key = key });
         if (row is null || string.IsNullOrWhiteSpace(row.Value))
         {
-            return Task.FromResult<T?>(null);
+            return null;
         }
 
         var json = ResolveStoredJson(row.Value, row.IsSecret == 1);
         if (json is null)
         {
             _logger.LogWarning("Could not read protected setting {Key}.", key);
-            return Task.FromResult<T?>(null);
+            return null;
         }
 
         try
         {
-            return Task.FromResult(JsonSerializer.Deserialize<T>(json, JsonOptions));
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Settings JSON invalid for key {Key}.", key);
-            return Task.FromResult<T?>(null);
+            return null;
         }
     }
 

@@ -1,15 +1,10 @@
 using System.ComponentModel;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using Microsoft.UI.Xaml;
-
 using Microsoft.UI.Xaml.Controls;
-
 using Microsoft.UI.Xaml.Navigation;
-
 using NickeltownPOSV4.Models;
-
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.ViewModels;
 
 
@@ -59,10 +54,10 @@ public sealed partial class WorkspacePage : Page
 
 
     public WorkspacePage()
-
     {
-
+        LoginTransitionProbe.Mark("workspace.ctor.begin");
         InitializeComponent();
+        LoginTransitionProbe.Mark("workspace.ctor.xaml");
 
         var vm = App.Services.GetRequiredService<WorkspacePageViewModel>();
 
@@ -71,7 +66,7 @@ public sealed partial class WorkspacePage : Page
         vm.PropertyChanged += OnViewModelPropertyChanged;
 
         SyncFromViewModel(vm);
-
+        LoginTransitionProbe.Mark("workspace.ctor.done");
     }
 
 
@@ -193,28 +188,59 @@ public sealed partial class WorkspacePage : Page
 
 
 
+    private bool _pitstopHostRealized;
+
     private void UpdateRouteLayout(WorkspacePageViewModel vm)
     {
         if (vm.IsTabsRoute)
         {
             ClassicWorkspacePanel.Visibility = Visibility.Collapsed;
             TabsWorkspaceHost.Visibility = Visibility.Visible;
-            PitstopRetailHost.Visibility = Visibility.Collapsed;
+            CollapsePitstopHost();
+            return;
         }
-        else if (vm.IsPitstopRoute)
+
+        if (vm.IsPitstopRoute)
         {
             ClassicWorkspacePanel.Visibility = Visibility.Collapsed;
             TabsWorkspaceHost.Visibility = Visibility.Collapsed;
-            PitstopRetailHost.Visibility = Visibility.Visible;
+            EnsurePitstopRetailHost();
+            if (_pitstopHostRealized)
+            {
+                PitstopRetailHost.Visibility = Visibility.Visible;
+            }
+
             var pitVm = App.Services.GetRequiredService<PitstopRetailViewModel>();
             _ = pitVm.RefreshCatalogFromDatabaseAsync();
+            return;
         }
-        else
+
+        ClassicWorkspacePanel.Visibility = Visibility.Visible;
+        TabsWorkspaceHost.Visibility = Visibility.Collapsed;
+        CollapsePitstopHost();
+    }
+
+    private void EnsurePitstopRetailHost()
+    {
+        if (_pitstopHostRealized)
         {
-            ClassicWorkspacePanel.Visibility = Visibility.Visible;
-            TabsWorkspaceHost.Visibility = Visibility.Collapsed;
-            PitstopRetailHost.Visibility = Visibility.Collapsed;
+            return;
         }
+
+        LoginTransitionProbe.Mark("pitstop.realize.begin");
+        _ = FindName(nameof(PitstopRetailHost));
+        _pitstopHostRealized = true;
+        LoginTransitionProbe.Mark("pitstop.realize.done");
+    }
+
+    private void CollapsePitstopHost()
+    {
+        if (!_pitstopHostRealized)
+        {
+            return;
+        }
+
+        PitstopRetailHost.Visibility = Visibility.Collapsed;
     }
 
 }

@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.0",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.0/NickeltownPOSV4_2.0.0.0_x64.msix",
-  "releaseNotes": "Stock Management v2 for Toshiba 1024×768: bottom job bar, segmented filters, slim list rows, scan→action sheet, guided receive/count, shopping checklist, reliable barcode + stock tracking.",
+  "version": "2.0.0.1",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.1/NickeltownPOSV4_2.0.0.1_x64.msix",
+  "releaseNotes": "Restores fast PIN login (hash verify off UI thread + memoize) that was missing from 2.0.0.0, while keeping Stock Management v2.",
   "mandatory": false
 }

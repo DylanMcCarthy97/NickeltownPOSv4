@@ -576,15 +576,18 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
     }
 
-    public Task<int> CountArchivedTabsAsync(CancellationToken cancellationToken = default)
-    {
-        using var conn = _factory.OpenConnection();
-        var n = conn.ExecuteScalar<long>(
-            new CommandDefinition(
-                "SELECT COUNT(*) FROM Tabs WHERE IsArchived != 0 AND COALESCE(IsDeleted,0) = 0",
-                cancellationToken: cancellationToken));
-        return Task.FromResult((int)n);
-    }
+    public Task<int> CountArchivedTabsAsync(CancellationToken cancellationToken = default) =>
+        SqliteBackground.Run(
+            () =>
+            {
+                using var conn = _factory.OpenConnection();
+                var n = conn.ExecuteScalar<long>(
+                    new CommandDefinition(
+                        "SELECT COUNT(*) FROM Tabs WHERE IsArchived != 0 AND COALESCE(IsDeleted,0) = 0",
+                        cancellationToken: cancellationToken));
+                return (int)n;
+            },
+            cancellationToken);
 
     public Task<IReadOnlyList<ArchivedTabListItem>> GetArchivedTabsPageAsync(
         int pageIndex,
@@ -602,37 +605,42 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
 
         var skip = pageIndex * pageSize;
-        using var conn = _factory.OpenConnection();
-        var rows = conn.Query<ArchivedSqlRow>(
-            new CommandDefinition(
-                """
-                SELECT LegacyId, DisplayName, Name, Balance,
-                  COALESCE(LastActivityAt, UpdatedAt, CreatedAt) AS ActivityStamp
-                FROM Tabs
-                WHERE IsArchived != 0 AND COALESCE(IsDeleted,0) = 0
-                ORDER BY datetime(COALESCE(LastActivityAt, UpdatedAt, CreatedAt)) DESC, Id DESC
-                LIMIT @Take OFFSET @Skip
-                """,
-                new { Take = pageSize, Skip = skip },
-                cancellationToken: cancellationToken));
+        return SqliteBackground.Run(
+            () =>
+            {
+                using var conn = _factory.OpenConnection();
+                var rows = conn.Query<ArchivedSqlRow>(
+                    new CommandDefinition(
+                        """
+                        SELECT LegacyId, DisplayName, Name, Balance,
+                          COALESCE(LastActivityAt, UpdatedAt, CreatedAt) AS ActivityStamp
+                        FROM Tabs
+                        WHERE IsArchived != 0 AND COALESCE(IsDeleted,0) = 0
+                        ORDER BY datetime(COALESCE(LastActivityAt, UpdatedAt, CreatedAt)) DESC, Id DESC
+                        LIMIT @Take OFFSET @Skip
+                        """,
+                        new { Take = pageSize, Skip = skip },
+                        cancellationToken: cancellationToken));
 
-        var list = new List<ArchivedTabListItem>();
-        foreach (var r in rows)
-        {
-            var label = string.IsNullOrWhiteSpace(r.DisplayName) ? r.Name : r.DisplayName;
-            var stamp = r.ActivityStamp;
-            var last = string.IsNullOrWhiteSpace(stamp)
-                ? "—"
-                : FormatActivity(stamp);
-            list.Add(
-                new ArchivedTabListItem(
-                    r.LegacyId ?? string.Empty,
-                    label?.Trim() ?? r.LegacyId ?? "?",
-                    r.Balance,
-                    last));
-        }
+                var list = new List<ArchivedTabListItem>();
+                foreach (var r in rows)
+                {
+                    var label = string.IsNullOrWhiteSpace(r.DisplayName) ? r.Name : r.DisplayName;
+                    var stamp = r.ActivityStamp;
+                    var last = string.IsNullOrWhiteSpace(stamp)
+                        ? "—"
+                        : FormatActivity(stamp);
+                    list.Add(
+                        new ArchivedTabListItem(
+                            r.LegacyId ?? string.Empty,
+                            label?.Trim() ?? r.LegacyId ?? "?",
+                            r.Balance,
+                            last));
+                }
 
-        return Task.FromResult<IReadOnlyList<ArchivedTabListItem>>(list);
+                return (IReadOnlyList<ArchivedTabListItem>)list;
+            },
+            cancellationToken);
     }
 
     public Task<IReadOnlyList<GuestCloseoutRow>> GetOpenGuestTabsForCloseoutAsync(CancellationToken cancellationToken = default)

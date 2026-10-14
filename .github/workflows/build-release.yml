@@ -272,6 +272,8 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        # Stamp package version dirties Package.appxmanifest; drop it so checkout main can proceed.
+        git reset --hard HEAD
         git fetch origin main
         git checkout -B main origin/main
 

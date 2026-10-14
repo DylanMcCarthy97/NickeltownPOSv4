@@ -1,5 +1,6 @@
 using System;
 using Microsoft.UI.Xaml.Controls;
+using NickeltownPOSV4.Services.Logging;
 
 namespace NickeltownPOSV4.Services;
 
@@ -21,6 +22,13 @@ public sealed class NavigationService : INavigationService
             return false;
         }
 
+        if (_shellFrame.CurrentSourcePageType == pageType)
+        {
+            LoginTransitionProbe.Mark("shell.nav.reuse." + pageType.Name);
+            return false;
+        }
+
+        LoginTransitionProbe.Mark("shell.nav.to." + pageType.Name);
         return _shellFrame.Navigate(pageType, parameter);
     }
 
