@@ -72,17 +72,15 @@ public sealed class StockShoppingListRowViewModel
         Name = row.Name;
         CategoryLine = StockInventoryLevelHelper.BuildCategoryLine(row);
         HaveQty = row.StockQty;
-        NeedQty = StockInventoryLevelHelper.NeedQty(row);
+        UnitsToBuy = StockInventoryLevelHelper.NeedQty(row);
+        NeedQty = UnitsToBuy;
         Status = StockInventoryLevelHelper.ResolveStatus(row);
-        if (NeedQty <= 0 && Status == StockVolunteerStatus.OutOfStock)
-        {
-            var target = StockInventoryLevelHelper.ResolveTargetAmount(row);
-            NeedQty = target is > 0 ? target.Value : 0;
-        }
-
-        SuggestedLine = StockInventoryLevelHelper.FormatSuggestedLine(row);
-        HasSetupWarning = row.PurchaseUnitQty is not > 0 && NeedQty > 0;
-        SetupHint = HasSetupWarning ? "Set pack size in product setup." : string.Empty;
+        PacksToBuy = StockInventoryLevelHelper.ResolvePacksToBuy(row);
+        SuggestedLine = PacksToBuy is int packs
+            ? packs + " pack" + (packs == 1 ? string.Empty : "s")
+            : string.Empty;
+        HasSetupWarning = PacksToBuy is null && UnitsToBuy > 0;
+        SetupHint = string.Empty; // Pack-size note is a single footer list, not per-row spam.
         StatusText = StockInventoryLevelHelper.StatusDisplayText(row);
         StatusAccentColor = StockInventoryLevelHelper.StatusAccentColor(row);
         StatusPillBackground = ToLightTint(StatusAccentColor);
@@ -100,21 +98,30 @@ public sealed class StockShoppingListRowViewModel
     public string Name { get; }
     public string CategoryLine { get; }
     public int HaveQty { get; }
+
+    /// <summary>Individual units required to reach target (never recommended as zero on a purchase list).</summary>
+    public int UnitsToBuy { get; }
+
+    /// <summary>Alias of <see cref="UnitsToBuy"/> for older call sites.</summary>
     public int NeedQty { get; }
+
+    /// <summary>Whole packs/cartons to buy when pack size is configured; otherwise null.</summary>
+    public int? PacksToBuy { get; }
+
     public StockVolunteerStatus Status { get; }
     public int SortPriority { get; }
     public string StatusText { get; }
     public string StatusAccentColor { get; }
     public string StatusPillBackground { get; }
     public bool IsMerch { get; }
-    public string HaveLine => "Have: " + HaveQty;
-    public string NeedLine => "Need: " + NeedQty;
+    public string HaveLine => "In stock: " + HaveQty;
+    public string NeedLine => "Buy: " + UnitsToBuy;
     public string SuggestedLine { get; }
     public bool HasSetupWarning { get; }
     public string SetupHint { get; }
     public string SuggestedDisplayLine => string.IsNullOrEmpty(SuggestedLine)
         ? string.Empty
-        : "Suggested: " + SuggestedLine;
+        : "Packs: " + SuggestedLine;
 
     private static string ToLightTint(string accent)
     {

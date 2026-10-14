@@ -1,23 +1,22 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models.Settings;
 using NickeltownPOSV4.Services.Settings;
 
 namespace NickeltownPOSV4.Services.Stock;
 
+/// <summary>Saturday automated BAR shopping-list email only (never merchandise).</summary>
 public sealed class ShoppingListEmailService : IShoppingListEmailService
 {
-    private readonly IStockEditingService _stock;
+    private readonly Data.Sqlite.IStockEditingService _stock;
     private readonly IEmailConfigService _emailConfig;
     private readonly IEmailSender _email;
     private readonly ILogger<ShoppingListEmailService> _logger;
 
     public ShoppingListEmailService(
-        IStockEditingService stock,
+        Data.Sqlite.IStockEditingService stock,
         IEmailConfigService emailConfig,
         IEmailSender email,
         ILogger<ShoppingListEmailService> logger)
@@ -33,18 +32,18 @@ public sealed class ShoppingListEmailService : IShoppingListEmailService
         var config = await _emailConfig.LoadAsync(cancellationToken).ConfigureAwait(false);
         if (!config.ShoppingListSaturdayEmailEnabled)
         {
-            return new ShoppingListEmailResult(true, "Saturday shopping-list email is disabled.", Skipped: true);
+            return new ShoppingListEmailResult(true, "Saturday bar shopping-list email is disabled.", Skipped: true);
         }
 
         if (!EmailAddressValidation.IsValid(config.ShoppingListRecipientEmail))
         {
-            _logger.LogWarning("Saturday shopping-list email enabled but recipient is missing or invalid.");
+            _logger.LogWarning("Saturday bar shopping-list email enabled but recipient is missing or invalid.");
             return new ShoppingListEmailResult(false, "Shopping-list recipient email is missing or invalid.");
         }
 
         if (!SaturdayEmailClaim.TryClaim(SaturdayEmailClaim.ShoppingListKind))
         {
-            return new ShoppingListEmailResult(true, "Shopping-list email already claimed for today.", Skipped: true);
+            return new ShoppingListEmailResult(true, "Bar shopping-list email already claimed for today.", Skipped: true);
         }
 
         try
@@ -57,11 +56,11 @@ public sealed class ShoppingListEmailService : IShoppingListEmailService
 
             if (result.Succeeded)
             {
-                _logger.LogInformation("Saturday shopping-list email: {Message}", result.Message);
+                _logger.LogInformation("Saturday bar shopping-list email: {Message}", result.Message);
             }
             else
             {
-                _logger.LogWarning("Saturday shopping-list email failed: {Message}", result.Message);
+                _logger.LogWarning("Saturday bar shopping-list email failed: {Message}", result.Message);
             }
 
             return result;
@@ -69,7 +68,7 @@ public sealed class ShoppingListEmailService : IShoppingListEmailService
         catch (Exception ex)
         {
             SaturdayEmailClaim.ReleaseIfSendFailed(SaturdayEmailClaim.ShoppingListKind);
-            _logger.LogError(ex, "Saturday shopping-list email failed.");
+            _logger.LogError(ex, "Saturday bar shopping-list email failed.");
             return new ShoppingListEmailResult(false, ex.Message);
         }
     }
@@ -87,14 +86,14 @@ public sealed class ShoppingListEmailService : IShoppingListEmailService
             var result = await SendCoreAsync(config, isTest: true, cancellationToken).ConfigureAwait(false);
             if (result.Succeeded)
             {
-                _logger.LogInformation("Test shopping-list email: {Message}", result.Message);
+                _logger.LogInformation("Test bar shopping-list email: {Message}", result.Message);
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Test shopping-list email failed.");
+            _logger.LogError(ex, "Test bar shopping-list email failed.");
             return new ShoppingListEmailResult(false, ex.Message);
         }
     }
@@ -104,22 +103,24 @@ public sealed class ShoppingListEmailService : IShoppingListEmailService
         bool isTest,
         CancellationToken cancellationToken)
     {
+        // Same stock snapshot source as the Saturday stock report (active catalog rows).
         var stockRows = await _stock.GetStockRowsAsync(includeInactive: false, cancellationToken).ConfigureAwait(false);
-        var listRows = ShoppingListEmailComposer.BuildRows(stockRows);
+        // Automated email is BAR only — merchandise is never included.
+        var snapshot = ShoppingListEmailComposer.BuildSnapshot(stockRows, ShoppingListKind.Bar);
         var to = new[] { EmailAddressValidation.Normalize(config.ShoppingListRecipientEmail) };
         var dateLabel = DateTime.Now.ToString("yyyy-MM-dd");
 
-        if (listRows.Count == 0)
+        if (snapshot.PurchaseRows.Count == 0)
         {
             if (!isTest && config.ShoppingListSkipWhenEmpty)
             {
-                return new ShoppingListEmailResult(true, "Shopping list empty — email skipped.", Skipped: true);
+                return new ShoppingListEmailResult(true, "Bar shopping list empty — email skipped.", Skipped: true);
             }
 
             await _email.SendToAsync(
                 subject: (isTest ? "[TEST] " : string.Empty)
-                    + $"Nickeltown shopping list — clear ({dateLabel})",
-                body: ShoppingListEmailComposer.BuildEmptyConfirmationBody(isTest),
+                    + $"Nickeltown bar shopping list — clear ({dateLabel})",
+                body: ShoppingListEmailComposer.BuildEmptyConfirmationBody(ShoppingListKind.Bar, isTest),
                 toRecipients: to,
                 attachments: null,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -127,16 +128,16 @@ public sealed class ShoppingListEmailService : IShoppingListEmailService
             return new ShoppingListEmailResult(
                 true,
                 isTest
-                    ? $"Test confirmation sent to {to[0]} (list empty)."
-                    : $"Empty-list confirmation sent to {to[0]}.");
+                    ? $"Test confirmation sent to {to[0]} (bar list empty)."
+                    : $"Empty bar-list confirmation sent to {to[0]}.");
         }
 
-        var pdf = ShoppingListEmailComposer.BuildPdf(listRows);
-        var fileName = $"Shopping_List_{DateTime.Now:yyyyMMdd}.pdf";
+        var pdf = ShoppingListEmailComposer.BuildPdf(snapshot);
+        var fileName = $"{ShoppingListCatalog.FileStem(ShoppingListKind.Bar)}_{DateTime.Now:yyyyMMdd}.pdf";
         await _email.SendToAsync(
             subject: (isTest ? "[TEST] " : string.Empty)
-                + $"Nickeltown shopping list — {DateTime.Now:dddd d MMMM yyyy}",
-            body: ShoppingListEmailComposer.BuildEmailBody(listRows, isTest),
+                + $"Nickeltown bar shopping list — {DateTime.Now:dddd d MMMM yyyy}",
+            body: ShoppingListEmailComposer.BuildEmailBody(snapshot, isTest, isSaturdaySchedule: !isTest),
             toRecipients: to,
             attachments: [new EmailAttachment(fileName, pdf, "application/pdf")],
             cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -144,7 +145,7 @@ public sealed class ShoppingListEmailService : IShoppingListEmailService
         return new ShoppingListEmailResult(
             true,
             isTest
-                ? $"Test shopping-list email sent to {to[0]} ({listRows.Count} items)."
-                : $"Shopping-list email sent to {to[0]} ({listRows.Count} items).");
+                ? $"Test bar shopping-list email sent to {to[0]} ({snapshot.PurchaseRows.Count} products)."
+                : $"Bar shopping-list email sent to {to[0]} ({snapshot.PurchaseRows.Count} products).");
     }
 }

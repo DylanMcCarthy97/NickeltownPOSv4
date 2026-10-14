@@ -181,31 +181,34 @@ public static class StockInventoryLevelHelper
             _ => "#FF6B7280",
         };
 
-    public static string FormatSuggestedLine(StockEditorRow row)
+    /// <summary>Whole packs to purchase from units needed ÷ pack size; null when pack size unset.</summary>
+    public static int? ResolvePacksToBuy(StockEditorRow row)
     {
         var need = NeedQty(row);
-        if (need <= 0 && ResolveStatus(row) == StockVolunteerStatus.OutOfStock)
-        {
-            var target = ResolveTargetAmount(row);
-            if (target is > 0)
-            {
-                need = target.Value;
-            }
-        }
-
         if (need <= 0)
         {
-            return string.Empty;
+            return null;
         }
 
         var pack = row.PurchaseUnitQty;
         if (pack is not > 0)
         {
-            return "Pack size not set";
+            return null;
         }
 
-        var packs = (int)Math.Ceiling(need / (double)pack.Value);
-        return packs + " x " + pack.Value + " Pack";
+        return (int)Math.Ceiling(need / (double)pack.Value);
+    }
+
+    public static string FormatSuggestedLine(StockEditorRow row)
+    {
+        var packs = ResolvePacksToBuy(row);
+        if (packs is null)
+        {
+            return string.Empty;
+        }
+
+        var packSize = row.PurchaseUnitQty!.Value;
+        return packs.Value + " x " + packSize + " Pack";
     }
 
     public static string FormatSuggestedBuy(StockEditorRow row) => FormatSuggestedLine(row);

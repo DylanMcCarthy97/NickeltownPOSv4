@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.6",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.6/NickeltownPOSV4_2.0.0.6_x64.msix",
-  "releaseNotes": "Fix Email settings: tap fields were stuck disabled after load. Tap a field to open the keyboard and edit.",
+  "version": "2.0.0.7",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.7/NickeltownPOSV4_2.0.0.7_x64.msix",
+  "releaseNotes": "Split bar and merchandise shopping lists; compact one-page PDFs; Saturday email sends bar list only.",
   "mandatory": false
 }

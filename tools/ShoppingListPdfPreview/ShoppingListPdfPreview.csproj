@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ShoppingListPdfPreview</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="iTextSharp.LGPLv2.Core" Version="3.4.20" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\NickeltownPOSV4\Assets\FlounderersLogo.png" Link="Assets\FlounderersLogo.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

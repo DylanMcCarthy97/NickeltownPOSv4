@@ -21,7 +21,7 @@ public sealed class AppEmailConfig
     public List<string> RecipientEmails { get; set; } = new();
 
     /// <summary>
-    /// Sole recipient for automated Saturday shopping-list emails.
+    /// Sole recipient for automated Saturday BAR shopping-list emails (never merchandise).
     /// Never seeded from <see cref="RecipientEmails"/> — must be set explicitly.
     /// </summary>
     public string ShoppingListRecipientEmail { get; set; } = string.Empty;
