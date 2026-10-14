@@ -12,6 +12,7 @@ using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Complimentary;
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.Services.Tabs;
 using NickeltownPOSV4.Views;
 using NickeltownPOSV4.Views.Panels;
@@ -119,6 +120,8 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private int _guestTabsCount;
 
     private int _archivedTabsCount;
+
+    private int _archivedCountHint;
 
     private TabCardModel? _selectedTab;
 
@@ -433,6 +436,16 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
             UpdateWelcomeFromSession();
         }
 
+        if (e.PropertyName is nameof(IUserSessionService.IsSignedIn) or null or ""
+            && !_session.IsSignedIn)
+        {
+            ResetToTabsBoard();
+            SetBoardMode(TabsBoardMode.OpenTabs);
+            ClearAllTabSelections();
+            SelectedTab = null;
+            _lastSelectedTabId = null;
+        }
+
         if (e.PropertyName is nameof(IUserSessionService.IsAdmin) or nameof(IUserSessionService.IsSignedIn) or null or "")
         {
             OnPropertyChanged(nameof(CanToggleBathurstTheme));
@@ -588,19 +601,29 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public async Task RefreshTabsFromDatabaseAsync()
     {
-        await _bathurstTheme.ReloadAsync().ConfigureAwait(true);
-        SyncBathurstFromService();
+        LoginTransitionProbe.Mark("tabs.refresh.begin");
         try
         {
             var rows = await _tabQuery.GetOpenTabCardsAsync().ConfigureAwait(true);
+            LoginTransitionProbe.Mark("tabs.openCards");
             _fullOpenTabs.Clear();
             _fullOpenTabs.AddRange(TabsBoardCatalogHelper.SortForBoard(rows));
             DataStatusHint = TabsBoardHintsHelper.BuildLiveTabsStatusHint(_fullOpenTabs);
 
-            await LoadArchivedTabCardsAsync().ConfigureAwait(true);
+            if (BoardMode == TabsBoardMode.ArchivedTabs)
+            {
+                await LoadArchivedTabCardsAsync().ConfigureAwait(true);
+            }
+
             UpdateModeCounts();
             RebuildBoardPage();
             TryReselectTabAfterReload();
+            LoginTransitionProbe.Mark("tabs.boardReady");
+
+            if (BoardMode != TabsBoardMode.ArchivedTabs)
+            {
+                _ = RefreshArchivedCountThenNotifyAsync();
+            }
         }
         catch
         {
@@ -614,7 +637,7 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
         RaiseToolbarHeaderHints();
         RaiseActionBarProperties();
-        await LoadQuickFreeItemsAsync().ConfigureAwait(true);
+        _ = LoadQuickFreeItemsAsync();
     }
 
     private async Task LoadArchivedTabCardsAsync()
@@ -639,11 +662,22 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
                     isMember: true,
                     isGuest: false));
             }
+
+            _archivedCountHint = _archivedTabCards.Count;
         }
         catch
         {
             // Archived list is optional for board display; leave empty.
         }
+    }
+
+    private async Task LoadArchivedThenRebuildAsync()
+    {
+        await LoadArchivedTabCardsAsync().ConfigureAwait(true);
+        UpdateModeCounts();
+        RebuildBoardPage();
+        TryReselectTabAfterReload();
+        RaiseActionBarProperties();
     }
 
     private void TryReselectTabAfterReload()
@@ -919,10 +953,28 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     {
         OpenTabsCount = TabsBoardCatalogHelper.MemberTabsOnly(_fullOpenTabs).Count();
         GuestTabsCount = _fullOpenTabs.Count(t => t.IsGuest);
-        ArchivedTabsCount = _archivedTabCards.Count;
+        ArchivedTabsCount = _archivedTabCards.Count > 0 ? _archivedTabCards.Count : _archivedCountHint;
         OnPropertyChanged(nameof(OpenTabsCount));
         OnPropertyChanged(nameof(GuestTabsCount));
         OnPropertyChanged(nameof(ArchivedTabsCount));
+    }
+
+    private async Task RefreshArchivedCountAsync()
+    {
+        try
+        {
+            _archivedCountHint = await _tabManagement.CountArchivedTabsAsync().ConfigureAwait(true);
+        }
+        catch
+        {
+            _archivedCountHint = _archivedTabCards.Count;
+        }
+    }
+
+    private async Task RefreshArchivedCountThenNotifyAsync()
+    {
+        await RefreshArchivedCountAsync().ConfigureAwait(true);
+        UpdateModeCounts();
     }
 
     private void SetBoardMode(TabsBoardMode mode)
@@ -939,6 +991,11 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
         var previousTabId = _lastSelectedTabId;
         BoardMode = mode;
+        if (mode == TabsBoardMode.ArchivedTabs)
+        {
+            _ = LoadArchivedThenRebuildAsync();
+        }
+
         RebuildBoardPage();
 
         if (string.IsNullOrEmpty(previousTabId))

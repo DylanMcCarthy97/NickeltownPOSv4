@@ -357,11 +357,13 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
 
     public Task<IReadOnlyList<QuickFreeButtonRow>> GetButtonsAsync(
         DateOnly localDate,
-        CancellationToken cancellationToken = default)
-    {
-        using var conn = _factory.OpenConnection();
-        var date = localDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var rows = conn.Query<QuickFreeButtonRow>(
+        CancellationToken cancellationToken = default) =>
+        SqliteBackground.Run(
+            () =>
+            {
+                using var conn = _factory.OpenConnection();
+                var date = localDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                var rows = conn.Query<QuickFreeButtonRow>(
             new CommandDefinition(
                 $"""
                 SELECT
@@ -387,8 +389,9 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
                 """,
                 new { date },
                 cancellationToken: cancellationToken));
-        return Task.FromResult<IReadOnlyList<QuickFreeButtonRow>>(rows.AsList());
-    }
+                return (IReadOnlyList<QuickFreeButtonRow>)rows.AsList();
+            },
+            cancellationToken);
 
     public Task<int> GetTodayCountAsync(
         long itemId,

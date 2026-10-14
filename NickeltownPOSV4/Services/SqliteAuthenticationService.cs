@@ -21,18 +21,25 @@ public sealed class SqliteAuthenticationService : IAuthenticationService
         _logger = logger;
     }
 
-    public Task<AuthenticationResult> AuthenticateByPinAsync(string pin, CancellationToken cancellationToken = default)
+    public async Task<AuthenticationResult> AuthenticateByPinAsync(string pin, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            return Task.FromResult(_pinCache.Authenticate(pin ?? string.Empty));
+            var entered = pin ?? string.Empty;
+            // PBKDF2 (~100k SHA-256) must not run on the WinUI thread: Task.FromResult
+            // completed synchronously and froze the PIN pad before IsBusy could paint.
+            return await Task.Run(() => _pinCache.Authenticate(entered), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "PIN authentication failed.");
-            return Task.FromResult(
-                AuthenticationResult.Fail("Sign-in is unavailable right now. Check the database, then try again."));
+            return AuthenticationResult.Fail("Sign-in is unavailable right now. Check the database, then try again.");
         }
     }
 
@@ -149,6 +156,7 @@ public sealed class StaffPinLookupCache : IStaffPinLookupCache
 
         if (byPlain.TryGetValue(trimmed, out var plainMatches))
         {
+            Logging.LoginTransitionProbe.Mark("auth.pin.cached");
             return ResultFromMatches(plainMatches);
         }
 
@@ -161,7 +169,66 @@ public sealed class StaffPinLookupCache : IStaffPinLookupCache
             }
         }
 
+        if (hashMatches.Count == 1)
+        {
+            RememberPlainPin(trimmed, hashMatches[0]);
+            Logging.LoginTransitionProbe.Mark("auth.pin.hashed.memoized");
+        }
+        else if (hashOnly.Count > 0)
+        {
+            Logging.LoginTransitionProbe.Mark(
+                hashMatches.Count == 0 ? "auth.pin.hashed.miss" : "auth.pin.hashed.duplicate");
+        }
+
         return ResultFromMatches(hashMatches);
+    }
+
+    /// <summary>
+    /// After a unique hash match, later logins for the same PIN are a dictionary hit.
+    /// Skips the write if Refresh already replaced this entry (PIN change / restaff).
+    /// </summary>
+    private void RememberPlainPin(string pin, StaffAuthEntry entry)
+    {
+        lock (_gate)
+        {
+            if (_byPlainPin.ContainsKey(pin))
+            {
+                return;
+            }
+
+            StaffAuthEntry? stillHashOnly = null;
+            foreach (var candidate in _hashOnly)
+            {
+                if (candidate.Id == entry.Id
+                    && string.Equals(candidate.PinHash, entry.PinHash, StringComparison.Ordinal)
+                    && string.Equals(candidate.PinSalt, entry.PinSalt, StringComparison.Ordinal))
+                {
+                    stillHashOnly = candidate;
+                    break;
+                }
+            }
+
+            if (stillHashOnly is null)
+            {
+                return;
+            }
+
+            var byPlain = new Dictionary<string, List<StaffAuthEntry>>(_byPlainPin, StringComparer.Ordinal)
+            {
+                [pin] = [stillHashOnly],
+            };
+            var hashOnly = new List<StaffAuthEntry>(_hashOnly.Count);
+            foreach (var candidate in _hashOnly)
+            {
+                if (candidate.Id != entry.Id)
+                {
+                    hashOnly.Add(candidate);
+                }
+            }
+
+            _byPlainPin = byPlain;
+            _hashOnly = hashOnly;
+        }
     }
 
     private static AuthenticationResult ResultFromMatches(List<StaffAuthEntry> matches)

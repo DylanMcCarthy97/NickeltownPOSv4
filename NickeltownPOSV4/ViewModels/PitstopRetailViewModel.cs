@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
@@ -176,6 +177,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         _audit = audit;
         _signOut = signOut;
         _refreshBus.RefreshRequested += OnSharedPosDataRefreshRequested;
+        _session.PropertyChanged += OnSessionPropertyChanged;
 
         CategoryChips = new ObservableCollection<PitstopCategoryChipViewModel>();
         ProductTiles = new ObservableCollection<PitstopProductTileViewModel>();
@@ -209,6 +211,27 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     public IRelayCommand SignOutCommand { get; }
 
     private void SignOut() => _signOut.SignOut();
+
+    private void OnSessionPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(IUserSessionService.IsSignedIn) or null or ""
+            && !_session.IsSignedIn)
+        {
+            ResetForSignedOutSession();
+        }
+    }
+
+    private void ResetForSignedOutSession()
+    {
+        BarcodeBuffer = string.Empty;
+        StatusMessage = string.Empty;
+        if (IsSendingSquare)
+        {
+            CancelCardPayment();
+        }
+
+        ClearCart();
+    }
 
     public PitstopCashNumpadHostViewModel CashNumpad => _cashNumpad;
 
@@ -646,7 +669,6 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         StartClock();
         await LoadPreferencesAsync().ConfigureAwait(true);
         await RefreshSquareStatusPillAsync().ConfigureAwait(true);
-        await RefreshCatalogFromDatabaseAsync().ConfigureAwait(true);
         await RefreshHeldSaleCountAsync().ConfigureAwait(true);
     }
 

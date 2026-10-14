@@ -18,40 +18,47 @@ public sealed class SqliteBarCatalogQuery : IItemCatalogQuery
           || trim(COALESCE(NULLIF(TRIM(i.CatalogSubCategory), ''), 'Drinks'))
         """;
 
-    public Task<IReadOnlyList<string>> GetBarCategoryNamesAsync(CancellationToken cancellationToken = default)
-    {
-        using var conn = _factory.OpenConnection();
-        var sql = $"""
-            SELECT DISTINCT {CategoryExpr} AS Cat
-            FROM Items i
-            WHERE COALESCE(i.IsActive, 1) != 0
-              AND COALESCE(i.ShowInBar, 1) != 0
-              AND lower(trim(COALESCE(NULLIF(TRIM(i.CatalogBucket), ''), 'Bar'))) IN ('bar', 'shared')
-              AND (
-                EXISTS (
-                  SELECT 1
-                  FROM ItemPrices ip
-                  WHERE ip.ItemId = i.Id AND COALESCE(ip.PriceKind, 'Bar') = 'Bar'
-                )
-                OR COALESCE(i.UsesOpenPrice, 0) != 0
-                OR EXISTS (
-                  SELECT 1
-                  FROM ItemPrices ipp
-                  WHERE ipp.ItemId = i.Id
-                    AND lower(trim(COALESCE(ipp.PriceKind, ''))) = 'pitstop'
-                    AND ipp.Price > 0
-                )
-              )
-            ORDER BY Cat
-            """;
-        var rows = conn.Query<string>(new CommandDefinition(sql, cancellationToken: cancellationToken));
-        return Task.FromResult<IReadOnlyList<string>>(rows.AsList());
-    }
+    public Task<IReadOnlyList<string>> GetBarCategoryNamesAsync(CancellationToken cancellationToken = default) =>
+        SqliteBackground.Run(
+            () =>
+            {
+                using var conn = _factory.OpenConnection();
+                var sql = $"""
+                    SELECT DISTINCT {CategoryExpr} AS Cat
+                    FROM Items i
+                    WHERE COALESCE(i.IsActive, 1) != 0
+                      AND COALESCE(i.ShowInBar, 1) != 0
+                      AND lower(trim(COALESCE(NULLIF(TRIM(i.CatalogBucket), ''), 'Bar'))) IN ('bar', 'shared')
+                      AND (
+                        EXISTS (
+                          SELECT 1
+                          FROM ItemPrices ip
+                          WHERE ip.ItemId = i.Id AND COALESCE(ip.PriceKind, 'Bar') = 'Bar'
+                        )
+                        OR COALESCE(i.UsesOpenPrice, 0) != 0
+                        OR EXISTS (
+                          SELECT 1
+                          FROM ItemPrices ipp
+                          WHERE ipp.ItemId = i.Id
+                            AND lower(trim(COALESCE(ipp.PriceKind, ''))) = 'pitstop'
+                            AND ipp.Price > 0
+                        )
+                      )
+                    ORDER BY Cat
+                    """;
+                var rows = conn.Query<string>(new CommandDefinition(sql, cancellationToken: cancellationToken));
+                return (IReadOnlyList<string>)rows.AsList();
+            },
+            cancellationToken);
 
-    public Task<IReadOnlyList<BarCatalogProductRow>> GetBarProductsAsync(string? categoryName, CancellationToken cancellationToken = default)
-    {
-        using var conn = _factory.OpenConnection();
-        var sql = $"""
+    public Task<IReadOnlyList<BarCatalogProductRow>> GetBarProductsAsync(
+        string? categoryName,
+        CancellationToken cancellationToken = default) =>
+        SqliteBackground.Run(
+            () =>
+            {
+                using var conn = _factory.OpenConnection();
+                var sql = $"""
             SELECT
               i.Id AS ItemId,
               i.Name,
@@ -127,8 +134,9 @@ public sealed class SqliteBarCatalogQuery : IItemCatalogQuery
             ORDER BY i.Name COLLATE NOCASE
             """;
 
-        var rows = conn.Query<BarCatalogProductRow>(
-            new CommandDefinition(sql, new { CategoryName = categoryName }, cancellationToken: cancellationToken));
-        return Task.FromResult<IReadOnlyList<BarCatalogProductRow>>(rows.AsList());
-    }
+                var rows = conn.Query<BarCatalogProductRow>(
+                    new CommandDefinition(sql, new { CategoryName = categoryName }, cancellationToken: cancellationToken));
+                return (IReadOnlyList<BarCatalogProductRow>)rows.AsList();
+            },
+            cancellationToken);
 }

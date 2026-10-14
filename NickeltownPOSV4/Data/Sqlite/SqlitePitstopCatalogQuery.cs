@@ -83,68 +83,76 @@ public sealed class SqlitePitstopCatalogQuery : IPitstopCatalogQuery
          )
         """;
 
-    public Task<IReadOnlyList<string>> GetPitstopCategoryNamesAsync(CancellationToken cancellationToken = default)
-    {
-        using var conn = _factory.OpenConnection();
-        var sql = $"""
-            SELECT DISTINCT {PitstopSubCategoryExpr} AS Cat
-            FROM Items i
-            WHERE COALESCE(i.IsActive, 1) != 0
-              AND COALESCE(i.ShowInPitstop, 0) != 0
-              {PitstopSellableBucketFilter}
-              {HasSellablePitstopPriceFilter}
-            ORDER BY Cat COLLATE NOCASE
-            """;
-        var rows = conn.Query<string>(new CommandDefinition(sql, cancellationToken: cancellationToken));
-        return Task.FromResult<IReadOnlyList<string>>(rows.AsList());
-    }
+    public Task<IReadOnlyList<string>> GetPitstopCategoryNamesAsync(CancellationToken cancellationToken = default) =>
+        SqliteBackground.Run(
+            () =>
+            {
+                using var conn = _factory.OpenConnection();
+                var sql = $"""
+                    SELECT DISTINCT {PitstopSubCategoryExpr} AS Cat
+                    FROM Items i
+                    WHERE COALESCE(i.IsActive, 1) != 0
+                      AND COALESCE(i.ShowInPitstop, 0) != 0
+                      {PitstopSellableBucketFilter}
+                      {HasSellablePitstopPriceFilter}
+                    ORDER BY Cat COLLATE NOCASE
+                    """;
+                var rows = conn.Query<string>(new CommandDefinition(sql, cancellationToken: cancellationToken));
+                return (IReadOnlyList<string>)rows.AsList();
+            },
+            cancellationToken);
 
-    public Task<IReadOnlyList<PitstopCatalogProductRow>> GetPitstopProductsAsync(string? categoryName, CancellationToken cancellationToken = default)
-    {
-        using var conn = _factory.OpenConnection();
-        var sql = $"""
-            SELECT
-              i.Id AS ItemId,
-              i.Name,
-              {PitstopSubCategoryExpr} AS CategoryName,
-              {PitstopBucketExpr} AS CatalogBucket,
-              {EffectivePitstopPriceExpr} AS PitstopPrice,
-              CAST(COALESCE((
-                SELECT ips.Price
-                FROM ItemPrices ips
-                WHERE ips.ItemId = i.Id AND lower(trim(COALESCE(ips.PriceKind, ''))) = 'pitstopspecial'
-                ORDER BY datetime(ips.EffectiveFrom) DESC, ips.Id DESC
-                LIMIT 1
-              ), 0) AS REAL) AS PitstopSpecialPrice,
-              COALESCE(i.IsOnSpecial, 0) AS IsOnSpecial,
-              i.StockQty,
-              COALESCE(i.TrackStock, 1) AS TrackStock,
-              i.ItemType,
-              i.ImagePath,
-              i.Sku AS Sku,
-              i.AlternateSkusJson AS AlternateSkusJson,
-              COALESCE(i.UsesOpenPrice, 0) AS UsesOpenPrice,
-              COALESCE(i.OrderInMerchandise, 0) AS OrderInMerchandise,
-              i.LowStockThreshold AS LowStockThreshold
-            FROM Items i
-            WHERE COALESCE(i.IsActive, 1) != 0
-              AND COALESCE(i.ShowInPitstop, 0) != 0
-              {PitstopSellableBucketFilter}
-              {HasSellablePitstopPriceFilter}
-              AND (@CategoryName IS NULL OR {PitstopSubCategoryExpr} = @CategoryName)
-            ORDER BY i.Name COLLATE NOCASE
-            """;
+    public Task<IReadOnlyList<PitstopCatalogProductRow>> GetPitstopProductsAsync(
+        string? categoryName,
+        CancellationToken cancellationToken = default) =>
+        SqliteBackground.Run(
+            () =>
+            {
+                using var conn = _factory.OpenConnection();
+                var sql = $"""
+                    SELECT
+                      i.Id AS ItemId,
+                      i.Name,
+                      {PitstopSubCategoryExpr} AS CategoryName,
+                      {PitstopBucketExpr} AS CatalogBucket,
+                      {EffectivePitstopPriceExpr} AS PitstopPrice,
+                      CAST(COALESCE((
+                        SELECT ips.Price
+                        FROM ItemPrices ips
+                        WHERE ips.ItemId = i.Id AND lower(trim(COALESCE(ips.PriceKind, ''))) = 'pitstopspecial'
+                        ORDER BY datetime(ips.EffectiveFrom) DESC, ips.Id DESC
+                        LIMIT 1
+                      ), 0) AS REAL) AS PitstopSpecialPrice,
+                      COALESCE(i.IsOnSpecial, 0) AS IsOnSpecial,
+                      i.StockQty,
+                      COALESCE(i.TrackStock, 1) AS TrackStock,
+                      i.ItemType,
+                      i.ImagePath,
+                      i.Sku AS Sku,
+                      i.AlternateSkusJson AS AlternateSkusJson,
+                      COALESCE(i.UsesOpenPrice, 0) AS UsesOpenPrice,
+                      COALESCE(i.OrderInMerchandise, 0) AS OrderInMerchandise,
+                      i.LowStockThreshold AS LowStockThreshold
+                    FROM Items i
+                    WHERE COALESCE(i.IsActive, 1) != 0
+                      AND COALESCE(i.ShowInPitstop, 0) != 0
+                      {PitstopSellableBucketFilter}
+                      {HasSellablePitstopPriceFilter}
+                      AND (@CategoryName IS NULL OR {PitstopSubCategoryExpr} = @CategoryName)
+                    ORDER BY i.Name COLLATE NOCASE
+                    """;
 
-        var rows = conn.Query<PitstopCatalogProductRow>(
-            new CommandDefinition(sql, new { CategoryName = categoryName }, cancellationToken: cancellationToken));
-        var list = rows.AsList();
-        foreach (var r in list)
-        {
-            SplitCategory(r);
-        }
+                var rows = conn.Query<PitstopCatalogProductRow>(
+                    new CommandDefinition(sql, new { CategoryName = categoryName }, cancellationToken: cancellationToken));
+                var list = rows.AsList();
+                foreach (var r in list)
+                {
+                    SplitCategory(r);
+                }
 
-        return Task.FromResult<IReadOnlyList<PitstopCatalogProductRow>>(list);
-    }
+                return (IReadOnlyList<PitstopCatalogProductRow>)list;
+            },
+            cancellationToken);
 
     public Task<PitstopCatalogProductRow?> FindBySkuAsync(string sku, CancellationToken cancellationToken = default)
     {
@@ -154,70 +162,75 @@ public sealed class SqlitePitstopCatalogQuery : IPitstopCatalogQuery
             return Task.FromResult<PitstopCatalogProductRow?>(null);
         }
 
-        using var conn = _factory.OpenConnection();
-        var selectSql = $"""
-            SELECT
-              i.Id AS ItemId,
-              i.Name,
-              {PitstopSubCategoryExpr} AS CategoryName,
-              {PitstopBucketExpr} AS CatalogBucket,
-              {EffectivePitstopPriceExpr} AS PitstopPrice,
-              CAST(COALESCE((
-                SELECT ips.Price
-                FROM ItemPrices ips
-                WHERE ips.ItemId = i.Id AND lower(trim(COALESCE(ips.PriceKind, ''))) = 'pitstopspecial'
-                ORDER BY datetime(ips.EffectiveFrom) DESC, ips.Id DESC
-                LIMIT 1
-              ), 0) AS REAL) AS PitstopSpecialPrice,
-              COALESCE(i.IsOnSpecial, 0) AS IsOnSpecial,
-              i.StockQty,
-              COALESCE(i.TrackStock, 1) AS TrackStock,
-              i.ItemType,
-              i.ImagePath,
-              i.Sku AS Sku,
-              i.AlternateSkusJson AS AlternateSkusJson,
-              COALESCE(i.UsesOpenPrice, 0) AS UsesOpenPrice,
-              COALESCE(i.OrderInMerchandise, 0) AS OrderInMerchandise,
-              i.LowStockThreshold AS LowStockThreshold
-            FROM Items i
-            WHERE COALESCE(i.IsActive, 1) != 0
-              AND COALESCE(i.ShowInPitstop, 0) != 0
-              {PitstopSellableBucketFilter}
-              {HasSellablePitstopPriceFilter}
-            """;
-
-        // Fast path: primary SKU (including leading-zero candidates), same as Bar.
-        foreach (var candidate in StockAlternateSkuHelper.ExpandScanCandidates(needle))
-        {
-            var row = conn.QuerySingleOrDefault<PitstopCatalogProductRow>(
-                new CommandDefinition(
-                    selectSql + " AND lower(trim(COALESCE(i.Sku, ''))) = lower(trim(@Sku)) LIMIT 1",
-                    new { Sku = candidate },
-                    cancellationToken: cancellationToken));
-            if (row is not null)
+        return SqliteBackground.Run(
+            () =>
             {
-                SplitCategory(row);
-                return Task.FromResult<PitstopCatalogProductRow?>(row);
-            }
-        }
+                using var conn = _factory.OpenConnection();
+                var selectSql = $"""
+                    SELECT
+                      i.Id AS ItemId,
+                      i.Name,
+                      {PitstopSubCategoryExpr} AS CategoryName,
+                      {PitstopBucketExpr} AS CatalogBucket,
+                      {EffectivePitstopPriceExpr} AS PitstopPrice,
+                      CAST(COALESCE((
+                        SELECT ips.Price
+                        FROM ItemPrices ips
+                        WHERE ips.ItemId = i.Id AND lower(trim(COALESCE(ips.PriceKind, ''))) = 'pitstopspecial'
+                        ORDER BY datetime(ips.EffectiveFrom) DESC, ips.Id DESC
+                        LIMIT 1
+                      ), 0) AS REAL) AS PitstopSpecialPrice,
+                      COALESCE(i.IsOnSpecial, 0) AS IsOnSpecial,
+                      i.StockQty,
+                      COALESCE(i.TrackStock, 1) AS TrackStock,
+                      i.ItemType,
+                      i.ImagePath,
+                      i.Sku AS Sku,
+                      i.AlternateSkusJson AS AlternateSkusJson,
+                      COALESCE(i.UsesOpenPrice, 0) AS UsesOpenPrice,
+                      COALESCE(i.OrderInMerchandise, 0) AS OrderInMerchandise,
+                      i.LowStockThreshold AS LowStockThreshold
+                    FROM Items i
+                    WHERE COALESCE(i.IsActive, 1) != 0
+                      AND COALESCE(i.ShowInPitstop, 0) != 0
+                      {PitstopSellableBucketFilter}
+                      {HasSellablePitstopPriceFilter}
+                    """;
 
-        // Slow path: alternate barcodes (JSON list matched in C#).
-        var withAlts = conn.Query<PitstopCatalogProductRow>(
-            new CommandDefinition(
-                selectSql + " AND length(trim(COALESCE(i.AlternateSkusJson, ''))) > 2",
-                cancellationToken: cancellationToken));
-        foreach (var row in withAlts)
-        {
-            if (!StockAlternateSkuHelper.MatchesPrimaryOrAlternate(row.Sku, row.AlternateSkusJson, needle))
-            {
-                continue;
-            }
+                // Fast path: primary SKU (including leading-zero candidates), same as Bar.
+                foreach (var candidate in StockAlternateSkuHelper.ExpandScanCandidates(needle))
+                {
+                    var row = conn.QuerySingleOrDefault<PitstopCatalogProductRow>(
+                        new CommandDefinition(
+                            selectSql + " AND lower(trim(COALESCE(i.Sku, ''))) = lower(trim(@Sku)) LIMIT 1",
+                            new { Sku = candidate },
+                            cancellationToken: cancellationToken));
+                    if (row is not null)
+                    {
+                        SplitCategory(row);
+                        return row;
+                    }
+                }
 
-            SplitCategory(row);
-            return Task.FromResult<PitstopCatalogProductRow?>(row);
-        }
+                // Slow path: alternate barcodes (JSON list matched in C#).
+                var withAlts = conn.Query<PitstopCatalogProductRow>(
+                    new CommandDefinition(
+                        selectSql + " AND length(trim(COALESCE(i.AlternateSkusJson, ''))) > 2",
+                        cancellationToken: cancellationToken));
+                foreach (var row in withAlts)
+                {
+                    if (!StockAlternateSkuHelper.MatchesPrimaryOrAlternate(row.Sku, row.AlternateSkusJson, needle))
+                    {
+                        continue;
+                    }
 
-        return Task.FromResult<PitstopCatalogProductRow?>(null);
+                    SplitCategory(row);
+                    return row;
+                }
+
+                return null;
+            },
+            cancellationToken);
     }
 
     private static void SplitCategory(PitstopCatalogProductRow r)

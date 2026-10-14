@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using NickeltownPOSV4.Models;
 using NickeltownPOSV4.Services;
+using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Views;
@@ -12,14 +13,18 @@ public sealed partial class MainShell : Page
 {
     public MainShell()
     {
+        LoginTransitionProbe.Mark("mainShell.ctor.begin");
         InitializeComponent();
+        LoginTransitionProbe.Mark("mainShell.ctor.xaml");
         DataContext = App.Services.GetRequiredService<MainShellViewModel>();
         Loaded += OnLoaded;
+        LoginTransitionProbe.Mark("mainShell.ctor.done");
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnLoaded;
+        LoginTransitionProbe.Mark("mainShell.loaded");
 
         App.Services.GetRequiredService<ISlidePanelService>().Attach(SlidePanelHost);
         App.Services.GetRequiredService<IInputOverlayService>().Attach(InputOverlayHost);
@@ -29,6 +34,7 @@ public sealed partial class MainShell : Page
             ShellContentFrame.CacheSize = 8;
             ShellContentFrame.Navigated += OnShellContentNavigated;
             vm.InitializeShell(ShellContentFrame);
+            LoginTransitionProbe.Mark("mainShell.initializeShell.done");
         }
     }
 
