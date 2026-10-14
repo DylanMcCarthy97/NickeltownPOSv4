@@ -21,6 +21,10 @@ public sealed class LoginTransitionTests
         Assert.Contains("auth.ok", string.Join('\n', LoginTransitionProbe.LastLines), StringComparison.Ordinal);
         Assert.Contains("LoginTransition total", summary, StringComparison.Ordinal);
         Assert.Equal(summary, LoginTransitionProbe.LastSummary);
+
+        LoginTransitionProbe.Mark("after.complete.ignored");
+        Assert.DoesNotContain("after.complete.ignored", string.Join('\n', LoginTransitionProbe.LastLines), StringComparison.Ordinal);
+        Assert.Equal(summary, LoginTransitionProbe.Complete("second.complete.ignored"));
     }
 
     [Fact]

@@ -23,8 +23,8 @@ public static class LoginTransitionProbe
     /// <summary>Single-file report to copy after a PIN login. Overwritten each attempt.</summary>
     public static string ReportFilePath =>
         Path.Combine(
-            Services.AppStoragePaths.GetDocumentsFolder(),
-            Services.AppStoragePaths.RootFolderName,
+            global::NickeltownPOSV4.Services.AppStoragePaths.GetDocumentsFolder(),
+            global::NickeltownPOSV4.Services.AppStoragePaths.RootFolderName,
             "logs",
             "login-transition.txt");
 
@@ -73,6 +73,14 @@ public static class LoginTransitionProbe
 
     public static string Complete(string stage)
     {
+        lock (Gate)
+        {
+            if (_watch is null)
+            {
+                return LastSummary;
+            }
+        }
+
         Mark(stage);
         string summary;
         lock (Gate)
@@ -88,6 +96,7 @@ public static class LoginTransitionProbe
             summary = sb.ToString();
             LastSummary = summary;
             _watch?.Stop();
+            _watch = null;
         }
 
         Write($"[LoginTransition] COMPLETE {summary}");
