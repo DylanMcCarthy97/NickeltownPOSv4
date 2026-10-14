@@ -162,10 +162,12 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
             {
                 conn.Execute(
                     new CommandDefinition(
-                        "UPDATE Items SET StockQty = StockQty - @q, UpdatedAt = datetime('now') WHERE Id = @id",
+                        "UPDATE Items SET StockQty = MAX(0, StockQty - @q), UpdatedAt = datetime('now') WHERE Id = @id",
                         new { q = request.Quantity, id = item.Id },
                         tx,
                         cancellationToken: cancellationToken));
+
+                Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, item.Id);
 
                 conn.Execute(
                     new CommandDefinition(
@@ -318,6 +320,8 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
                             new { q = issue.Quantity, id = item.Id },
                             tx,
                             cancellationToken: cancellationToken));
+
+                    Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, item.Id);
 
                     conn.Execute(
                         new CommandDefinition(

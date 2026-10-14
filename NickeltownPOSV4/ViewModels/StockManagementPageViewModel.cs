@@ -834,7 +834,15 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
     public string DetailCatalogSubCategory
     {
         get => _detailCatalogSubCategory;
-        set => SetProperty(ref _detailCatalogSubCategory, value);
+        set
+        {
+            if (SetProperty(ref _detailCatalogSubCategory, value)
+                && StockCatalogTaxonomy.IsFoodSubCategory(DetailCatalogBucket, _detailCatalogSubCategory))
+            {
+                DetailStockMode = StockCatalogTaxonomy.StockModeNotTracked;
+                SyncDetailFlagsFromStockMode();
+            }
+        }
     }
 
     public string DetailStockMode
@@ -1792,7 +1800,9 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
                 ?? (string.IsNullOrWhiteSpace(StockAdjustmentReason) ? null : StockAdjustmentReason.Trim());
             var bucket = StockCatalogTaxonomy.NormalizeBucket(DetailCatalogBucket);
             var sub = StockCatalogTaxonomy.NormalizeSubCategory(bucket, DetailCatalogSubCategory);
-            var stockMode = StockCatalogTaxonomy.NormalizeStockMode(DetailStockMode);
+            var stockMode = StockCatalogTaxonomy.IsFoodSubCategory(bucket, sub)
+                ? StockCatalogTaxonomy.StockModeNotTracked
+                : StockCatalogTaxonomy.NormalizeStockMode(DetailStockMode);
             var showInBar = ShowInBar;
             var saveQty = qty;
             string? itemDescription;

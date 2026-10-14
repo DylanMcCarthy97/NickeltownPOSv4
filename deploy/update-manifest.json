@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.2",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.2/NickeltownPOSV4_2.0.0.2_x64.msix",
-  "releaseNotes": "Stock search no longer uses a TextBox (Toshiba OS keyboard was sticking). Tap Search for the in-app keyboard; scan a barcode anywhere on Stock to open the item. Includes PIN login fix from 2.0.0.1.",
+  "version": "2.0.0.3",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.3/NickeltownPOSV4_2.0.0.3_x64.msix",
+  "releaseNotes": "Catalog health: Shared bar-price OK, merch barcodes optional, stay on Health while fixing. Sell-until-gone auto-hides at 0 / returns when topped up. Food is Not tracked.",
   "mandatory": false
 }

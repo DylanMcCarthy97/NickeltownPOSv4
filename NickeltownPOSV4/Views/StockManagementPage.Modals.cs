@@ -101,6 +101,7 @@ public sealed partial class StockManagementPage
     private void StockModalCloseButton_Click(object sender, RoutedEventArgs e)
     {
         DismissInPageStockModal();
+        // Health stays open underneath; no rebuild needed on Cancel.
     }
 
     private void StockModalDim_Tapped(object sender, TappedRoutedEventArgs e)
@@ -299,6 +300,12 @@ public sealed partial class StockManagementPage
         {
             _resumeProductSetupAfterItemEdit = false;
             ShowProductSetupFullScreen();
+            return;
+        }
+
+        if (_resumeCatalogHealthAfterQuickEdit)
+        {
+            OpenCatalogHealthFullScreen();
             return;
         }
 

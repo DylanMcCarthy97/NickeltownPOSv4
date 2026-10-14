@@ -42,7 +42,7 @@ public sealed partial class StockManagementPage
                 },
                 new TextBlock
                 {
-                    Text = "Find missing prices, duplicate barcodes, and stock-mode drift before selling.",
+                    Text = "Shared items can use Bar price in Pitstop. Merch barcodes are optional. Fix issues without leaving this screen.",
                     FontSize = 13,
                     Opacity = 0.8,
                     TextWrapping = TextWrapping.WrapWholeWords,
@@ -56,7 +56,11 @@ public sealed partial class StockManagementPage
             MinWidth = 96,
             Style = HeaderButtonStyle,
         };
-        close.Click += (_, _) => CloseFullScreenToHome();
+        close.Click += (_, _) =>
+        {
+            _resumeCatalogHealthAfterQuickEdit = false;
+            CloseFullScreenToHome();
+        };
         Grid.SetColumn(close, 1);
         header.Children.Add(close);
         Grid.SetRow(header, 0);
@@ -119,12 +123,13 @@ public sealed partial class StockManagementPage
                     ?? _vm.FindListRowByItemId(issue.ItemId);
                 if (row is null)
                 {
-                    _vm.SetStatusMessage("Item not in current filter — clear filters and try again.");
+                    _vm.SetStatusMessage("Item not found — refresh stock and try again.");
                     return;
                 }
 
-                CloseFullScreenToHome();
-                await OpenQuickEditAsync(row).ConfigureAwait(true);
+                // Keep Catalog Health open under the quick-edit modal; refresh list after save.
+                _resumeCatalogHealthAfterQuickEdit = true;
+                await OpenQuickEditAsync(row, resumeCatalogHealth: true).ConfigureAwait(true);
             };
             Grid.SetRow(list, 2);
             root.Children.Add(list);
@@ -132,7 +137,7 @@ public sealed partial class StockManagementPage
 
         var footer = new TextBlock
         {
-            Text = "Tap an issue to open quick edit for that item.",
+            Text = "Tap an issue to quick-edit. After Save you stay on Catalog health with an updated list.",
             FontSize = 12,
             Opacity = 0.75,
         };

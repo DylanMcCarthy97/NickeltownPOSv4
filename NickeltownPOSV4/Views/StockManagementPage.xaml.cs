@@ -21,6 +21,9 @@ public sealed partial class StockManagementPage : Page
     /// <summary>When true, closing item edit returns to the Product Setup list instead of the stock home screen.</summary>
     internal bool _resumeProductSetupAfterItemEdit;
 
+    /// <summary>When true, closing quick edit / item edit returns to Catalog health with a refreshed list.</summary>
+    internal bool _resumeCatalogHealthAfterQuickEdit;
+
     internal int _stockOverlayGate;
 
     /// <summary>When set, Receive Stock opens with this item pre-selected (Stock v2 action sheet).</summary>
