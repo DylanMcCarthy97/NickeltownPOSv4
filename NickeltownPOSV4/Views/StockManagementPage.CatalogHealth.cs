@@ -42,7 +42,7 @@ public sealed partial class StockManagementPage
                 },
                 new TextBlock
                 {
-                    Text = "Shared items can use Bar price in Pitstop. Merch barcodes are optional. Fix issues without leaving this screen.",
+                    Text = "Shared Bar→Pitstop fallback OK. Free-at-bar (0.00) + Pitstop price OK. Food/Merch barcodes optional. Stay here while fixing.",
                     FontSize = 13,
                     Opacity = 0.8,
                     TextWrapping = TextWrapping.WrapWholeWords,
