@@ -21,14 +21,32 @@ public sealed class StockCatalogReliabilityTests
     }
 
     [Fact]
-    public void SkipsSoldItemStockDecrement_TrackedFoodDoesNotSkip()
+    public void SkipsSoldItemStockDecrement_FoodSubCategoryAlwaysSkips()
+    {
+        // Hot food has no counted amounts — even a drifted Tracked mode must not deduct.
+        var skip = StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
+            trackStock: 1,
+            orderInMerchandise: 0,
+            stockMode: StockCatalogTaxonomy.StockModeTracked,
+            itemType: "Item",
+            itemName: "Steak Sandwich",
+            catalogBucket: StockCatalogTaxonomy.BucketBar,
+            catalogSubCategory: "Food");
+
+        Assert.True(skip);
+    }
+
+    [Fact]
+    public void SkipsSoldItemStockDecrement_TrackedDrinkStillDeducts()
     {
         var skip = StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
             trackStock: 1,
             orderInMerchandise: 0,
             stockMode: StockCatalogTaxonomy.StockModeTracked,
             itemType: "Item",
-            itemName: "Steak Sandwich");
+            itemName: "Lager",
+            catalogBucket: StockCatalogTaxonomy.BucketBar,
+            catalogSubCategory: "Beer");
 
         Assert.False(skip);
     }
@@ -40,6 +58,72 @@ public sealed class StockCatalogReliabilityTests
             0, 1, StockCatalogTaxonomy.StockModeOrderIn, "Item", "Hat"));
         Assert.True(StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
             0, 0, StockCatalogTaxonomy.StockModeNotTracked, "Item", "Sundry"));
+    }
+
+    [Fact]
+    public void CatalogHealth_SharedBarOnlyPriceIsOk_AndMerchNeedsNoBarcode()
+    {
+        var rows = new List<StockEditorRow>
+        {
+            new()
+            {
+                ItemId = 1,
+                Name = "Shared Drink",
+                IsActive = 1,
+                ShowInBar = 1,
+                ShowInPitstop = 1,
+                CatalogBucket = StockCatalogTaxonomy.BucketShared,
+                CatalogSubCategory = "Drinks",
+                StockMode = StockCatalogTaxonomy.StockModeTracked,
+                TrackStock = 1,
+                BarPrice = 5,
+                PitstopPrice = null,
+                WarnMeBelow = 2,
+                Sku = "SHARED-1",
+            },
+            new()
+            {
+                ItemId = 2,
+                Name = "Club Cap",
+                IsActive = 1,
+                ShowInBar = 1,
+                CatalogBucket = StockCatalogTaxonomy.BucketBar,
+                CatalogSubCategory = "Merch",
+                StockMode = StockCatalogTaxonomy.StockModeTracked,
+                TrackStock = 1,
+                BarPrice = 20,
+                WarnMeBelow = 1,
+                Sku = null,
+            },
+        };
+
+        var issues = StockCatalogHealthService.Evaluate(rows);
+        Assert.DoesNotContain(issues, i => i.ItemId == 1 && i.Kind == StockCatalogHealthService.IssueMissingChannelPrice);
+        Assert.DoesNotContain(issues, i => i.ItemId == 2 && i.Kind == StockCatalogHealthService.IssueMissingBarcode);
+    }
+
+    [Fact]
+    public void CatalogHealth_FlagsTrackedFood()
+    {
+        var rows = new List<StockEditorRow>
+        {
+            new()
+            {
+                ItemId = 3,
+                Name = "Hot Chips",
+                IsActive = 1,
+                ShowInBar = 1,
+                CatalogBucket = StockCatalogTaxonomy.BucketBar,
+                CatalogSubCategory = "Food",
+                StockMode = StockCatalogTaxonomy.StockModeTracked,
+                TrackStock = 1,
+                BarPrice = 8,
+                Sku = "FOOD-1",
+            },
+        };
+
+        var issues = StockCatalogHealthService.Evaluate(rows);
+        Assert.Contains(issues, i => i.ItemId == 3 && i.Kind == StockCatalogHealthService.IssueFoodTracked);
     }
 
     [Fact]
