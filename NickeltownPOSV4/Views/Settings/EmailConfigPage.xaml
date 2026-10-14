@@ -183,15 +183,15 @@
                         FontSize="14"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Saturday shopping-list email" />
+                        Text="Saturday bar shopping-list email" />
                     <TextBlock
                         FontSize="12"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Sent on the same Saturday schedule as the stock report, but only to this address — never to the club/stock recipients above."
+                        Text="Sends the Weekly Bar Shopping List on the same Saturday schedule as the stock report, only to this address — never merchandise, and never the club/stock recipients above."
                         TextWrapping="WrapWholeWords" />
 
                     <StackPanel Spacing="3">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SHOPPING-LIST RECIPIENT" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="BAR SHOPPING-LIST RECIPIENT" />
                         <Button Command="{Binding EditShoppingListRecipientCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                             <TextBlock Text="{Binding ShoppingListRecipientSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                         </Button>
@@ -237,7 +237,7 @@
                         HorizontalAlignment="Left"
                         MinHeight="44"
                         Command="{Binding SendShoppingListTestCommand}"
-                        Content="Test shopping list email"
+                        Content="Test bar shopping list email"
                         Style="{StaticResource SettingsSecondaryButtonStyle}" />
                 </StackPanel>
             </Border>

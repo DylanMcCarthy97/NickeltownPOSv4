@@ -239,7 +239,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
 
     public string ShoppingListRecipientWarning =>
         ShowShoppingListRecipientWarning
-            ? "Automatic Saturday shopping-list email is on, but the recipient address is missing or invalid. It will not send until you set a valid address and Save."
+            ? "Automatic Saturday bar shopping-list email is on, but the recipient address is missing or invalid. It will not send until you set a valid address and Save."
             : string.Empty;
 
     public IAsyncRelayCommand LoadCommand { get; }

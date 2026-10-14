@@ -63,114 +63,103 @@ public sealed class ShoppingListEmailTests
     }
 
     [Fact]
-    public void ShoppingListEmailComposer_BuildRows_OnlyNeedsBuying()
+    public void ShoppingListCatalog_SeparatesBarAndMerchandiseByCategory()
+    {
+        var lager = Row(1, "Lager", "Beer", stock: 0, warn: 2, preferred: 12, pack: 6);
+        var cola = Row(2, "Cola", "Drinks", stock: 1, warn: 4, preferred: 24, pack: 24);
+        var hoodie = Row(3, "Club Hoodie", "Merch", stock: 2, warn: 3, preferred: 8, pack: 1);
+        var pie = Row(4, "Meat Pie", "Food", stock: 0, warn: 2, preferred: 10, pack: 1);
+
+        Assert.True(ShoppingListCatalog.IsBarShoppingCategory(lager));
+        Assert.True(ShoppingListCatalog.IsBarShoppingCategory(cola));
+        Assert.False(ShoppingListCatalog.IsBarShoppingCategory(hoodie));
+        Assert.False(ShoppingListCatalog.IsBarShoppingCategory(pie));
+
+        Assert.True(ShoppingListCatalog.IsMerchandiseShoppingCategory(hoodie));
+        Assert.False(ShoppingListCatalog.IsMerchandiseShoppingCategory(lager));
+        Assert.False(ShoppingListCatalog.IsMerchandiseShoppingCategory(pie));
+    }
+
+    [Fact]
+    public void ShoppingListSnapshot_BarExcludesMerchAndFood_AndNeverRecommendsZero()
     {
         var rows = new List<StockEditorRow>
         {
-            new()
-            {
-                ItemId = 1,
-                Name = "Lager",
-                IsActive = 1,
-                TrackStock = 1,
-                StockQty = 0,
-                WarnMeBelow = 2,
-                PreferredStockLevel = 12,
-                PurchaseUnitQty = 6,
-                CatalogSubCategory = "Beer",
-                StockMode = StockCatalogTaxonomy.StockModeTracked,
-            },
-            new()
-            {
-                ItemId = 2,
-                Name = "Plenty Stock",
-                IsActive = 1,
-                TrackStock = 1,
-                StockQty = 40,
-                WarnMeBelow = 2,
-                PreferredStockLevel = 12,
-                CatalogSubCategory = "Beer",
-                StockMode = StockCatalogTaxonomy.StockModeTracked,
-            },
+            Row(1, "Lager", "Beer", stock: 0, warn: 2, preferred: 12, pack: 6),
+            Row(2, "Plenty Stock", "Beer", stock: 40, warn: 2, preferred: 12, pack: 6),
+            Row(3, "Club Cap", "Merch", stock: 1, warn: 3, preferred: 10, pack: 1),
+            Row(4, "Banner", "Merch", stock: 0, warn: 1, preferred: 2, pack: 1),
+            Row(5, "Broken Reorder", "Spirits", stock: 0, warn: 0, preferred: 0, pack: 6),
+            Row(6, "Soft Drink", "Drinks", stock: 3, warn: 6, preferred: 24, pack: 0),
         };
 
-        var list = ShoppingListEmailComposer.BuildRows(rows);
-        Assert.Single(list);
-        Assert.Equal("Lager", list[0].Name);
-        Assert.Equal(StockVolunteerStatus.OutOfStock, list[0].Status);
+        var bar = ShoppingListSnapshot.Build(rows, ShoppingListKind.Bar);
+        Assert.Equal(2, bar.PurchaseRows.Count);
+        Assert.Contains(bar.PurchaseRows, r => r.Name == "Lager");
+        Assert.Contains(bar.PurchaseRows, r => r.Name == "Soft Drink");
+        Assert.DoesNotContain(bar.PurchaseRows, r => r.Name == "Club Cap");
+        Assert.DoesNotContain(bar.PurchaseRows, r => r.Name == "Banner");
+        Assert.DoesNotContain(bar.PurchaseRows, r => r.UnitsToBuy <= 0);
+        Assert.Contains("Broken Reorder", bar.InvalidReorderNames);
+        Assert.Contains("Soft Drink", bar.MissingPackSizeNames);
+
+        var lager = bar.PurchaseRows.Single(r => r.Name == "Lager");
+        Assert.Equal(12, lager.UnitsToBuy);
+        Assert.Equal(2, lager.PacksToBuy);
+
+        var merch = ShoppingListSnapshot.Build(rows, ShoppingListKind.Merchandise);
+        Assert.Equal(2, merch.PurchaseRows.Count);
+        Assert.Contains(merch.PurchaseRows, r => r.Name == "Club Cap");
+        Assert.Contains(merch.PurchaseRows, r => r.Name == "Banner");
+        Assert.DoesNotContain(merch.PurchaseRows, r => r.Name == "Lager");
+        Assert.DoesNotContain(merch.PurchaseRows, r => r.Name == "Soft Drink");
     }
 
     [Fact]
     public void ShoppingListEmailComposer_BodyContainsBuyNowAndAttachmentNote()
     {
-        var source = new StockEditorRow
-        {
-            ItemId = 1,
-            Name = "Lager",
-            IsActive = 1,
-            TrackStock = 1,
-            StockQty = 1,
-            WarnMeBelow = 4,
-            PreferredStockLevel = 12,
-            PurchaseUnitQty = 6,
-            CatalogSubCategory = "Beer",
-            StockMode = StockCatalogTaxonomy.StockModeTracked,
-            ShowOnShoppingList = 1,
-        };
+        var source = Row(1, "Lager", "Beer", stock: 1, warn: 4, preferred: 12, pack: 6);
         Assert.True(StockInventoryLevelHelper.NeedsBuying(source));
 
-        var body = ShoppingListEmailComposer.BuildEmailBody([new StockShoppingListRowViewModel(source)]);
+        var snap = ShoppingListSnapshot.Build([source], ShoppingListKind.Bar);
+        var body = ShoppingListEmailComposer.BuildEmailBody(snap, isSaturdaySchedule: true);
         Assert.Contains("BUY NOW", body, StringComparison.Ordinal);
         Assert.Contains("Lager", body, StringComparison.Ordinal);
         Assert.Contains("PDF shopping list is attached", body, StringComparison.Ordinal);
+        Assert.Contains("Weekly Bar Shopping List", body, StringComparison.Ordinal);
+        Assert.Contains("Saturday schedule", body, StringComparison.Ordinal);
     }
 
     [Fact]
     public void ShoppingListEmailComposer_EmptyConfirmation_Readable()
     {
-        var body = ShoppingListEmailComposer.BuildEmptyConfirmationBody();
+        var body = ShoppingListEmailComposer.BuildEmptyConfirmationBody(ShoppingListKind.Bar);
         Assert.Contains("Nothing needs buying", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Weekly Bar Shopping List", body, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ShoppingListPdfBuilder_WeeklyCombined_BuildsPdfBytes()
+    public void ShoppingListPdfBuilder_BarAndMerch_AreSeparateDocuments()
     {
-        var rows = ShoppingListEmailComposer.BuildRows(
-        [
-            new StockEditorRow
-            {
-                ItemId = 1,
-                Name = "Lager",
-                IsActive = 1,
-                TrackStock = 1,
-                StockQty = 0,
-                WarnMeBelow = 2,
-                PreferredStockLevel = 12,
-                PurchaseUnitQty = 6,
-                CatalogSubCategory = "Beer",
-                StockMode = StockCatalogTaxonomy.StockModeTracked,
-            },
-            new StockEditorRow
-            {
-                ItemId = 2,
-                Name = "Club Cap",
-                IsActive = 1,
-                TrackStock = 1,
-                StockQty = 3,
-                WarnMeBelow = 5,
-                PreferredStockLevel = 10,
-                PurchaseUnitQty = 0,
-                CatalogSubCategory = "Merch",
-                StockMode = StockCatalogTaxonomy.StockModeTracked,
-            },
-        ]);
+        var rows = new List<StockEditorRow>
+        {
+            Row(1, "Lager", "Beer", stock: 0, warn: 2, preferred: 12, pack: 6),
+            Row(2, "Club Cap", "Merch", stock: 3, warn: 5, preferred: 10, pack: 0),
+        };
 
-        var pdf = ShoppingListEmailComposer.BuildPdf(rows);
-        Assert.True(pdf.Length > 4);
-        Assert.Equal((byte)'%', pdf[0]);
-        Assert.Equal((byte)'P', pdf[1]);
-        Assert.Equal((byte)'D', pdf[2]);
-        Assert.Equal((byte)'F', pdf[3]);
+        var barPdf = ShoppingListEmailComposer.BuildPdf(ShoppingListSnapshot.Build(rows, ShoppingListKind.Bar));
+        var merchPdf = ShoppingListEmailComposer.BuildPdf(ShoppingListSnapshot.Build(rows, ShoppingListKind.Merchandise));
+
+        AssertPdfMagic(barPdf);
+        AssertPdfMagic(merchPdf);
+        Assert.NotEqual(barPdf.Length, merchPdf.Length);
+
+        var barText = System.Text.Encoding.Latin1.GetString(barPdf);
+        var merchText = System.Text.Encoding.Latin1.GetString(merchPdf);
+        Assert.Contains("Weekly Bar Shopping List", barText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Club Cap", barText, StringComparison.Ordinal);
+        Assert.Contains("Merchandise Shopping List", merchText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Lager", merchText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -262,7 +251,7 @@ public sealed class ShoppingListEmailTests
     }
 
     [Fact]
-    public async Task ShoppingListEmailService_SendsOnlyConfiguredRecipient_WithPdf()
+    public async Task ShoppingListEmailService_SendsOnlyBarList_NeverMerch()
     {
         var email = new CapturingEmailSender();
         var cfg = new MemoryEmailConfig(new AppEmailConfig
@@ -275,19 +264,8 @@ public sealed class ShoppingListEmailTests
         var svc = new ShoppingListEmailService(
             new FakeStock(
             [
-                new StockEditorRow
-                {
-                    ItemId = 9,
-                    Name = "Lager",
-                    IsActive = 1,
-                    TrackStock = 1,
-                    StockQty = 0,
-                    WarnMeBelow = 2,
-                    PreferredStockLevel = 12,
-                    PurchaseUnitQty = 6,
-                    CatalogSubCategory = "Beer",
-                    StockMode = StockCatalogTaxonomy.StockModeTracked,
-                },
+                Row(9, "Lager", "Beer", stock: 0, warn: 2, preferred: 12, pack: 6),
+                Row(10, "Club Cap", "Merch", stock: 0, warn: 2, preferred: 8, pack: 1),
             ]),
             cfg,
             email,
@@ -301,7 +279,10 @@ public sealed class ShoppingListEmailTests
         Assert.DoesNotContain("club@example.com", email.Sends[0].To);
         Assert.NotNull(email.Sends[0].Attachments);
         Assert.Single(email.Sends[0].Attachments!);
-        Assert.Contains("shopping list", email.Sends[0].Body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Bar_Shopping_List", email.Sends[0].Attachments![0].FileName, StringComparison.Ordinal);
+        Assert.Contains("bar shopping list", email.Sends[0].Subject, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Lager", email.Sends[0].Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Club Cap", email.Sends[0].Body, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -315,19 +296,7 @@ public sealed class ShoppingListEmailTests
         var svc = new ShoppingListEmailService(
             new FakeStock(
             [
-                new StockEditorRow
-                {
-                    ItemId = 1,
-                    Name = "Lager",
-                    IsActive = 1,
-                    TrackStock = 1,
-                    StockQty = 0,
-                    WarnMeBelow = 2,
-                    PreferredStockLevel = 12,
-                    PurchaseUnitQty = 6,
-                    CatalogSubCategory = "Beer",
-                    StockMode = StockCatalogTaxonomy.StockModeTracked,
-                },
+                Row(1, "Lager", "Beer", stock: 0, warn: 2, preferred: 12, pack: 6),
             ]),
             cfg,
             new FailingEmailSender(),
@@ -379,6 +348,38 @@ public sealed class ShoppingListEmailTests
                 // ignore
             }
         }
+    }
+
+    private static StockEditorRow Row(
+        long id,
+        string name,
+        string subCategory,
+        int stock,
+        int warn,
+        int preferred,
+        int pack) =>
+        new()
+        {
+            ItemId = id,
+            Name = name,
+            IsActive = 1,
+            TrackStock = 1,
+            StockQty = stock,
+            WarnMeBelow = warn > 0 ? warn : null,
+            PreferredStockLevel = preferred > 0 ? preferred : null,
+            PurchaseUnitQty = pack > 0 ? pack : null,
+            CatalogSubCategory = subCategory,
+            StockMode = StockCatalogTaxonomy.StockModeTracked,
+            ShowOnShoppingList = 1,
+        };
+
+    private static void AssertPdfMagic(byte[] pdf)
+    {
+        Assert.True(pdf.Length > 4);
+        Assert.Equal((byte)'%', pdf[0]);
+        Assert.Equal((byte)'P', pdf[1]);
+        Assert.Equal((byte)'D', pdf[2]);
+        Assert.Equal((byte)'F', pdf[3]);
     }
 
     private sealed class CapturingEmailSender : IEmailSender

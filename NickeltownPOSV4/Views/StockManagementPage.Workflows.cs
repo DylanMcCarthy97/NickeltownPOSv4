@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using NickeltownPOSV4.Data.Sqlite;
+using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Settings;
 using NickeltownPOSV4.Services.Stock;
 using NickeltownPOSV4.ViewModels;
@@ -58,7 +60,9 @@ public sealed partial class StockManagementPage
             HorizontalAlignment = HorizontalAlignment.Center,
         };
 
-    internal void OpenShoppingListFullScreen() => ShowFullScreen(StockManagementScreen.ShoppingList, BuildShoppingListShell());
+    internal void OpenShoppingListFullScreen() =>
+        ShowFullScreen(StockManagementScreen.ShoppingList, BuildShoppingListChooserShell());
+
     internal void OpenReceiveStockFullScreen() => ShowFullScreen(StockManagementScreen.ReceiveStock, BuildReceiveStockShell());
     internal void OpenCountStockFullScreen() => ShowFullScreen(StockManagementScreen.CountStock, BuildCountStockShell());
     internal async void OpenProductsFullScreen()
@@ -87,76 +91,143 @@ public sealed partial class StockManagementPage
         await OpenAddItemFullScreenAsync().ConfigureAwait(true);
     }
 
-    private UIElement BuildShoppingListShell()
+    private UIElement BuildShoppingListChooserShell()
     {
-        var regular = _vm.BuildShoppingListRegularRows();
-        var merch = _vm.BuildShoppingListMerchRows();
-        var checkedIds = new HashSet<long>();
-        var body = new StackPanel { Spacing = 10 };
-        body.Children.Add(BuildShoppingListSummaryBanner(regular, merch));
+        var barSnap = _vm.BuildBarShoppingListSnapshot();
+        var merchSnap = _vm.BuildMerchandiseShoppingListSnapshot();
+
+        var body = new StackPanel { Spacing = 12 };
         body.Children.Add(new TextBlock
         {
-            Text = "Tick items as you walk the aisle. Copy or email when ready.",
+            Text = "Choose a list. Saturday email sends the Bar list only — merchandise is manual.",
             FontSize = 13,
-            Opacity = 0.75,
+            Opacity = 0.8,
             TextWrapping = TextWrapping.WrapWholeWords,
         });
 
-        if (regular.Count == 0 && merch.Count == 0)
+        var barBtn = WorkflowButton($"Bar Shopping List  ({barSnap.PurchaseRows.Count})");
+        barBtn.MinHeight = 64;
+        barBtn.Click += (_, _) =>
+            ShowFullScreen(StockManagementScreen.ShoppingList, BuildShoppingListKindShell(ShoppingListKind.Bar));
+
+        var merchBtn = WorkflowButton($"Merchandise Shopping List  ({merchSnap.PurchaseRows.Count})");
+        merchBtn.MinHeight = 64;
+        merchBtn.Click += (_, _) =>
+            ShowFullScreen(StockManagementScreen.ShoppingList, BuildShoppingListKindShell(ShoppingListKind.Merchandise));
+
+        body.Children.Add(barBtn);
+        body.Children.Add(merchBtn);
+
+        var back = WorkflowButton("Back");
+        back.Click += (_, _) => CloseFullScreen();
+        return WorkflowShellWithActions("Shopping lists", "Bar or merchandise", body, back);
+    }
+
+    private UIElement BuildShoppingListKindShell(ShoppingListKind kind)
+    {
+        var snap = kind == ShoppingListKind.Bar
+            ? _vm.BuildBarShoppingListSnapshot()
+            : _vm.BuildMerchandiseShoppingListSnapshot();
+
+        var checkedIds = new HashSet<long>();
+        var body = new StackPanel { Spacing = 10 };
+        body.Children.Add(new Border
         {
-            body.Children.Add(new Border
+            Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 238, 242, 255)),
+            BorderBrush = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 191, 219, 254)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(14, 10, 14, 10),
+            Child = new TextBlock
             {
-                Background = PosSurfaceBrush,
-                BorderBrush = PosBorderBrush,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(16, 20, 16, 20),
-                Child = new TextBlock
-                {
-                    Text = "Nothing needs buying right now.",
-                    FontSize = 15,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Opacity = 0.75,
-                },
+                Text = snap.PurchaseRows.Count == 0
+                    ? "Nothing needs buying right now."
+                    : $"Products to buy: {snap.PurchaseRows.Count}  ·  Units needed: {snap.TotalUnitsToBuy}",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 30, 58, 138)),
+                TextWrapping = TextWrapping.WrapWholeWords,
+            },
+        });
+
+        if (snap.PurchaseRows.Count > 0)
+        {
+            var buyNow = snap.PurchaseRows.Where(r =>
+                r.Status is StockVolunteerStatus.OutOfStock or StockVolunteerStatus.BuyNow).ToList();
+            var buySoon = snap.PurchaseRows.Where(r => r.Status == StockVolunteerStatus.BuySoon).ToList();
+            AppendShoppingListChecklistSection(body, "BUY NOW", buyNow, checkedIds);
+            AppendShoppingListChecklistSection(body, "BUY SOON", buySoon, checkedIds);
+        }
+
+        if (snap.MissingPackSizeNames.Count > 0)
+        {
+            body.Children.Add(new TextBlock
+            {
+                Text = "Pack size needed: " + string.Join(", ", snap.MissingPackSizeNames),
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 180, 83, 9)),
+                TextWrapping = TextWrapping.WrapWholeWords,
             });
         }
-        else
+
+        if (snap.InvalidReorderNames.Count > 0)
         {
-            AppendShoppingListChecklistSection(body, "Bar & supplies", regular, checkedIds);
-            AppendShoppingListChecklistSection(body, "Merchandise", merch, checkedIds);
+            body.Children.Add(new TextBlock
+            {
+                Text = "Review reorder settings: " + string.Join(", ", snap.InvalidReorderNames),
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 180, 83, 9)),
+                TextWrapping = TextWrapping.WrapWholeWords,
+            });
         }
 
         var copyBtn = WorkflowButton("Copy list");
         copyBtn.Click += (_, _) =>
         {
             var package = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-            package.SetText(_vm.BuildShoppingListClipboardText());
+            package.SetText(_vm.BuildShoppingListClipboardText(kind));
             Clipboard.SetContent(package);
-            _vm.SetStatusMessage("Shopping list copied.");
+            _vm.SetStatusMessage(ShoppingListCatalog.ShortLabel(kind) + " list copied.");
         };
 
-        var emailBarBtn = WorkflowButton("Email bar PDF");
-        emailBarBtn.IsEnabled = regular.Count > 0;
-        emailBarBtn.Click += async (_, _) =>
-            await EmailShoppingListPdfAsync(regular, ShoppingListPdfScope.Regular).ConfigureAwait(true);
+        var previewBtn = WorkflowButton("Preview PDF");
+        previewBtn.Click += async (_, _) => await PreviewShoppingListPdfAsync(snap).ConfigureAwait(true);
 
-        var emailMerchBtn = WorkflowButton("Email merch PDF");
-        emailMerchBtn.IsEnabled = merch.Count > 0;
-        emailMerchBtn.Click += async (_, _) =>
-            await EmailShoppingListPdfAsync(merch, ShoppingListPdfScope.Merch).ConfigureAwait(true);
+        var saveBtn = WorkflowButton("Save PDF");
+        saveBtn.Click += async (_, _) => await SaveShoppingListPdfAsync(snap).ConfigureAwait(true);
+
+        var emailBtn = WorkflowButton("Email shopping list");
+        emailBtn.Click += async (_, _) => await EmailShoppingListPdfAsync(snap).ConfigureAwait(true);
+
+        var backBtn = WorkflowButton("Back to lists");
+        backBtn.Click += (_, _) =>
+            ShowFullScreen(StockManagementScreen.ShoppingList, BuildShoppingListChooserShell());
 
         var actions = new StackPanel { Spacing = 8 };
-        actions.Children.Add(copyBtn);
+        var row1 = new Grid { ColumnSpacing = 8 };
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row1.Children.Add(previewBtn);
+        row1.Children.Add(saveBtn);
+        Grid.SetColumn(saveBtn, 1);
+        actions.Children.Add(row1);
 
-        var emailRow = new Grid { ColumnSpacing = 8 };
-        emailRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        emailRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        emailRow.Children.Add(emailBarBtn);
-        emailRow.Children.Add(emailMerchBtn);
-        Grid.SetColumn(emailMerchBtn, 1);
-        actions.Children.Add(emailRow);
+        var row2 = new Grid { ColumnSpacing = 8 };
+        row2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row2.Children.Add(emailBtn);
+        row2.Children.Add(copyBtn);
+        Grid.SetColumn(copyBtn, 1);
+        actions.Children.Add(row2);
+        actions.Children.Add(backBtn);
 
-        return WorkflowShellWithActions("Shopping list", "Checklist to buy", body, actions);
+        return WorkflowShellWithActions(
+            ShoppingListCatalog.DisplayTitle(kind),
+            kind == ShoppingListKind.Bar
+                ? "Beer, spirits, soft drinks — Saturday email uses this list"
+                : "Clothing, banners, stubby holders — manual only",
+            body,
+            actions);
     }
 
     private void AppendShoppingListChecklistSection(
@@ -288,231 +359,98 @@ public sealed partial class StockManagementPage
         };
     }
 
-    private static Border BuildShoppingListSummaryBanner(
-        IReadOnlyList<StockShoppingListRowViewModel> regular,
-        IReadOnlyList<StockShoppingListRowViewModel> merch)
+    private async Task PreviewShoppingListPdfAsync(ShoppingListSnapshot snap)
     {
-        var rows = regular.Concat(merch).ToList();
-        var outOfStock = rows.Count(r => r.Status == StockVolunteerStatus.OutOfStock);
-        var setupWarnings = rows.Count(r => r.HasSetupWarning);
-        var totalNeed = rows.Sum(r => r.NeedQty);
-
-        var parts = new List<string>();
-        if (rows.Count == 0)
-        {
-            parts.Add("All stocked up");
-        }
-        else
-        {
-            if (regular.Count > 0)
-            {
-                parts.Add(regular.Count + " bar & supplies");
-            }
-
-            if (merch.Count > 0)
-            {
-                parts.Add(merch.Count + " merch");
-            }
-
-            if (totalNeed > 0)
-            {
-                parts.Add(totalNeed + " units needed");
-            }
-
-            if (outOfStock > 0)
-            {
-                parts.Add(outOfStock + " out of stock");
-            }
-
-            if (setupWarnings > 0)
-            {
-                parts.Add(setupWarnings + " need pack size");
-            }
-        }
-
-        return new Border
-        {
-            Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 238, 242, 255)),
-            BorderBrush = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 191, 219, 254)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(14, 10, 14, 10),
-            Child = new TextBlock
-            {
-                Text = string.Join("  ·  ", parts),
-                FontSize = 13,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 30, 58, 138)),
-                TextWrapping = TextWrapping.WrapWholeWords,
-            },
-        };
-    }
-
-    private Border BuildShoppingListRowCard(StockShoppingListRowViewModel row)
-    {
-        var accentBrush = ParseAccentBrush(row.StatusAccentColor);
-        var pillBg = ParseAccentBrush(row.StatusPillBackground);
-
-        var titleRow = new Grid();
-        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var titleStack = new StackPanel { Spacing = 2 };
-        titleStack.Children.Add(new TextBlock
-        {
-            Text = row.Name,
-            FontSize = 16,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            TextWrapping = TextWrapping.WrapWholeWords,
-        });
-        if (!string.IsNullOrWhiteSpace(row.CategoryLine))
-        {
-            titleStack.Children.Add(new TextBlock
-            {
-                Text = row.CategoryLine,
-                FontSize = 12,
-                Opacity = 0.65,
-            });
-        }
-
-        titleRow.Children.Add(titleStack);
-
-        var pill = new Border
-        {
-            Background = pillBg,
-            BorderBrush = accentBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(8, 3, 8, 3),
-            VerticalAlignment = VerticalAlignment.Top,
-            Child = new TextBlock
-            {
-                Text = row.StatusText,
-                FontSize = 11,
-                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-                Foreground = accentBrush,
-            },
-        };
-        Grid.SetColumn(pill, 1);
-        titleRow.Children.Add(pill);
-
-        var metrics = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 8, 0, 0) };
-        metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.6, GridUnitType.Star) });
-        var haveTile = CreateMetricTile("Have", row.HaveQty.ToString(CultureInfo.InvariantCulture), false);
-        var needTile = CreateMetricTile("Need", row.NeedQty.ToString(CultureInfo.InvariantCulture), true);
-        metrics.Children.Add(haveTile);
-        metrics.Children.Add(needTile);
-        Grid.SetColumn(needTile, 1);
-
-        var suggestedText = row.HasSetupWarning
-            ? "Pack size not set"
-            : (string.IsNullOrEmpty(row.SuggestedLine) ? "—" : row.SuggestedLine);
-        var suggestedTile = CreateMetricTile("Suggested", suggestedText, false, row.HasSetupWarning);
-        Grid.SetColumn(suggestedTile, 2);
-        metrics.Children.Add(suggestedTile);
-
-        var card = new StackPanel { Spacing = 0 };
-        card.Children.Add(titleRow);
-        card.Children.Add(metrics);
-
-        if (!string.IsNullOrEmpty(row.SetupHint))
-        {
-            card.Children.Add(new TextBlock
-            {
-                Text = row.SetupHint,
-                FontSize = 12,
-                Margin = new Thickness(0, 8, 0, 0),
-                Foreground = new SolidColorBrush(Microsoft.UI.Colors.IndianRed),
-            });
-        }
-
-        return new Border
-        {
-            Background = PosSurfaceBrush,
-            BorderBrush = PosBorderBrush,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(12, 10, 12, 10),
-            Child = card,
-        };
-    }
-
-    private static Border CreateMetricTile(string label, string value, bool emphasize, bool warn = false)
-    {
-        var valueBlock = new TextBlock
-        {
-            Text = value,
-            FontSize = emphasize ? 18 : 15,
-            FontWeight = emphasize
-                ? Microsoft.UI.Text.FontWeights.Bold
-                : Microsoft.UI.Text.FontWeights.SemiBold,
-            TextWrapping = TextWrapping.WrapWholeWords,
-        };
-        if (warn)
-        {
-            valueBlock.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 180, 83, 9));
-        }
-
-        var sp = new StackPanel { Spacing = 2 };
-        sp.Children.Add(new TextBlock
-        {
-            Text = label,
-            FontSize = 11,
-            Opacity = 0.65,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-        });
-        sp.Children.Add(valueBlock);
-
-        return new Border
-        {
-            Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 248, 250, 252)),
-            BorderBrush = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 226, 232, 240)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(8, 6, 8, 6),
-            Child = sp,
-        };
-    }
-
-    private async Task EmailShoppingListPdfAsync(IReadOnlyList<StockShoppingListRowViewModel> rows, ShoppingListPdfScope scope)
-    {
-        if (rows.Count == 0)
-        {
-            _vm.SetStatusMessage(scope == ShoppingListPdfScope.Merch
-                ? "No merchandise to email."
-                : "No bar & supplies to email.");
-            return;
-        }
-
-        var isMerch = scope == ShoppingListPdfScope.Merch;
-        var label = isMerch ? "merchandise" : "bar & supplies";
-        var fileStem = isMerch ? "Merch_Shopping_List" : "Bar_Shopping_List";
-
         try
         {
-            _vm.SetStatusMessage($"Building {label} PDF...");
-            var bytes = ShoppingListPdfBuilder.Build(rows, scope);
-            var fileName = $"{fileStem}_{DateTime.Now:yyyyMMdd}.pdf";
-            var email = App.Services.GetRequiredService<IEmailSender>();
-
-            _vm.SetStatusMessage("Sending email...");
-            await email.SendAsync(
-                subject: $"Nickeltown {label} shopping list — {DateTime.Now:dddd d MMMM yyyy}",
-                body:
-                    $"Attached is the {label} shopping list for items that need restocking."
-                    + Environment.NewLine + Environment.NewLine
-                    + "Sent automatically by Nickeltown POS v4.",
-                attachments: new List<EmailAttachment>
-                {
-                    new(fileName, bytes, "application/pdf"),
-                }).ConfigureAwait(true);
-            _vm.SetStatusMessage($"{char.ToUpper(label[0])}{label[1..]} list emailed.");
+            _vm.SetStatusMessage("Building PDF preview...");
+            var bytes = ShoppingListPdfBuilder.Build(snap);
+            var dir = Path.Combine(Path.GetTempPath(), "NickeltownPOS", "ShoppingListPreviews");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, $"{ShoppingListCatalog.FileStem(snap.Kind)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+            await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(true);
+            var launcher = App.Services.GetRequiredService<IExportedFileLauncher>();
+            _vm.SetStatusMessage(launcher.TryLaunch(path)
+                ? ShoppingListCatalog.ShortLabel(snap.Kind) + " PDF opened."
+                : "Preview saved: " + path);
         }
         catch (Exception ex)
         {
-            _vm.SetStatusMessage($"Email failed: {ex.Message}");
+            _vm.SetStatusMessage("Preview failed: " + ex.Message);
+        }
+    }
+
+    private async Task SaveShoppingListPdfAsync(ShoppingListSnapshot snap)
+    {
+        try
+        {
+            _vm.SetStatusMessage("Saving PDF...");
+            var bytes = ShoppingListPdfBuilder.Build(snap);
+            var dir = App.Services.GetRequiredService<IReportPathProvider>().GetStockReportsDirectory();
+            var path = Path.Combine(dir, $"{ShoppingListCatalog.FileStem(snap.Kind)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+            await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(true);
+            var launcher = App.Services.GetRequiredService<IExportedFileLauncher>();
+            _vm.SetStatusMessage(launcher.TryLaunch(path)
+                ? ShoppingListCatalog.ShortLabel(snap.Kind) + " PDF saved."
+                : "Saved: " + path);
+        }
+        catch (Exception ex)
+        {
+            _vm.SetStatusMessage("Save failed: " + ex.Message);
+        }
+    }
+
+    private async Task EmailShoppingListPdfAsync(ShoppingListSnapshot snap)
+    {
+        var label = ShoppingListCatalog.ShortLabel(snap.Kind).ToLowerInvariant();
+        try
+        {
+            _vm.SetStatusMessage($"Building {label} PDF...");
+            var bytes = ShoppingListPdfBuilder.Build(snap);
+            var fileName = $"{ShoppingListCatalog.FileStem(snap.Kind)}_{DateTime.Now:yyyyMMdd}.pdf";
+            var email = App.Services.GetRequiredService<IEmailSender>();
+            var body = ShoppingListEmailComposer.BuildEmailBody(snap, isTest: false);
+
+            _vm.SetStatusMessage("Sending email...");
+            if (snap.Kind == ShoppingListKind.Bar)
+            {
+                // Manual bar list uses the dedicated shopping-list recipient (same as Saturday).
+                var cfg = await App.Services.GetRequiredService<IEmailConfigService>()
+                    .LoadAsync()
+                    .ConfigureAwait(true);
+                if (!EmailAddressValidation.IsValid(cfg.ShoppingListRecipientEmail))
+                {
+                    _vm.SetStatusMessage("Set the shopping-list recipient in Settings → Email first.");
+                    return;
+                }
+
+                var to = EmailAddressValidation.Normalize(cfg.ShoppingListRecipientEmail);
+                await email.SendToAsync(
+                    subject: $"Nickeltown bar shopping list — {DateTime.Now:dddd d MMMM yyyy}",
+                    body: body,
+                    toRecipients: new[] { to },
+                    attachments: new List<EmailAttachment>
+                    {
+                        new(fileName, bytes, "application/pdf"),
+                    }).ConfigureAwait(true);
+                _vm.SetStatusMessage("Bar shopping list emailed to " + to + ".");
+            }
+            else
+            {
+                // Merchandise is manual only — uses the normal stock/report recipients.
+                await email.SendAsync(
+                    subject: $"Nickeltown merchandise shopping list — {DateTime.Now:dddd d MMMM yyyy}",
+                    body: body,
+                    attachments: new List<EmailAttachment>
+                    {
+                        new(fileName, bytes, "application/pdf"),
+                    }).ConfigureAwait(true);
+                _vm.SetStatusMessage("Merchandise shopping list emailed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _vm.SetStatusMessage("Email failed: " + ex.Message);
         }
     }
 
