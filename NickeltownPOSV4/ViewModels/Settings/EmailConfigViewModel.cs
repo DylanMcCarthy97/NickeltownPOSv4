@@ -269,6 +269,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         try
         {
             IsBusy = true;
+            NotifyBusyChanged();
             var current = await _config.LoadAsync().ConfigureAwait(true);
             SmtpServer = current.SmtpServer;
             SmtpPort = current.SmtpPort;
@@ -280,7 +281,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
             ShoppingListRecipientEmail = current.ShoppingListRecipientEmail ?? string.Empty;
             ShoppingListSaturdayEmailEnabled = current.ShoppingListSaturdayEmailEnabled;
             ShoppingListSkipWhenEmpty = current.ShoppingListSkipWhenEmpty;
-            SetStatus("Loaded.");
+            SetStatus("Loaded. Tap a field to edit.");
         }
         catch (Exception ex)
         {
@@ -289,6 +290,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         finally
         {
             IsBusy = false;
+            NotifyBusyChanged();
         }
     }
 
