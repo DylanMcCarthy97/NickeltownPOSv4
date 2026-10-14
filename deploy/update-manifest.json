@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.1",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.1/NickeltownPOSV4_2.0.0.1_x64.msix",
-  "releaseNotes": "Restores fast PIN login (hash verify off UI thread + memoize) that was missing from 2.0.0.0, while keeping Stock Management v2.",
+  "version": "2.0.0.2",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.2/NickeltownPOSV4_2.0.0.2_x64.msix",
+  "releaseNotes": "Stock search no longer uses a TextBox (Toshiba OS keyboard was sticking). Tap Search for the in-app keyboard; scan a barcode anywhere on Stock to open the item. Includes PIN login fix from 2.0.0.1.",
   "mandatory": false
 }

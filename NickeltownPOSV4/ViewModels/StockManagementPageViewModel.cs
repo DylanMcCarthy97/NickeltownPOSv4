@@ -234,10 +234,14 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         {
             if (SetProperty(ref _searchText, value))
             {
+                OnPropertyChanged(nameof(HasSearchText));
                 RebindPage();
             }
         }
     }
+
+    /// <summary>True when the stock list is filtered by a typed/scanned search string.</summary>
+    public bool HasSearchText => !string.IsNullOrWhiteSpace(_searchText);
 
     public string FilterCatalogLabel
     {
