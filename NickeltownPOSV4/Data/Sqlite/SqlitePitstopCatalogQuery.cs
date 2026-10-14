@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using NickeltownPOSV4.Services.Stock;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -121,6 +122,7 @@ public sealed class SqlitePitstopCatalogQuery : IPitstopCatalogQuery
               i.ItemType,
               i.ImagePath,
               i.Sku AS Sku,
+              i.AlternateSkusJson AS AlternateSkusJson,
               COALESCE(i.UsesOpenPrice, 0) AS UsesOpenPrice,
               COALESCE(i.OrderInMerchandise, 0) AS OrderInMerchandise,
               i.LowStockThreshold AS LowStockThreshold
@@ -153,7 +155,7 @@ public sealed class SqlitePitstopCatalogQuery : IPitstopCatalogQuery
         }
 
         using var conn = _factory.OpenConnection();
-        var sql = $"""
+        var selectSql = $"""
             SELECT
               i.Id AS ItemId,
               i.Name,
@@ -173,6 +175,7 @@ public sealed class SqlitePitstopCatalogQuery : IPitstopCatalogQuery
               i.ItemType,
               i.ImagePath,
               i.Sku AS Sku,
+              i.AlternateSkusJson AS AlternateSkusJson,
               COALESCE(i.UsesOpenPrice, 0) AS UsesOpenPrice,
               COALESCE(i.OrderInMerchandise, 0) AS OrderInMerchandise,
               i.LowStockThreshold AS LowStockThreshold
@@ -180,18 +183,41 @@ public sealed class SqlitePitstopCatalogQuery : IPitstopCatalogQuery
             WHERE COALESCE(i.IsActive, 1) != 0
               AND COALESCE(i.ShowInPitstop, 0) != 0
               {PitstopSellableBucketFilter}
-              AND lower(trim(COALESCE(i.Sku, ''))) = lower(trim(@Sku))
-            LIMIT 1
+              {HasSellablePitstopPriceFilter}
             """;
 
-        var row = conn.QuerySingleOrDefault<PitstopCatalogProductRow>(
-            new CommandDefinition(sql, new { Sku = needle }, cancellationToken: cancellationToken));
-        if (row is not null)
+        // Fast path: primary SKU (including leading-zero candidates), same as Bar.
+        foreach (var candidate in StockAlternateSkuHelper.ExpandScanCandidates(needle))
         {
-            SplitCategory(row);
+            var row = conn.QuerySingleOrDefault<PitstopCatalogProductRow>(
+                new CommandDefinition(
+                    selectSql + " AND lower(trim(COALESCE(i.Sku, ''))) = lower(trim(@Sku)) LIMIT 1",
+                    new { Sku = candidate },
+                    cancellationToken: cancellationToken));
+            if (row is not null)
+            {
+                SplitCategory(row);
+                return Task.FromResult<PitstopCatalogProductRow?>(row);
+            }
         }
 
-        return Task.FromResult(row);
+        // Slow path: alternate barcodes (JSON list matched in C#).
+        var withAlts = conn.Query<PitstopCatalogProductRow>(
+            new CommandDefinition(
+                selectSql + " AND length(trim(COALESCE(i.AlternateSkusJson, ''))) > 2",
+                cancellationToken: cancellationToken));
+        foreach (var row in withAlts)
+        {
+            if (!StockAlternateSkuHelper.MatchesPrimaryOrAlternate(row.Sku, row.AlternateSkusJson, needle))
+            {
+                continue;
+            }
+
+            SplitCategory(row);
+            return Task.FromResult<PitstopCatalogProductRow?>(row);
+        }
+
+        return Task.FromResult<PitstopCatalogProductRow?>(null);
     }
 
     private static void SplitCategory(PitstopCatalogProductRow r)

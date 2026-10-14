@@ -52,6 +52,9 @@ public sealed class PitstopCatalogProductRow
 
     public string? Sku { get; set; }
 
+    /// <summary>JSON array of alternate barcodes (same as Items.AlternateSkusJson).</summary>
+    public string? AlternateSkusJson { get; set; }
+
     public bool HasSku => !string.IsNullOrWhiteSpace(Sku);
 
     public string SkuDisplay => string.IsNullOrWhiteSpace(Sku) ? string.Empty : $"SKU {Sku.Trim()}";

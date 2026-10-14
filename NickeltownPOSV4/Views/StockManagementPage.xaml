@@ -68,7 +68,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="2" VerticalAlignment="Center">
                     <TextBlock FontSize="22" FontWeight="Bold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Stock Management" />
-                    <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="See what we have and what needs buying" />
+                    <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Tap an item to quick-edit. Tracked sales always update counts." />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <TextBlock VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding ItemCountText, Mode=OneWay}" />
@@ -123,6 +123,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Button
                     Grid.Column="0"
@@ -159,6 +160,16 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="16" Foreground="{StaticResource PosWorkflowCountBrush}" Glyph="&#xE8CB;" />
                         <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosWorkflowCountBrush}" Text="Count Stock" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Grid.Column="3"
+                    BorderBrush="{StaticResource PosAccentBrush}"
+                    Click="CatalogHealth_Click"
+                    Style="{StaticResource StockWorkflowActionButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="16" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE9D9;" />
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosAccentBrush}" Text="Health" />
                     </StackPanel>
                 </Button>
             </Grid>

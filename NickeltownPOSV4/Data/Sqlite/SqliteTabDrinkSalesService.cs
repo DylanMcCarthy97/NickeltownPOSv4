@@ -116,6 +116,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                           StockQty,
                           COALESCE(TrackStock, 1) AS TrackStock,
                           COALESCE(OrderInMerchandise, 0) AS OrderInMerchandise,
+                          COALESCE(NULLIF(TRIM(StockMode), ''), 'Tracked') AS StockMode,
                           COALESCE(NULLIF(TRIM(CatalogBucket), ''), 'Bar') AS CatalogBucket,
                           COALESCE(NULLIF(TRIM(CatalogSubCategory), ''), 'Drinks') AS CatalogSubCategory,
                           ItemType,
@@ -137,11 +138,10 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                 var skipStockForSale = StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
                     row.TrackStock,
                     row.OrderInMerchandise,
-                    row.CatalogBucket,
-                    row.CatalogSubCategory,
+                    row.StockMode,
                     row.ItemType,
                     row.Name);
-                if (!skipStockForSale && row.TrackStock != 0 && row.StockQty < line.Quantity)
+                if (!skipStockForSale && row.StockQty < line.Quantity)
                 {
                     tx.Rollback();
                     return Task.FromResult(TabDrinkCommitResult.Fail($"Not enough stock for “{line.DisplayName}” (have {row.StockQty}, need {line.Quantity})."));
@@ -185,7 +185,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                         cancellationToken: cancellationToken));
 
                 var movementRef = $"{tabLegacyId}:{legacyEntryId}";
-                if (!skipStockForSale && row.TrackStock != 0)
+                if (!skipStockForSale)
                 {
                     conn.Execute(
                         new CommandDefinition(
@@ -378,8 +378,10 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                           StockQty,
                           COALESCE(TrackStock, 1) AS TrackStock,
                           COALESCE(OrderInMerchandise, 0) AS OrderInMerchandise,
+                          COALESCE(NULLIF(TRIM(StockMode), ''), 'Tracked') AS StockMode,
                           COALESCE(NULLIF(TRIM(CatalogBucket), ''), 'Bar') AS CatalogBucket,
                           COALESCE(NULLIF(TRIM(CatalogSubCategory), ''), 'Drinks') AS CatalogSubCategory,
+                          ItemType,
                           Name
                         FROM Items
                         WHERE Id = @id
@@ -401,10 +403,13 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
 
                 undoneLines.Add((itemLabel ?? "item", payload.Quantity));
 
-                var skipStockForSale = itemRow.OrderInMerchandise != 0
-                    || itemRow.TrackStock == 0
-                    || StockCatalogTaxonomy.SkipsBarStockDecrement(itemRow.CatalogBucket, itemRow.CatalogSubCategory);
-                if (!skipStockForSale && itemRow.TrackStock != 0)
+                var skipStockForSale = StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
+                    itemRow.TrackStock,
+                    itemRow.OrderInMerchandise,
+                    itemRow.StockMode,
+                    itemRow.ItemType,
+                    itemRow.Name);
+                if (!skipStockForSale)
                 {
                     conn.Execute(
                         new CommandDefinition(
@@ -502,6 +507,8 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
         public int TrackStock { get; set; }
 
         public int OrderInMerchandise { get; set; }
+
+        public string StockMode { get; set; } = StockCatalogTaxonomy.StockModeTracked;
 
         public string CatalogBucket { get; set; } = StockCatalogTaxonomy.BucketBar;
 

@@ -58,7 +58,7 @@ public sealed partial class StockManagementPage
         {
             _vm.SelectRowCommand.Execute(row);
             _resumeProductSetupAfterItemEdit = false;
-            await OpenItemEditFullScreenAsync().ConfigureAwait(true);
+            await OpenQuickEditAsync(row).ConfigureAwait(true);
         }
     }
 
@@ -128,4 +128,6 @@ public sealed partial class StockManagementPage
     private void ReceiveStock_Click(object sender, RoutedEventArgs e) => OpenReceiveStockFullScreen();
 
     private void CountStock_Click(object sender, RoutedEventArgs e) => OpenCountStockFullScreen();
+
+    private void CatalogHealth_Click(object sender, RoutedEventArgs e) => OpenCatalogHealthFullScreen();
 }

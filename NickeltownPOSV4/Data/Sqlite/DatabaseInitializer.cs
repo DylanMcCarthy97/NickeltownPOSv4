@@ -167,6 +167,91 @@ public sealed class DatabaseInitializer
             new { k = StockVolunteerMigrationSettingsKey });
     }
 
+    private const string StockModeFlagSyncSettingsKey = "stock_mode_flag_sync_20261014";
+
+    /// <summary>
+    /// Re-derive TrackStock / OrderIn / SellUntilGone flags from StockMode so sale deduction
+    /// and shopping-list logic stay aligned. Also finish PreferredStockLevel backfill from JSON parLevel.
+    /// </summary>
+    private static void RunStockModeFlagSyncMigration(SqliteConnection conn)
+    {
+        var ran = conn.ExecuteScalar<long>(
+            "SELECT COUNT(*) FROM Settings WHERE Key = @k",
+            new { k = StockModeFlagSyncSettingsKey });
+        if (ran > 0)
+        {
+            return;
+        }
+
+        var rows = conn.Query<(long Id, int Track, int OrderIn, int NotGonna, string? StockMode, string? ItemDescription, int? Preferred)>(
+            """
+            SELECT
+              Id,
+              COALESCE(TrackStock, 1) AS Track,
+              COALESCE(OrderInMerchandise, 0) AS OrderIn,
+              COALESCE(NotGonnaOrderBack, 0) AS NotGonna,
+              StockMode,
+              ItemDescription,
+              PreferredStockLevel AS Preferred
+            FROM Items
+            """);
+
+        foreach (var r in rows)
+        {
+            var mode = string.IsNullOrWhiteSpace(r.StockMode)
+                ? StockCatalogTaxonomy.StockModeFromLegacyFlags(r.Track, r.OrderIn, r.NotGonna)
+                : StockCatalogTaxonomy.NormalizeStockMode(r.StockMode);
+            StockCatalogTaxonomy.ApplyStockModeToFlags(
+                mode,
+                out var track,
+                out var orderIn,
+                out var notGonna,
+                out var includeWeekly,
+                out var runOut);
+
+            int? preferred = r.Preferred;
+            if (preferred is null or <= 0)
+            {
+                var meta = Services.Stock.StockItemMetadataSerializer.Parse(r.ItemDescription, isShotMixer: false);
+                if (meta.ParLevel is > 0)
+                {
+                    preferred = meta.ParLevel;
+                }
+            }
+
+            conn.Execute(
+                """
+                UPDATE Items
+                SET StockMode = @mode,
+                    TrackStock = @track,
+                    OrderInMerchandise = @orderIn,
+                    NotGonnaOrderBack = @notGonna,
+                    IncludeInWeeklyStockReport = @includeWeekly,
+                    IsRunOutItem = @runOut,
+                    PreferredStockLevel = COALESCE(@preferred, PreferredStockLevel)
+                WHERE Id = @id
+                """,
+                new
+                {
+                    id = r.Id,
+                    mode,
+                    track,
+                    orderIn,
+                    notGonna,
+                    includeWeekly,
+                    runOut,
+                    preferred,
+                });
+        }
+
+        conn.Execute(
+            """
+            INSERT INTO Settings (Key, Value, IsSecret, UpdatedAt)
+            VALUES (@k, '1', 0, datetime('now'))
+            """,
+            new { k = StockModeFlagSyncSettingsKey });
+    }
+
     /// <summary>Idempotent ALTERs for installs that created the DB before newer columns existed.</summary>
     private static void ApplyOptionalColumnPatches(SqliteConnection conn)
     {
@@ -247,6 +332,7 @@ public sealed class DatabaseInitializer
         TryAddColumn(conn, "Items", "ShowOnShoppingList", "ALTER TABLE Items ADD COLUMN ShowOnShoppingList INTEGER");
         TryAddColumn(conn, "Items", "LastStockCountDate", "ALTER TABLE Items ADD COLUMN LastStockCountDate TEXT");
         RunStockVolunteerFieldMigration(conn);
+        RunStockModeFlagSyncMigration(conn);
 
         conn.Execute(
             """

@@ -114,14 +114,9 @@ public static class StockCatalogTaxonomy
         (NormalizeBucket(bucket) == BucketBar || NormalizeBucket(bucket) == BucketPitstop)
         && NormalizeSubCategory(bucket, subCategory).Equals("Food", StringComparison.OrdinalIgnoreCase);
 
-    public static bool SkipsBarStockDecrement(string bucket, string subCategory) =>
-        IsBarLineFood(bucket, subCategory) || IsLegacyFoodSubLabel(subCategory);
-
-    private static bool IsLegacyFoodSubLabel(string subCategory)
-    {
-        var food = new[] { "Snacks", "Meals", "Appetizers", "Legacy Food", "Meal Deal" };
-        return food.Contains(subCategory, StringComparer.OrdinalIgnoreCase);
-    }
+    /// <summary>True when shelf quantity is maintained for this stock mode.</summary>
+    public static bool MaintainsOnHandQuantity(string? stockMode) =>
+        NormalizeStockMode(stockMode) is StockModeTracked or StockModeSellUntilGone;
 
     private static string InferBucketFromNameAndVisibility(string name, bool showInBar, bool showInPitstop)
     {

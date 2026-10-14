@@ -2,11 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace NickeltownPOSV4.Services.Stock;
 
 public static class StockItemMetadataSerializer
 {
+    private static readonly JsonSerializerOptions WriteOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     public static StockItemMetadata Parse(string? itemDescription, bool isShotMixer)
     {
         if (string.IsNullOrWhiteSpace(itemDescription))
@@ -38,18 +44,19 @@ public static class StockItemMetadataSerializer
 
     public static string ToStorageJson(StockItemMetadata meta, bool includeSpirits)
     {
+        // PreferredStockLevel column is the single source for target/par — do not write ParLevel into JSON.
         var payload = new Payload
         {
             Notes = string.IsNullOrWhiteSpace(meta.Notes) ? null : meta.Notes.Trim(),
-            ParLevel = meta.ParLevel,
+            ParLevel = null,
             SourceSystem = string.IsNullOrWhiteSpace(meta.SourceSystem) ? null : meta.SourceSystem.Trim(),
             MixerItemId = meta.MixerItemId,
             MixerQty = meta.MixerItemId is > 0 ? meta.MixerQty : null,
             Spirits = includeSpirits && meta.Spirits is { Count: > 0 } ? meta.Spirits.ToList() : null,
         };
-        if (payload.Notes is null && payload.ParLevel is null && payload.SourceSystem is null && payload.MixerItemId is null && payload.Spirits is null)
+        if (payload.Notes is null && payload.SourceSystem is null && payload.MixerItemId is null && payload.Spirits is null)
             return string.Empty;
-        return JsonSerializer.Serialize(payload);
+        return JsonSerializer.Serialize(payload, WriteOptions);
     }
 
     public sealed class StockItemMetadata
