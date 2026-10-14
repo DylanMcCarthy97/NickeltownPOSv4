@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
+using NickeltownPOSV4.Models.Settings;
 
 namespace NickeltownPOSV4.Services.Settings;
 
@@ -15,11 +16,27 @@ public sealed class SmtpEmailSender : IEmailSender
 
     public SmtpEmailSender(IEmailConfigService config) => _config = config;
 
-    public async Task SendAsync(
+    public Task SendAsync(
         string subject,
         string body,
         IReadOnlyCollection<EmailAttachment>? attachments = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        SendCoreAsync(subject, body, attachments, toRecipients: null, cancellationToken);
+
+    public Task SendToAsync(
+        string subject,
+        string body,
+        IReadOnlyCollection<string> toRecipients,
+        IReadOnlyCollection<EmailAttachment>? attachments = null,
+        CancellationToken cancellationToken = default) =>
+        SendCoreAsync(subject, body, attachments, toRecipients, cancellationToken);
+
+    private async Task SendCoreAsync(
+        string subject,
+        string body,
+        IReadOnlyCollection<EmailAttachment>? attachments,
+        IReadOnlyCollection<string>? toRecipients,
+        CancellationToken cancellationToken)
     {
         var config = await _config.LoadAsync(cancellationToken).ConfigureAwait(false);
 
@@ -33,15 +50,13 @@ public sealed class SmtpEmailSender : IEmailSender
             throw new InvalidOperationException("Sender email and password must be configured.");
         }
 
-        var recipients = config.RecipientEmails
-            .Where(r => !string.IsNullOrWhiteSpace(r))
-            .Select(r => r.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
+        var recipients = ResolveRecipients(config, toRecipients);
         if (recipients.Count == 0)
         {
-            throw new InvalidOperationException("At least one recipient email is required.");
+            throw new InvalidOperationException(
+                toRecipients is null
+                    ? "At least one recipient email is required."
+                    : "Shopping-list recipient email is missing or invalid.");
         }
 
         using var client = new SmtpClient(config.SmtpServer, config.SmtpPort)
@@ -87,5 +102,28 @@ public sealed class SmtpEmailSender : IEmailSender
                 s.Dispose();
             }
         }
+    }
+
+    /// <summary>
+    /// When <paramref name="toRecipients"/> is null, use stock/monthly RecipientEmails.
+    /// When non-null, use only that list (even if empty after filtering).
+    /// </summary>
+    public static List<string> ResolveRecipients(AppEmailConfig config, IReadOnlyCollection<string>? toRecipients)
+    {
+        if (toRecipients is not null)
+        {
+            return toRecipients
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Select(r => r.Trim())
+                .Where(EmailAddressValidation.IsValid)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        return config.RecipientEmails
+            .Where(r => !string.IsNullOrWhiteSpace(r))
+            .Select(r => r.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

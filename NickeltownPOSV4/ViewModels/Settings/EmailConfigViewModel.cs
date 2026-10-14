@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using NickeltownPOSV4.Models.Settings;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Settings;
+using NickeltownPOSV4.Services.Stock;
 
 namespace NickeltownPOSV4.ViewModels.Settings;
 
@@ -12,6 +13,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
 {
     private readonly IEmailConfigService _config;
     private readonly IEmailSender _sender;
+    private readonly IShoppingListEmailService _shoppingListEmail;
     private readonly IInputOverlayService _inputOverlay;
     private readonly IEmailConfigImportService _import;
     private readonly IEmailConfigFilePicker _filePicker;
@@ -23,11 +25,15 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
     private string _senderPassword = string.Empty;
     private string _senderName = "Nickeltown POS";
     private string _recipientList = string.Empty;
+    private string _shoppingListRecipientEmail = string.Empty;
+    private bool _shoppingListSaturdayEmailEnabled;
+    private bool _shoppingListSkipWhenEmpty = true;
 
     public EmailConfigViewModel(
         INavigationService navigation,
         IEmailConfigService config,
         IEmailSender sender,
+        IShoppingListEmailService shoppingListEmail,
         IInputOverlayService inputOverlay,
         IEmailConfigImportService import,
         IEmailConfigFilePicker filePicker)
@@ -35,6 +41,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
     {
         _config = config;
         _sender = sender;
+        _shoppingListEmail = shoppingListEmail;
         _inputOverlay = inputOverlay;
         _import = import;
         _filePicker = filePicker;
@@ -42,6 +49,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         LoadCommand = new AsyncRelayCommand(LoadAsync);
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => !IsBusy);
         SendTestCommand = new AsyncRelayCommand(SendTestAsync, () => !IsBusy);
+        SendShoppingListTestCommand = new AsyncRelayCommand(SendShoppingListTestAsync, () => !IsBusy);
         ImportFromV2Command = new AsyncRelayCommand(ImportFromV2Async, () => !IsBusy);
 
         EditSmtpServerCommand = new AsyncRelayCommand(EditSmtpServerAsync, () => !IsBusy);
@@ -50,6 +58,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         EditSenderPasswordCommand = new AsyncRelayCommand(EditSenderPasswordAsync, () => !IsBusy);
         EditSenderNameCommand = new AsyncRelayCommand(EditSenderNameAsync, () => !IsBusy);
         EditRecipientsCommand = new AsyncRelayCommand(EditRecipientsAsync, () => !IsBusy);
+        EditShoppingListRecipientCommand = new AsyncRelayCommand(EditShoppingListRecipientAsync, () => !IsBusy);
 
         RefreshLegacyPathProbe();
     }
@@ -185,11 +194,59 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         }
     }
 
+    public string ShoppingListRecipientEmail
+    {
+        get => _shoppingListRecipientEmail;
+        set
+        {
+            if (SetProperty(ref _shoppingListRecipientEmail, value))
+            {
+                OnPropertyChanged(nameof(ShoppingListRecipientSummary));
+                OnPropertyChanged(nameof(ShowShoppingListRecipientWarning));
+                OnPropertyChanged(nameof(ShoppingListRecipientWarning));
+            }
+        }
+    }
+
+    public string ShoppingListRecipientSummary =>
+        string.IsNullOrWhiteSpace(ShoppingListRecipientEmail)
+            ? "Tap to enter shopping-list recipient (not stock report recipients)"
+            : ShoppingListRecipientEmail.Trim();
+
+    public bool ShoppingListSaturdayEmailEnabled
+    {
+        get => _shoppingListSaturdayEmailEnabled;
+        set
+        {
+            if (SetProperty(ref _shoppingListSaturdayEmailEnabled, value))
+            {
+                OnPropertyChanged(nameof(ShowShoppingListRecipientWarning));
+                OnPropertyChanged(nameof(ShoppingListRecipientWarning));
+            }
+        }
+    }
+
+    public bool ShoppingListSkipWhenEmpty
+    {
+        get => _shoppingListSkipWhenEmpty;
+        set => SetProperty(ref _shoppingListSkipWhenEmpty, value);
+    }
+
+    public bool ShowShoppingListRecipientWarning =>
+        ShoppingListSaturdayEmailEnabled && !EmailAddressValidation.IsValid(ShoppingListRecipientEmail);
+
+    public string ShoppingListRecipientWarning =>
+        ShowShoppingListRecipientWarning
+            ? "Automatic Saturday shopping-list email is on, but the recipient address is missing or invalid. It will not send until you set a valid address and Save."
+            : string.Empty;
+
     public IAsyncRelayCommand LoadCommand { get; }
 
     public IAsyncRelayCommand SaveCommand { get; }
 
     public IAsyncRelayCommand SendTestCommand { get; }
+
+    public IAsyncRelayCommand SendShoppingListTestCommand { get; }
 
     public IAsyncRelayCommand EditSmtpServerCommand { get; }
 
@@ -202,6 +259,8 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
     public IAsyncRelayCommand EditSenderNameCommand { get; }
 
     public IAsyncRelayCommand EditRecipientsCommand { get; }
+
+    public IAsyncRelayCommand EditShoppingListRecipientCommand { get; }
 
     public IAsyncRelayCommand ImportFromV2Command { get; }
 
@@ -218,6 +277,9 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
             SenderPassword = current.SenderPassword;
             SenderName = current.SenderName;
             RecipientList = string.Join(Environment.NewLine, current.RecipientEmails);
+            ShoppingListRecipientEmail = current.ShoppingListRecipientEmail ?? string.Empty;
+            ShoppingListSaturdayEmailEnabled = current.ShoppingListSaturdayEmailEnabled;
+            ShoppingListSkipWhenEmpty = current.ShoppingListSkipWhenEmpty;
             SetStatus("Loaded.");
         }
         catch (Exception ex)
@@ -237,7 +299,9 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
             IsBusy = true;
             NotifyBusyChanged();
             await _config.SaveAsync(BuildConfig()).ConfigureAwait(true);
-            SetStatus("Saved.");
+            SetStatus(ShowShoppingListRecipientWarning
+                ? "Saved. Warning: shopping-list auto-send is enabled without a valid recipient."
+                : "Saved.");
         }
         catch (Exception ex)
         {
@@ -261,11 +325,32 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
                 subject: "Nickeltown POS test email",
                 body: "This is a test email from Nickeltown POS v4. If you got this, SMTP is configured correctly.")
                 .ConfigureAwait(true);
-            SetStatus("Test email sent.");
+            SetStatus("Test email sent to stock/report recipients.");
         }
         catch (Exception ex)
         {
             SetStatus($"Test send failed: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyBusyChanged();
+        }
+    }
+
+    private async Task SendShoppingListTestAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            NotifyBusyChanged();
+            await _config.SaveAsync(BuildConfig()).ConfigureAwait(true);
+            var result = await _shoppingListEmail.SendTestAsync().ConfigureAwait(true);
+            SetStatus(result.Succeeded ? result.Message : $"Shopping-list test failed: {result.Message}");
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Shopping-list test failed: {ex.Message}");
         }
         finally
         {
@@ -385,6 +470,19 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         RecipientList = result;
     }
 
+    private async Task EditShoppingListRecipientAsync()
+    {
+        var result = await _inputOverlay.ShowKeyboardAsync(
+            ShoppingListRecipientEmail ?? string.Empty,
+            "Shopping-list recipient email").ConfigureAwait(true);
+        if (result is null)
+        {
+            return;
+        }
+
+        ShoppingListRecipientEmail = result.Trim();
+    }
+
     private System.Collections.Generic.List<string> ParseRecipients() =>
         (_recipientList ?? string.Empty)
             .Split(new[] { '\r', '\n', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
@@ -406,6 +504,9 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
             SenderPassword = SenderPassword ?? string.Empty,
             SenderName = (SenderName ?? string.Empty).Trim(),
             RecipientEmails = recipients,
+            ShoppingListRecipientEmail = EmailAddressValidation.Normalize(ShoppingListRecipientEmail),
+            ShoppingListSaturdayEmailEnabled = ShoppingListSaturdayEmailEnabled,
+            ShoppingListSkipWhenEmpty = ShoppingListSkipWhenEmpty,
         };
     }
 
@@ -413,6 +514,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
     {
         SaveCommand.NotifyCanExecuteChanged();
         SendTestCommand.NotifyCanExecuteChanged();
+        SendShoppingListTestCommand.NotifyCanExecuteChanged();
         ImportFromV2Command.NotifyCanExecuteChanged();
         EditSmtpServerCommand.NotifyCanExecuteChanged();
         EditSmtpPortCommand.NotifyCanExecuteChanged();
@@ -420,5 +522,6 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         EditSenderPasswordCommand.NotifyCanExecuteChanged();
         EditSenderNameCommand.NotifyCanExecuteChanged();
         EditRecipientsCommand.NotifyCanExecuteChanged();
+        EditShoppingListRecipientCommand.NotifyCanExecuteChanged();
     }
 }
