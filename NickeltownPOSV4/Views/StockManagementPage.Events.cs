@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.ViewModels;
 
@@ -69,28 +68,19 @@ public sealed partial class StockManagementPage
     }
 
     /// <summary>
-    /// Open the on-screen keyboard only on an intentional tap.
-    /// GotFocus must NOT open it — after the overlay closes, focus returning to the
-    /// TextBox would reopen the keyboard in a loop (Toshiba stuck-keyboard bug).
+    /// Search is a Button (not a TextBox) so the Toshiba OS keyboard never attaches.
+    /// Only this intentional click opens our in-app overlay keyboard.
     /// </summary>
-    private async void StockSearchTextBox_PointerPressed(object sender, PointerRoutedEventArgs e)
+    private async void StockSearchButton_Click(object sender, RoutedEventArgs e)
     {
-        e.Handled = true;
         await RunWithStockOverlayGateAsync(RunStockSearchOverlayCoreAsync).ConfigureAwait(true);
     }
 
-    private async void StockScanBarcode_Click(object sender, RoutedEventArgs e)
+    private void StockClearSearch_Click(object sender, RoutedEventArgs e)
     {
-        // Prefer wedge scan on the page; this button is a fallback for typing a code.
-        await RunWithStockOverlayGateAsync(async () =>
-        {
-            var r = await _inputOverlay.ShowKeyboardAsync(string.Empty, "Type barcode").ConfigureAwait(true);
-            ClearStockSearchFocus();
-            if (r is not null)
-            {
-                await TryHandleHomeBarcodeOrSearchAsync(r).ConfigureAwait(true);
-            }
-        }).ConfigureAwait(true);
+        _vm.SearchText = string.Empty;
+        ClearStockSearchFocus();
+        _vm.SetStatusMessage("Search cleared.");
     }
 
     private async Task RunStockSearchOverlayCoreAsync()

@@ -55,6 +55,7 @@ public sealed partial class StockManagementPage
     {
         try
         {
+            // Keep focus on the page root so wedge scans work and no TextBox summons the OS keyboard.
             StockPageRoot?.Focus(FocusState.Programmatic);
         }
         catch

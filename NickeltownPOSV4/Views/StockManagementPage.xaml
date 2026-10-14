@@ -71,25 +71,47 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <FontIcon VerticalAlignment="Center" FontSize="18" Foreground="{StaticResource PosTextSecondaryBrush}" Glyph="&#xE721;" />
-                    <TextBox
-                        x:Name="StockSearchTextBox"
+                    <!--
+                      Button (not TextBox): Toshiba OS touch keyboard must never attach here.
+                      Tap opens our app overlay keyboard only; wedge scans work page-wide.
+                    -->
+                    <Button
+                        x:Name="StockSearchButton"
                         Grid.Column="1"
-                        BorderThickness="0"
+                        MinHeight="48"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        VerticalAlignment="Stretch"
                         Background="Transparent"
-                        IsReadOnly="True"
-                        IsTabStop="False"
-                        PlaceholderText="Search name — or just scan a barcode"
-                        PointerPressed="StockSearchTextBox_PointerPressed"
-                        Style="{StaticResource PosTouchFieldTextBoxStyle}"
-                        Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        BorderThickness="0"
+                        Click="StockSearchButton_Click"
+                        Padding="4,0"
+                        UseSystemFocusVisuals="False">
+                        <Grid>
+                            <TextBlock
+                                FontSize="15"
+                                Foreground="{StaticResource PosTextSecondaryBrush}"
+                                Text="Search name — or just scan a barcode"
+                                TextTrimming="CharacterEllipsis"
+                                Visibility="{Binding HasSearchText, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
+                                Text="{Binding SearchText, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis"
+                                Visibility="{Binding HasSearchText, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                        </Grid>
+                    </Button>
                     <Button
                         Grid.Column="2"
                         MinWidth="48"
                         MinHeight="48"
-                        Click="StockScanBarcode_Click"
+                        Click="StockClearSearch_Click"
                         Style="{StaticResource TabsHeaderActionButtonStyle}"
-                        ToolTipService.ToolTip="Scan barcode">
-                        <FontIcon FontSize="18" Glyph="&#xE963;" />
+                        ToolTipService.ToolTip="Clear search"
+                        Visibility="{Binding HasSearchText, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <FontIcon FontSize="16" Glyph="&#xE711;" />
                     </Button>
                     <Button
                         Grid.Column="3"

@@ -443,11 +443,25 @@ public sealed partial class StockManagementPage
 
     private static void WireOverlayField(TextBox textBox, Button sideButton, Func<Task> runOverlayAsync)
     {
-        sideButton.Click += async (_, _) => await runOverlayAsync().ConfigureAwait(true);
+        async Task RunAndDefocusAsync()
+        {
+            await runOverlayAsync().ConfigureAwait(true);
+            try
+            {
+                // After overlay dismiss, leave the TextBox so the Toshiba OS keyboard cannot stick.
+                (textBox.Parent as Control)?.Focus(FocusState.Programmatic);
+            }
+            catch
+            {
+                // Ignore focus races.
+            }
+        }
+
+        sideButton.Click += async (_, _) => await RunAndDefocusAsync().ConfigureAwait(true);
         textBox.PointerPressed += async (_, e) =>
         {
             e.Handled = true;
-            await runOverlayAsync().ConfigureAwait(true);
+            await RunAndDefocusAsync().ConfigureAwait(true);
         };
     }
 
@@ -455,7 +469,9 @@ public sealed partial class StockManagementPage
         new()
         {
             Style = (Style)Application.Current.Resources["PosTouchFieldTextBoxStyle"],
-            IsReadOnly = false,
+            IsReadOnly = true,
+            IsTabStop = false,
+            PreventKeyboardDisplayOnProgrammaticFocus = true,
             PlaceholderText = placeholder ?? string.Empty,
         };
 
@@ -464,5 +480,7 @@ public sealed partial class StockManagementPage
         {
             Style = (Style)Application.Current.Resources["PosTouchFieldTextBoxStyle"],
             IsReadOnly = true,
+            IsTabStop = false,
+            PreventKeyboardDisplayOnProgrammaticFocus = true,
         };
 }
