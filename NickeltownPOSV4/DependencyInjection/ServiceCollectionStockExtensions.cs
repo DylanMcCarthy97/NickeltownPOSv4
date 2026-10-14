@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Services.Stock;
 using NickeltownPOSV4.ViewModels;
-using NickeltownPOSV4.Views.Panels;
 
 namespace NickeltownPOSV4.DependencyInjection;
 
@@ -14,8 +13,7 @@ internal static class ServiceCollectionStockExtensions
         services.AddSingleton<IStockProductImageStorage, StockProductImageStorage>();
         services.AddSingleton<StockItemAdminPersistenceService>();
         services.AddSingleton<StockV2ItemImportPreviewService>();
-        services.AddTransient<StockEditorPanelViewModel>();
-        services.AddTransient<StockEditorPanel>();
+        // StockEditorPanel is legacy/unused — StockManagementPage is the stock admin surface.
         services.AddTransient<StockManagementPageViewModel>();
 
         return services;

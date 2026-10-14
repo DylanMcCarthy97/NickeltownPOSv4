@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
+using NickeltownPOSV4.Services.Stock;
 using NickeltownPOSV4.ViewModels;
 
 namespace NickeltownPOSV4.Services.AddDrinks;
 
-/// <summary>SKU / alternate barcode lookup for wedge scanners.</summary>
+/// <summary>SKU / alternate barcode lookup for wedge scanners (delegates to shared stock helper).</summary>
 internal static class AddDrinksBarcodeHelper
 {
     public static DrinkCardItem? FindProduct(IReadOnlyList<DrinkCardItem> products, string code)
     {
-        foreach (var candidate in ExpandScanCandidates(code))
+        foreach (var candidate in StockAlternateSkuHelper.ExpandScanCandidates(code))
         {
             var hit = products.FirstOrDefault(p =>
                 (!string.IsNullOrWhiteSpace(p.Sku)
@@ -27,49 +27,9 @@ internal static class AddDrinksBarcodeHelper
         return null;
     }
 
-    public static IEnumerable<string> ExpandScanCandidates(string code)
-    {
-        var c = (code ?? string.Empty).Trim();
-        if (c.Length == 0)
-        {
-            yield break;
-        }
+    public static IEnumerable<string> ExpandScanCandidates(string code) =>
+        StockAlternateSkuHelper.ExpandScanCandidates(code);
 
-        yield return c;
-        if (c.All(char.IsDigit) && c.Length > 1)
-        {
-            var trimmed = c.TrimStart('0');
-            if (trimmed.Length > 0 && !string.Equals(trimmed, c, StringComparison.Ordinal))
-            {
-                yield return trimmed;
-            }
-        }
-    }
-
-    public static IReadOnlyList<string> ParseAlternateSkusJson(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return Array.Empty<string>();
-        }
-
-        try
-        {
-            var list = JsonSerializer.Deserialize<List<string>>(json);
-            if (list is null)
-            {
-                return Array.Empty<string>();
-            }
-
-            return list
-                .Select(s => (s ?? string.Empty).Trim())
-                .Where(s => s.Length > 0)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-        catch (JsonException)
-        {
-            return Array.Empty<string>();
-        }
-    }
+    public static IReadOnlyList<string> ParseAlternateSkusJson(string? json) =>
+        StockAlternateSkuHelper.ParseAlternateSkuList(json).ToList();
 }

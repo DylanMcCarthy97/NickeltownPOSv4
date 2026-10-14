@@ -23,7 +23,7 @@ public sealed class SpecialTypeListItem
 }
 
 /// <summary>Fixed-layout stock admin (1024×768): filter cards, scrollable list, full-screen sub-flows.</summary>
-public sealed class StockManagementPageViewModel : ObservableViewModel
+public sealed partial class StockManagementPageViewModel : ObservableViewModel
 {
     public const int DefaultFilterIndex = StockManagementBrowserFilter.ChipAll;
 
@@ -185,11 +185,10 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
         SpecialApplyToItems.Add("Both");
         SpecialTypeOptionItems.Add(new SpecialTypeListItem { Value = "FixedPrice", Label = "Fixed price" });
         SpecialTypeOptionItems.Add(new SpecialTypeListItem { Value = "PercentOff", Label = "Percentage off" });
+        // Stock v2: four primary segments only (Drinks/Merch live under More).
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipAll, "All", "\uE8FD", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipAll)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipNeedBuying, "Need Buying", "\uE946", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipNeedBuying)));
+        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipNeedBuying, "Need buy", "\uE946", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipNeedBuying)));
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipOutOfStock, "Out", "\uE7BA", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipOutOfStock)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipDrinks, "Drinks", "\uE8F4", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipDrinks)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipMerch, "Merch", "\uE8F1", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipMerch)));
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipInactive, "Inactive", "\uE7BA", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipInactive)));
         SelectFilterCardCommand = new RelayCommand<int>(SelectFilterCard);
         OpenItemEditCommand = new RelayCommand(OpenItemEditFromSelection, () => HasSelection);
@@ -269,6 +268,7 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
                 OnPropertyChanged(nameof(IsReceiveStockScreen));
                 OnPropertyChanged(nameof(IsCountStockScreen));
                 OnPropertyChanged(nameof(IsProductsScreen));
+                OnPropertyChanged(nameof(IsCatalogHealthScreen));
             }
         }
     }
@@ -290,6 +290,8 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
     public bool IsCountStockScreen => CurrentScreen == StockManagementScreen.CountStock;
 
     public bool IsProductsScreen => CurrentScreen == StockManagementScreen.Products;
+
+    public bool IsCatalogHealthScreen => CurrentScreen == StockManagementScreen.CatalogHealth;
 
     public string SummaryNeedBuyingText => _summaryNeedBuyingCount.ToString(CultureInfo.InvariantCulture);
 
@@ -1204,12 +1206,11 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
             return false;
         }
 
-        if (!StockCatalogTaxonomy.MaintainsOnHandQuantity(r.TrackStock, r.OrderInMerchandise))
-        {
-            return false;
-        }
-
-        return !StockCatalogTaxonomy.IsBarLineFood(r.CatalogBucket, r.CatalogSubCategory);
+        // Food and drinks both adjust when StockMode maintains on-hand qty.
+        return StockCatalogTaxonomy.MaintainsOnHandQuantity(
+            string.IsNullOrWhiteSpace(r.StockMode)
+                ? StockCatalogTaxonomy.StockModeFromLegacyFlags(r.TrackStock, r.OrderInMerchandise, r.NotGonnaOrderBack)
+                : r.StockMode);
     }
 
     private async Task ApplyQuickStockDeltaAndPersistAsync(string? parameter)
@@ -1296,81 +1297,6 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
         OnPropertyChanged(nameof(NeedBuyingCount));
         OnPropertyChanged(nameof(NeedBuyingBadgeText));
         OnPropertyChanged(nameof(ShowNeedBuyingBadge));
-    }
-
-    public IReadOnlyList<StockShoppingListRowViewModel> BuildShoppingListRows() =>
-        BuildShoppingListRows(includeMerch: true, includeRegular: true);
-
-    public IReadOnlyList<StockShoppingListRowViewModel> BuildShoppingListRegularRows() =>
-        BuildShoppingListRows(includeMerch: false, includeRegular: true);
-
-    public IReadOnlyList<StockShoppingListRowViewModel> BuildShoppingListMerchRows() =>
-        BuildShoppingListRows(includeMerch: true, includeRegular: false);
-
-    private IReadOnlyList<StockShoppingListRowViewModel> BuildShoppingListRows(bool includeMerch, bool includeRegular) =>
-        _all.Where(StockInventoryLevelHelper.IsShoppingListCandidate)
-            .Select(r => new StockShoppingListRowViewModel(r))
-            .Where(r => (r.IsMerch && includeMerch) || (!r.IsMerch && includeRegular))
-            .OrderBy(r => r.SortPriority)
-            .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-    public string BuildShoppingListClipboardText()
-    {
-        var regular = BuildShoppingListRegularRows();
-        var merch = BuildShoppingListMerchRows();
-        var lines = new List<string>
-        {
-            "Nickeltown Shopping List",
-            DateTime.Now.ToString("dddd d MMMM yyyy", CultureInfo.GetCultureInfo("en-AU")),
-            string.Empty,
-        };
-
-        if (regular.Count == 0 && merch.Count == 0)
-        {
-            lines.Add("Nothing needs buying right now.");
-            return string.Join(Environment.NewLine, lines);
-        }
-
-        var totalItems = regular.Count + merch.Count;
-        var totalNeed = regular.Sum(r => r.NeedQty) + merch.Sum(r => r.NeedQty);
-        lines.Add($"Items: {totalItems}  |  Units needed: {totalNeed}");
-        if (regular.Count > 0 && merch.Count > 0)
-        {
-            lines.Add($"Bar & supplies: {regular.Count}  |  Merchandise: {merch.Count}");
-        }
-
-        lines.Add(string.Empty);
-        AppendShoppingListSection(lines, "BAR & SUPPLIES", regular);
-        AppendShoppingListSection(lines, "MERCHANDISE", merch);
-        return string.Join(Environment.NewLine, lines);
-    }
-
-    private static void AppendShoppingListSection(List<string> lines, string title, IReadOnlyList<StockShoppingListRowViewModel> rows)
-    {
-        if (rows.Count == 0)
-        {
-            return;
-        }
-
-        lines.Add(title);
-        lines.Add(new string('─', Math.Min(title.Length, 40)));
-        foreach (var row in rows)
-        {
-            lines.Add(row.Name + (string.IsNullOrEmpty(row.StatusText) ? "" : "  [" + row.StatusText + "]"));
-            lines.Add($"  Have: {row.HaveQty}   Need: {row.NeedQty}");
-            if (!string.IsNullOrEmpty(row.SuggestedDisplayLine))
-            {
-                lines.Add("  " + row.SuggestedDisplayLine);
-            }
-
-            if (!string.IsNullOrEmpty(row.SetupHint))
-            {
-                lines.Add("  " + row.SetupHint);
-            }
-
-            lines.Add(string.Empty);
-        }
     }
 
     public IReadOnlyList<StockEditorRow> BuildStockCountQueue() =>
@@ -1477,8 +1403,10 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
         SpecialLabel = snap.SpecialLabel;
         SpecialAppliesToMode = snap.SpecialAppliesToMode;
         ApplyMetadataFromDescription(snap.ItemDescription, snap.IsShotMixerItem);
+        // PreferredStockLevel is the only target field; migrate leftover JSON par into the text box once.
         DetailPreferredStockLevelText = src.PreferredStockLevel?.ToString(CultureInfo.InvariantCulture)
             ?? DetailParLevelText;
+        DetailParLevelText = DetailPreferredStockLevelText;
         DetailWarnMeBelowText = src.WarnMeBelow?.ToString(CultureInfo.InvariantCulture)
             ?? snap.LowStockThresholdText;
         DetailPurchaseUnitQtyText = src.PurchaseUnitQty?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
@@ -1817,7 +1745,12 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
         }
 
         int? preferredVal = null;
-        var prefRaw = (DetailPreferredStockLevelText ?? DetailParLevelText ?? string.Empty).Trim();
+        var prefRaw = (DetailPreferredStockLevelText ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(prefRaw))
+        {
+            prefRaw = (DetailParLevelText ?? string.Empty).Trim();
+        }
+
         if (!string.IsNullOrEmpty(prefRaw))
         {
             if (!StockMoneyInputParser.TryParseWholeNonNegativeInt(prefRaw, "Target Amount", out var pv, out var prefErr))
@@ -1827,6 +1760,8 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
             }
 
             preferredVal = pv;
+            DetailPreferredStockLevelText = prefRaw;
+            DetailParLevelText = prefRaw;
         }
 
         int? packVal = null;
@@ -1871,7 +1806,6 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
                     new StockItemMetadataSerializer.StockItemMetadata
                     {
                         Notes = DetailNotesText,
-                        ParLevel = preferredVal ?? ParseOptionalInt(DetailParLevelText),
                         MixerItemId = DetailMixerItemId,
                         MixerQty = DetailMixerQty,
                         Spirits = spirits.ToList(),
@@ -1884,7 +1818,6 @@ public sealed class StockManagementPageViewModel : ObservableViewModel
                     new StockItemMetadataSerializer.StockItemMetadata
                     {
                         Notes = DetailNotesText,
-                        ParLevel = preferredVal ?? ParseOptionalInt(DetailParLevelText),
                     },
                     includeSpirits: false);
                 if (string.IsNullOrEmpty(itemDescription) && !string.IsNullOrWhiteSpace(DetailNotesText))

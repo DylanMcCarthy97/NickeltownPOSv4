@@ -43,17 +43,15 @@ public static class StockInventoryLevelHelper
         return row.LowStockThreshold is > 0 ? row.LowStockThreshold : null;
     }
 
+    /// <summary>
+    /// Target on-hand qty from <see cref="StockEditorRow.PreferredStockLevel"/> only.
+    /// Legacy parLevel in ItemDescription JSON is migrated into PreferredStockLevel at DB init.
+    /// </summary>
     public static int? ResolveTargetAmount(StockEditorRow row)
     {
         if (row.PreferredStockLevel is > 0)
         {
             return row.PreferredStockLevel;
-        }
-
-        var meta = StockItemMetadataSerializer.Parse(row.ItemDescription, isShotMixer: false);
-        if (meta.ParLevel is > 0)
-        {
-            return meta.ParLevel;
         }
 
         if (row.LowStockThreshold is > 0)
@@ -218,8 +216,9 @@ public static class StockInventoryLevelHelper
     public static string BuildCategoryLine(StockEditorRow row) =>
         (row.CatalogSubCategory ?? "Drinks").Trim();
 
+    /// <summary>Slim list qty — number only (status sits beside it).</summary>
     public static string FormatStockHero(StockEditorRow row) =>
-        row.StockQty + " LEFT";
+        row.StockQty.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     public static bool ShowStatusPill(StockEditorRow row) =>
         ResolveStatus(row) != StockVolunteerStatus.NotCounted;

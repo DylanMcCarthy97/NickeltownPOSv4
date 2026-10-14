@@ -5,7 +5,8 @@ using System.Text.Json;
 
 namespace NickeltownPOSV4.Services.Stock;
 
-internal static class StockAlternateSkuHelper
+/// <summary>Primary + alternate barcode matching shared by Bar and Pitstop sell paths.</summary>
+public static class StockAlternateSkuHelper
 {
     public static bool AlternateSkuListContains(string? alternateSkusJson, string code)
     {
@@ -18,6 +19,49 @@ internal static class StockAlternateSkuHelper
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// True when <paramref name="scanCode"/> matches primary SKU or any alternate,
+    /// including leading-zero variants for numeric barcodes.
+    /// </summary>
+    public static bool MatchesPrimaryOrAlternate(string? primarySku, string? alternateSkusJson, string scanCode)
+    {
+        foreach (var candidate in ExpandScanCandidates(scanCode))
+        {
+            if (!string.IsNullOrWhiteSpace(primarySku)
+                && string.Equals(primarySku.Trim(), candidate, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (AlternateSkuListContains(alternateSkusJson, candidate))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Scan code plus optional leading-zero trim for numeric wedge barcodes.</summary>
+    public static IEnumerable<string> ExpandScanCandidates(string code)
+    {
+        var c = (code ?? string.Empty).Trim();
+        if (c.Length == 0)
+        {
+            yield break;
+        }
+
+        yield return c;
+        if (c.All(char.IsDigit) && c.Length > 1)
+        {
+            var trimmed = c.TrimStart('0');
+            if (trimmed.Length > 0 && !string.Equals(trimmed, c, StringComparison.Ordinal))
+            {
+                yield return trimmed;
+            }
+        }
     }
 
     public static IEnumerable<string> ParseAlternateSkuList(string? alternateSkusJson) =>

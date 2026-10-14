@@ -10,4 +10,5 @@ public enum StockManagementScreen
     ItemEdit,
     AdjustStock,
     ImportWizard,
+    CatalogHealth,
 }

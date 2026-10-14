@@ -113,7 +113,7 @@ public sealed partial class StockManagementPage
         DismissInPageStockModal();
     }
 
-    private static ComboBox CreateStockModePicker(string currentMode)
+    internal static ComboBox CreateStockModePicker(string currentMode)
     {
         var cb = new ComboBox { MinHeight = 46, FontSize = 13 };
         foreach (var (value, label) in new (string Value, string Label)[]
@@ -198,7 +198,7 @@ public sealed partial class StockManagementPage
             : $"Bar profit: {profit:0.00}";
     }
 
-    private static StackPanel Labeled(string caption, UIElement field)
+    internal static StackPanel Labeled(string caption, UIElement field)
     {
         var sp = new StackPanel { Spacing = 4 };
         sp.Children.Add(
@@ -279,17 +279,19 @@ public sealed partial class StockManagementPage
         ShowFullScreen(StockManagementScreen.ItemEdit, BuildEditFullScreenShell(isNewItem: true));
     }
 
-    private void ShowFullScreen(StockManagementScreen screen, UIElement content)
+    internal void ShowFullScreen(StockManagementScreen screen, UIElement content)
     {
         _vm.CurrentScreen = screen;
         StockFullScreenPresenter.Content = content;
     }
 
-    private void CloseFullScreen()
+    internal void CloseFullScreen()
     {
         StockFullScreenPresenter.Content = null;
         _vm.CurrentScreen = StockManagementScreen.Home;
     }
+
+    internal void CloseFullScreenToHome() => CloseFullScreen();
 
     private void CloseFullScreenAfterItemEdit()
     {
@@ -1004,8 +1006,11 @@ public sealed partial class StockManagementPage
         panel.Children.Add(Labeled("How we stock this item", form.StockModeBox));
         panel.Children.Add(
             CreateEditHintText(
-                "Tracked - count stock and reorder when low. Sell until gone - run down, no buying. Order only - not kept on shelf. Not counted - skip stock checks."));
+                "Tracked - count stock on every sale (including Food) and reorder when low. Sell until gone - run down, no buying. Order only - not kept on shelf. Not counted - skip stock checks."));
         panel.Children.Add(qtyGrid);
+        panel.Children.Add(
+            CreateEditHintText(
+                "Target Amount is the preferred on-hand level used by the shopping list. Warn below triggers Buy Now."));
         panel.Children.Add(Labeled("Pack size", form.PackSizeRow));
         panel.Children.Add(
             CreateEditHintText(

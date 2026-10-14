@@ -205,7 +205,13 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                 var row = conn.QuerySingleOrDefault<ItemStockRow>(
                     new CommandDefinition(
                         """
-                        SELECT StockQty, COALESCE(TrackStock, 1) AS TrackStock, COALESCE(OrderInMerchandise, 0) AS OrderInMerchandise
+                        SELECT
+                          StockQty,
+                          COALESCE(TrackStock, 1) AS TrackStock,
+                          COALESCE(OrderInMerchandise, 0) AS OrderInMerchandise,
+                          COALESCE(NULLIF(TRIM(StockMode), ''), 'Tracked') AS StockMode,
+                          ItemType,
+                          Name
                         FROM Items
                         WHERE Id = @id AND COALESCE(IsActive,1) != 0
                         """,
@@ -219,8 +225,13 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                     return PitstopSaleCommitResult.Fail($"Item id {line.ItemId} is missing or inactive.");
                 }
 
-                var skipStockForSale = row.OrderInMerchandise != 0;
-                if (!skipStockForSale && row.TrackStock != 0 && row.StockQty < line.Quantity)
+                var skipStockForSale = Services.Stock.StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
+                    row.TrackStock,
+                    row.OrderInMerchandise,
+                    row.StockMode,
+                    row.ItemType,
+                    row.Name);
+                if (!skipStockForSale && row.StockQty < line.Quantity)
                 {
                     tx.Rollback();
                     return PitstopSaleCommitResult.Fail($"Not enough stock for \"{line.DisplayName}\".");
@@ -261,7 +272,7 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                         tx,
                         cancellationToken: cancellationToken));
 
-                if (!skipStockForSale && row.TrackStock != 0)
+                if (!skipStockForSale)
                 {
                     conn.Execute(
                         new CommandDefinition(
@@ -818,6 +829,12 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
         public int TrackStock { get; set; }
 
         public int OrderInMerchandise { get; set; }
+
+        public string StockMode { get; set; } = StockCatalogTaxonomy.StockModeTracked;
+
+        public string? ItemType { get; set; }
+
+        public string? Name { get; set; }
     }
 
     private sealed class PitstopTotalsAggRow

@@ -14,89 +14,63 @@
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
         <conv:ArgbStringToBrushConverter x:Key="ArgbBrush" />
         <conv:StockAlternateRowBrushConverter x:Key="StockAltRowBrush" />
-        <Style x:Key="StockCompactFilterChipStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="34" />
-            <Setter Property="MinWidth" Value="110" />
+        <Style x:Key="StockSegmentButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0,0,8,6" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="UseSystemFocusVisuals" Value="False" />
         </Style>
-        <Style x:Key="StockWorkflowActionButtonStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="50" />
+        <Style x:Key="StockBottomBarButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="58" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="CornerRadius" Value="12" />
             <Setter Property="Background" Value="#FFFDFEFF" />
-            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosBorderBrush}" />
             <Setter Property="UseSystemFocusVisuals" Value="False" />
+            <Setter Property="Padding" Value="4,6" />
         </Style>
         <Style x:Key="StockListRowBorderStyle" TargetType="Border">
-            <Setter Property="MinHeight" Value="82" />
-            <Setter Property="MaxHeight" Value="86" />
-            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="MinHeight" Value="64" />
+            <Setter Property="MaxHeight" Value="68" />
+            <Setter Property="CornerRadius" Value="10" />
             <Setter Property="BorderBrush" Value="{StaticResource PosBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
         </Style>
-        <Style x:Key="StockHeroButtonStyle" TargetType="Button">
-            <Setter Property="MinWidth" Value="120" />
-            <Setter Property="MinHeight" Value="48" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Padding" Value="4,0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="UseSystemFocusVisuals" Value="False" />
-        </Style>
     </Page.Resources>
     <Grid x:Name="StockPageRoot">
+        <!-- Stock v2 home: search → segments → list → bottom job bar (Toshiba 1024×768) -->
         <Grid
             x:Name="StockHomeRoot"
-            Padding="12,8,12,8"
+            Padding="10,6,10,8"
             Visibility="{Binding IsHomeScreen, Converter={StaticResource BoolToVis}, Mode=OneWay}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" ColumnSpacing="12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Spacing="2" VerticalAlignment="Center">
-                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="{StaticResource PosTextPrimaryBrush}" Text="Stock Management" />
-                    <TextBlock FontSize="13" Foreground="{StaticResource PosTextSecondaryBrush}" Text="See what we have and what needs buying" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <TextBlock VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding ItemCountText, Mode=OneWay}" />
-                    <Button
-                        MinHeight="44"
-                        MinWidth="108"
-                        AutomationProperties.Name="Add item"
-                        Click="AddItem_Click"
-                        Content="Add item"
-                        CornerRadius="12"
-                        Style="{StaticResource TabsHeaderActionButtonStyle}" />                    <Button MinHeight="44" MinWidth="96" Click="RefreshStock_Click" Content="Refresh" CornerRadius="12" Style="{StaticResource TabsHeaderActionButtonStyle}" />
-                </StackPanel>
-            </Grid>
+
+            <!-- Search / scan first -->
             <Border
-                Grid.Row="1"
-                Margin="0,8,0,0"
+                Grid.Row="0"
                 Background="{StaticResource PosSurfaceBrush}"
                 BorderBrush="{StaticResource PosBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="14"
-                MinHeight="44">
-                <Grid Padding="12,0" ColumnSpacing="8">
+                MinHeight="52">
+                <Grid Padding="10,0" ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <FontIcon VerticalAlignment="Center" FontSize="16" Foreground="{StaticResource PosTextSecondaryBrush}" Glyph="&#xE721;" />
+                    <FontIcon VerticalAlignment="Center" FontSize="18" Foreground="{StaticResource PosTextSecondaryBrush}" Glyph="&#xE721;" />
                     <TextBox
                         x:Name="StockSearchTextBox"
                         Grid.Column="1"
@@ -104,166 +78,161 @@
                         Background="Transparent"
                         GotFocus="StockSearchTextBox_GotFocus"
                         IsReadOnly="True"
-                        PlaceholderText="Search item name or barcode"
+                        PlaceholderText="Search or scan barcode"
                         Style="{StaticResource PosTouchFieldTextBoxStyle}"
                         Tapped="StockSearchTextBox_Tapped"
                         Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
                         Grid.Column="2"
-                        MinWidth="44"
-                        MinHeight="44"
+                        MinWidth="48"
+                        MinHeight="48"
                         Click="StockScanBarcode_Click"
-                        Style="{StaticResource TabsHeaderActionButtonStyle}">
-                        <FontIcon FontSize="16" Glyph="&#xE963;" />
+                        Style="{StaticResource TabsHeaderActionButtonStyle}"
+                        ToolTipService.ToolTip="Scan barcode">
+                        <FontIcon FontSize="18" Glyph="&#xE963;" />
+                    </Button>
+                    <Button
+                        Grid.Column="3"
+                        MinWidth="48"
+                        MinHeight="48"
+                        Click="AddItem_Click"
+                        Style="{StaticResource TabsHeaderActionButtonStyle}"
+                        ToolTipService.ToolTip="Add item">
+                        <FontIcon FontSize="18" Glyph="&#xE710;" />
                     </Button>
                 </Grid>
             </Border>
-            <Grid Grid.Row="2" Margin="0,8,0,0" ColumnSpacing="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Button
-                    Grid.Column="0"
-                    BorderBrush="{StaticResource PosWorkflowShoppingBrush}"
-                    Click="ShoppingList_Click"
-                    Style="{StaticResource StockWorkflowActionButtonStyle}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon FontSize="16" Foreground="{StaticResource PosWorkflowShoppingBrush}" Glyph="&#xE7BF;" />
-                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosWorkflowShoppingBrush}" Text="Shopping List" />
-                        <Border
-                            Padding="6,2"
-                            Background="{StaticResource PosWorkflowShoppingBrush}"
-                            CornerRadius="8"
-                            Visibility="{Binding ShowNeedBuyingBadge, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-                            <TextBlock FontSize="11" FontWeight="Bold" Foreground="{StaticResource PosOnAccentForegroundBrush}" Text="{Binding NeedBuyingBadgeText, Mode=OneWay}" />
-                        </Border>
-                    </StackPanel>
-                </Button>
-                <Button
-                    Grid.Column="1"
-                    BorderBrush="{StaticResource PosWorkflowReceiveBrush}"
-                    Click="ReceiveStock_Click"
-                    Style="{StaticResource StockWorkflowActionButtonStyle}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon FontSize="16" Foreground="{StaticResource PosWorkflowReceiveBrush}" Glyph="&#xE8FB;" />
-                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosWorkflowReceiveBrush}" Text="Receive Stock" />
-                    </StackPanel>
-                </Button>
-                <Button
-                    Grid.Column="2"
-                    BorderBrush="{StaticResource PosWorkflowCountBrush}"
-                    Click="CountStock_Click"
-                    Style="{StaticResource StockWorkflowActionButtonStyle}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon FontSize="16" Foreground="{StaticResource PosWorkflowCountBrush}" Glyph="&#xE8CB;" />
-                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosWorkflowCountBrush}" Text="Count Stock" />
-                    </StackPanel>
-                </Button>
-            </Grid>
-            <ItemsControl
-                x:Name="FilterCardsItemsControl"
-                Grid.Row="3"
-                Margin="0,8,0,0"
-                ItemsSource="{Binding FilterCards, Mode=OneWay}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <controls:WrapChipPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Button
-                            Command="{Binding DataContext.SelectFilterCardCommand, ElementName=StockPageRoot}"
-                            CommandParameter="{Binding FilterIndex}"
-                            Style="{StaticResource StockCompactFilterChipStyle}">
-                            <Border
-                                MinWidth="120"
-                                MinHeight="34"
-                                Background="{Binding ChipBackground, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
-                                BorderBrush="{Binding ChipBorderBrush, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
-                                BorderThickness="1"
-                                CornerRadius="18"
-                                Padding="12,7">
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    FontSize="12"
-                                    FontWeight="SemiBold"
-                                    Foreground="{Binding ChipForeground, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
-                                    Text="{Binding CompactLabel, Mode=OneWay}"
-                                    TextWrapping="NoWrap" />
-                            </Border>
-                        </Button>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+
+            <!-- Segmented filters -->
             <Border
-                Grid.Row="4"
-                Margin="0,6,0,0"
+                Grid.Row="1"
+                Margin="0,8,0,0"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="4">
+                <Grid ColumnSpacing="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ItemsControl
+                        x:Name="FilterCardsItemsControl"
+                        Grid.ColumnSpan="4"
+                        ItemsSource="{Binding FilterCards, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <controls:WrapChipPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    MinWidth="230"
+                                    HorizontalAlignment="Stretch"
+                                    Command="{Binding DataContext.SelectFilterCardCommand, ElementName=StockPageRoot}"
+                                    CommandParameter="{Binding FilterIndex}"
+                                    Style="{StaticResource StockSegmentButtonStyle}">
+                                    <Border
+                                        MinHeight="40"
+                                        MinWidth="220"
+                                        Margin="2"
+                                        Background="{Binding ChipBackground, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
+                                        BorderBrush="{Binding ChipBorderBrush, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        Padding="6,6">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="SemiBold"
+                                            Foreground="{Binding ChipForeground, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
+                                            Text="{Binding CompactLabel, Mode=OneWay}"
+                                            TextWrapping="NoWrap" />
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Border>
+
+            <!-- Slim product list -->
+            <Border
+                Grid.Row="2"
+                Margin="0,8,0,0"
                 Background="{StaticResource PosSurfaceBrush}"
                 BorderBrush="{StaticResource PosBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="14"
-                Padding="4,4">
-                <ListView
-                    x:Name="ProductBrowserList"
-                    IsItemClickEnabled="True"
-                    ItemClick="ProductBrowserList_ItemClick"
-                    ItemsSource="{Binding PageRows, Mode=OneWay}"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                    ScrollViewer.HorizontalScrollMode="Disabled"
-                    ScrollViewer.VerticalScrollBarVisibility="Auto"
-                    SelectionMode="None">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0,3" />
-                            <Setter Property="MinHeight" Value="82" />
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid HorizontalAlignment="Stretch">
-                                <Border
-                                    HorizontalAlignment="Stretch"
-                                    Background="{Binding IsAlternateRow, Converter={StaticResource StockAltRowBrush}}"
-                                    Style="{StaticResource StockListRowBorderStyle}">
-                                    <Grid Padding="10,8" ColumnSpacing="8" HorizontalAlignment="Stretch">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" MinWidth="0" />
-                                            <ColumnDefinition Width="180" />
-                                            <ColumnDefinition Width="150" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid Grid.Column="0" ColumnSpacing="10" VerticalAlignment="Center">
+                Padding="3">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="10,6,10,4" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextSecondaryBrush}"
+                            Text="{Binding ItemCountText, Mode=OneWay}" />
+                        <Button
+                            Grid.Column="1"
+                            MinHeight="36"
+                            MinWidth="88"
+                            Click="RefreshStock_Click"
+                            Content="Refresh"
+                            CornerRadius="10"
+                            Style="{StaticResource TabsHeaderActionButtonStyle}" />
+                    </Grid>
+                    <ListView
+                        x:Name="ProductBrowserList"
+                        Grid.Row="1"
+                        IsItemClickEnabled="True"
+                        ItemClick="ProductBrowserList_ItemClick"
+                        ItemsSource="{Binding PageRows, Mode=OneWay}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        ScrollViewer.HorizontalScrollMode="Disabled"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0,2" />
+                                <Setter Property="MinHeight" Value="64" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid HorizontalAlignment="Stretch">
+                                    <Border
+                                        HorizontalAlignment="Stretch"
+                                        Background="{Binding IsAlternateRow, Converter={StaticResource StockAltRowBrush}}"
+                                        Style="{StaticResource StockListRowBorderStyle}">
+                                        <Grid Padding="12,8" ColumnSpacing="10" HorizontalAlignment="Stretch">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" MinWidth="0" />
+                                                <ColumnDefinition Width="88" />
+                                                <ColumnDefinition Width="118" />
                                             </Grid.ColumnDefinitions>
-                                            <Border
-                                                Width="48"
-                                                Height="48"
-                                                Background="{StaticResource PosProductThumbFillBrush}"
-                                                BorderBrush="{StaticResource PosProductThumbBorderBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="10"
-                                                VerticalAlignment="Center">
-                                                <controls:CatalogProductImage
-                                                    HorizontalAlignment="Stretch"
-                                                    VerticalAlignment="Stretch"
-                                                    FallbackEmoji="{Binding ProductImageFallbackEmoji, Mode=OneWay}"
-                                                    ImagePath="{Binding ProductImagePath, Mode=OneWay}" />
-                                            </Border>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                            <StackPanel VerticalAlignment="Center" Spacing="1">
                                                 <TextBlock
-                                                    MaxLines="2"
-                                                    FontSize="14"
+                                                    MaxLines="1"
+                                                    FontSize="15"
                                                     FontWeight="SemiBold"
                                                     Foreground="{StaticResource PosTextPrimaryBrush}"
-                                                    LineHeight="18"
                                                     Text="{Binding Name, Mode=OneWay}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    TextWrapping="WrapWholeWords" />
+                                                    TextTrimming="CharacterEllipsis" />
                                                 <TextBlock
                                                     MaxLines="1"
                                                     FontSize="12"
@@ -271,79 +240,132 @@
                                                     Text="{Binding CategoryLine, Mode=OneWay}"
                                                     TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                        </Grid>
-                                        <Grid
-                                            Grid.Column="1"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Center">
-                                            <TextBlock
+                                            <Grid
+                                                Grid.Column="1"
                                                 HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Center"
-                                                FontSize="30"
-                                                FontWeight="Bold"
-                                                Foreground="{StaticResource PosTextPrimaryBrush}"
-                                                Text="{Binding StockHeroText, Mode=OneWay}"
-                                                TextAlignment="Center" />
-                                            <Button
-                                                HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Click="StockHeroAdjust_Click"
-                                                IsEnabled="{Binding CanQuickAdjustStock, Mode=OneWay}"
-                                                Tag="{Binding}"
-                                                Visibility="{Binding CanQuickAdjustStock, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                                        </Grid>
-                                        <Grid
-                                            Grid.Column="2"
-                                            VerticalAlignment="Center"
-                                            ColumnSpacing="6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                                VerticalAlignment="Center">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="26"
+                                                    FontWeight="Bold"
+                                                    Foreground="{StaticResource PosTextPrimaryBrush}"
+                                                    Text="{Binding StockHeroText, Mode=OneWay}" />
+                                                <Button
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Click="StockHeroAdjust_Click"
+                                                    IsEnabled="{Binding CanQuickAdjustStock, Mode=OneWay}"
+                                                    Tag="{Binding}"
+                                                    Visibility="{Binding CanQuickAdjustStock, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                            </Grid>
                                             <StackPanel
+                                                Grid.Column="2"
                                                 Orientation="Horizontal"
-                                                Spacing="5"
+                                                Spacing="6"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
                                                 Visibility="{Binding ShowStatusPill, Converter={StaticResource BoolToVis}, Mode=OneWay}">
                                                 <Ellipse
-                                                    Width="10"
-                                                    Height="10"
+                                                    Width="9"
+                                                    Height="9"
                                                     VerticalAlignment="Center"
                                                     Fill="{Binding StatusAccentColor, Converter={StaticResource ArgbBrush}, Mode=OneWay}" />
-                                                <Border
-                                                    Padding="8,4"
-                                                    Background="{Binding StatusPillBackground, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
-                                                    BorderBrush="{Binding StatusAccentColor, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="8">
-                                                    <TextBlock
-                                                        MaxLines="1"
-                                                        FontSize="11"
-                                                        FontWeight="SemiBold"
-                                                        Foreground="{Binding StatusAccentColor, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
-                                                        Text="{Binding StatusText, Mode=OneWay}"
-                                                        TextTrimming="CharacterEllipsis" />
-                                                </Border>
+                                                <TextBlock
+                                                    MaxWidth="90"
+                                                    MaxLines="1"
+                                                    FontSize="12"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{Binding StatusAccentColor, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
+                                                    Text="{Binding StatusText, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    VerticalAlignment="Center" />
                                             </StackPanel>
-                                            <FontIcon
-                                                Grid.Column="1"
-                                                VerticalAlignment="Center"
-                                                FontSize="12"
-                                                Foreground="{StaticResource PosTextSecondaryBrush}"
-                                                Glyph="&#xE76C;" />
                                         </Grid>
-                                    </Grid>
-                                </Border>
-                                <Border Background="#0F2563EB" BorderBrush="{StaticResource PosAccentBrush}" BorderThickness="1" CornerRadius="12" IsHitTestVisible="False" Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                                    </Border>
+                                    <Border
+                                        Background="#0F2563EB"
+                                        BorderBrush="{StaticResource PosAccentBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        IsHitTestVisible="False"
+                                        Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
             </Border>
+
+            <!-- Bottom job bar -->
+            <Grid Grid.Row="3" Margin="0,8,0,0" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="0"
+                    Click="ShoppingList_Click"
+                    Style="{StaticResource StockBottomBarButtonStyle}">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                        <FontIcon FontSize="16" Foreground="{StaticResource PosWorkflowShoppingBrush}" Glyph="&#xE7BF;" />
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PosWorkflowShoppingBrush}" Text="Shopping" HorizontalAlignment="Center" />
+                        <Border
+                            MinWidth="18"
+                            Padding="5,1"
+                            HorizontalAlignment="Center"
+                            Background="{StaticResource PosWorkflowShoppingBrush}"
+                            CornerRadius="8"
+                            Visibility="{Binding ShowNeedBuyingBadge, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                            <TextBlock FontSize="10" FontWeight="Bold" Foreground="{StaticResource PosOnAccentForegroundBrush}" Text="{Binding NeedBuyingBadgeText, Mode=OneWay}" HorizontalAlignment="Center" />
+                        </Border>
+                    </StackPanel>
+                </Button>
+                <Button
+                    Grid.Column="1"
+                    Click="ReceiveStock_Click"
+                    Style="{StaticResource StockBottomBarButtonStyle}">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                        <FontIcon FontSize="16" Foreground="{StaticResource PosWorkflowReceiveBrush}" Glyph="&#xE8FB;" />
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PosWorkflowReceiveBrush}" Text="Receive" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Grid.Column="2"
+                    Click="CountStock_Click"
+                    Style="{StaticResource StockBottomBarButtonStyle}">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                        <FontIcon FontSize="16" Foreground="{StaticResource PosWorkflowCountBrush}" Glyph="&#xE8CB;" />
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PosWorkflowCountBrush}" Text="Count" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Grid.Column="3"
+                    Click="CatalogHealth_Click"
+                    Style="{StaticResource StockBottomBarButtonStyle}">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                        <FontIcon FontSize="16" Foreground="{StaticResource PosAccentBrush}" Glyph="&#xE9D9;" />
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PosAccentBrush}" Text="Health" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Grid.Column="4"
+                    MinWidth="64"
+                    Click="StockMore_Click"
+                    Style="{StaticResource StockBottomBarButtonStyle}">
+                    <StackPanel Spacing="2" HorizontalAlignment="Center">
+                        <FontIcon FontSize="16" Foreground="{StaticResource PosTextSecondaryBrush}" Glyph="&#xE712;" />
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PosTextSecondaryBrush}" Text="More" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
         </Grid>
+
         <Grid
             x:Name="StockFullScreenHost"
             Padding="12,10,12,10"
