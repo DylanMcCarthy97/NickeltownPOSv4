@@ -114,6 +114,11 @@ public sealed class ScheduledMaintenanceService : IDisposable
         {
             _ = RunScheduledBackupAsync();
         }
+        else
+        {
+            // Backup already done — still retry unclaimed Saturday emails (stock / shopping list).
+            _ = RunScheduledEmailsAsync();
+        }
     }
 
     private async Task OnBackupTimerAsync()
@@ -153,6 +158,12 @@ public sealed class ScheduledMaintenanceService : IDisposable
             }
         }
 
+        await RunScheduledEmailsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Stock snapshot + shopping-list emails with independent once-per-Saturday claims.</summary>
+    public async Task RunScheduledEmailsAsync(CancellationToken cancellationToken = default)
+    {
         // Stock snapshot email — unchanged recipients (AppEmailConfig.RecipientEmails).
         if (SaturdayEmailClaim.TryClaim(SaturdayEmailClaim.StockKind))
         {
