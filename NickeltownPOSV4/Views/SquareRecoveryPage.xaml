@@ -63,6 +63,7 @@
 
         <Border Grid.Row="1" Style="{StaticResource SettingsCardStyle}">
             <Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsRepeater ItemsSource="{Binding Rows.CurrentPageItems, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="8" />
@@ -84,7 +85,7 @@
                                         <Run Text=" · attempt #" />
                                         <Run Text="{Binding AttemptId, Mode=OneWay}" />
                                     </TextBlock>
-                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="{Binding OccurredAtText, Mode=OneWay}" />
                                         <Run Text=" · status " />
                                         <Run Text="{Binding StatusText, Mode=OneWay}" />
@@ -93,7 +94,7 @@
                                         <Run Text=" · operator " />
                                         <Run Text="{Binding OperatorText, Mode=OneWay}" />
                                     </TextBlock>
-                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="Square id " />
                                         <Run Text="{Binding SquarePaymentIdText, Mode=OneWay}" />
                                         <Run Text=" · checkout " />
@@ -101,7 +102,7 @@
                                         <Run Text=" · idempotency " />
                                         <Run Text="{Binding IdempotencyKeyText, Mode=OneWay}" />
                                     </TextBlock>
-                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="Tab " />
                                         <Run Text="{Binding TabLegacyIdText, Mode=OneWay}" />
                                         <Run Text=" · base " />
@@ -123,7 +124,13 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
+                                        <Button Grid.Row="2" Grid.Column="0" MinHeight="44" Command="{Binding CheckSquareCommand}"
+                                                Content="Check Square status" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                        <Button Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" MinHeight="44" Command="{Binding SaveTabTopUpCommand}"
+                                                Content="Save approved tab top-up" Style="{StaticResource SettingsPrimaryButtonStyle}"
+                                                Visibility="{Binding CanSaveTabTopUp, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Button
                                             Grid.Row="0"
                                             Grid.Column="0"
@@ -166,6 +173,7 @@
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
+                </ScrollViewer>
                 <TextBlock
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"

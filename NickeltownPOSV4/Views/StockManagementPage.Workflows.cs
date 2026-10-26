@@ -846,6 +846,7 @@ public sealed partial class StockManagementPage
         }
 
         var pending = new List<(long ItemId, int OldQty, int NewQty)>();
+        var counted = new HashSet<long>();
         var finished = false;
         var itemName = new TextBlock
         {
@@ -1065,6 +1066,7 @@ public sealed partial class StockManagementPage
 
             var item = queue[index];
             var actual = ParseInt(countValueLabel.Text, item.StockQty);
+            counted.Add(item.ItemId);
             if (actual != item.StockQty)
             {
                 pending.Add((item.ItemId, item.StockQty, actual));
@@ -1077,11 +1079,15 @@ public sealed partial class StockManagementPage
         saveSummaryBtn.Click += async (_, _) =>
         {
             var changes = pending.Select(p => (p.ItemId, p.NewQty)).ToList();
-            var allIds = queue.Select(q => q.ItemId).ToList();
-            if (await _vm.ApplyStockCountResultsAsync(changes, allIds).ConfigureAwait(true))
+            var allIds = counted.ToList();
+            var expected = queue.Where(q => counted.Contains(q.ItemId)).ToDictionary(q => q.ItemId, q => q.StockQty);
+            saveSummaryBtn.IsEnabled = false;
+            try
             {
-                CloseFullScreen();
+                if (await _vm.ApplyStockCountResultsAsync(changes, allIds, expected).ConfigureAwait(true))
+                    CloseFullScreen();
             }
+            finally { saveSummaryBtn.IsEnabled = true; }
         };
 
         Border CreateCompareTile(string title, UIElement content, bool emphasize = false)

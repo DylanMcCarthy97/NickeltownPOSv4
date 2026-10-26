@@ -53,6 +53,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Search / scan first -->
@@ -195,6 +196,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" Margin="10,6,10,4" ColumnSpacing="8">
@@ -202,12 +204,12 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource PosTextSecondaryBrush}"
-                            Text="{Binding ItemCountText, Mode=OneWay}" />
+                        <StackPanel VerticalAlignment="Center" Spacing="3">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}"
+                                       Text="{Binding InventorySummaryText, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}"
+                                       Text="{Binding LastStockCountText, Mode=OneWay}" />
+                        </StackPanel>
                         <Button
                             Grid.Column="1"
                             MinHeight="36"
@@ -217,9 +219,19 @@
                             CornerRadius="10"
                             Style="{StaticResource TabsHeaderActionButtonStyle}" />
                     </Grid>
+                    <Grid Grid.Row="1" Margin="22,4,22,4" ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="88" />
+                            <ColumnDefinition Width="140" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding ItemCountText, Mode=OneWay}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Center" FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="On hand" />
+                        <TextBlock Grid.Column="2" HorizontalAlignment="Right" FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Stock status" />
+                    </Grid>
                     <ListView
                         x:Name="ProductBrowserList"
-                        Grid.Row="1"
+                        Grid.Row="2"
                         IsItemClickEnabled="True"
                         ItemClick="ProductBrowserList_ItemClick"
                         ItemsSource="{Binding PageRows, Mode=OneWay}"
@@ -245,7 +257,7 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" MinWidth="0" />
                                                 <ColumnDefinition Width="88" />
-                                                <ColumnDefinition Width="118" />
+                                                <ColumnDefinition Width="140" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel VerticalAlignment="Center" Spacing="1">
                                                 <TextBlock
@@ -283,20 +295,22 @@
                                                     Tag="{Binding}"
                                                     Visibility="{Binding CanQuickAdjustStock, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                             </Grid>
-                                            <StackPanel
+                                            <Border
                                                 Grid.Column="2"
-                                                Orientation="Horizontal"
-                                                Spacing="6"
+                                                Background="{Binding StatusPillBackground, Converter={StaticResource ArgbBrush}, Mode=OneWay}"
+                                                Padding="8,5"
+                                                CornerRadius="8"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
                                                 Visibility="{Binding ShowStatusPill, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <Ellipse
                                                     Width="9"
                                                     Height="9"
                                                     VerticalAlignment="Center"
                                                     Fill="{Binding StatusAccentColor, Converter={StaticResource ArgbBrush}, Mode=OneWay}" />
                                                 <TextBlock
-                                                    MaxWidth="90"
+                                                    MaxWidth="106"
                                                     MaxLines="1"
                                                     FontSize="12"
                                                     FontWeight="SemiBold"
@@ -304,7 +318,8 @@
                                                     Text="{Binding StatusText, Mode=OneWay}"
                                                     TextTrimming="CharacterEllipsis"
                                                     VerticalAlignment="Center" />
-                                            </StackPanel>
+                                                </StackPanel>
+                                            </Border>
                                         </Grid>
                                     </Border>
                                     <Border
@@ -318,11 +333,28 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
+                    <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440" Spacing="12"
+                                Visibility="{Binding ShowStockEmptyState, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                        <TextBlock FontSize="22" FontWeight="SemiBold" TextAlignment="Center"
+                                   Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding StockEmptyTitle, Mode=OneWay}" />
+                        <TextBlock FontSize="14" TextAlignment="Center" TextWrapping="WrapWholeWords"
+                                   Foreground="{StaticResource PosTextSecondaryBrush}" Text="{Binding StockEmptyHint, Mode=OneWay}" />
+                        <Button Content="Clear search · show all" Command="{Binding ResetStockFiltersCommand}" HorizontalAlignment="Center"
+                                MinHeight="44" Padding="20,8" Style="{StaticResource TabsHeaderActionButtonStyle}" />
+                    </StackPanel>
+                    <ProgressRing Grid.Row="2" IsActive="{Binding IsLoadingStock, Mode=OneWay}" Width="36" Height="36"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Visibility="{Binding IsLoadingStock, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 </Grid>
             </Border>
 
+            <Border Grid.Row="3" Margin="0,6,0,0" Padding="10,6" Background="{StaticResource PosSurfaceBrush}" CornerRadius="8"
+                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding StatusMessage, Mode=OneWay}"
+                           TextWrapping="WrapWholeWords" MaxLines="2" />
+            </Border>
             <!-- Bottom job bar -->
-            <Grid Grid.Row="3" Margin="0,8,0,0" ColumnSpacing="8">
+            <Grid Grid.Row="4" Margin="0,8,0,0" ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
@@ -392,7 +424,16 @@
             x:Name="StockFullScreenHost"
             Padding="12,10,12,10"
             Visibility="{Binding IsFullScreenActive, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <ContentPresenter x:Name="StockFullScreenPresenter" />
+            <Border Grid.Row="1" Margin="0,8,0,0" Padding="12,8" Background="{StaticResource PosSurfaceBrush}" CornerRadius="10"
+                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                <TextBlock FontSize="13" Foreground="{StaticResource PosTextPrimaryBrush}" Text="{Binding StatusMessage, Mode=OneWay}"
+                           TextWrapping="WrapWholeWords" />
+            </Border>
         </Grid>
         <Grid x:Name="StockModalLayer" Canvas.ZIndex="5000" Visibility="Collapsed">
             <Border Background="#B3000000" Tapped="StockModalDim_Tapped" />

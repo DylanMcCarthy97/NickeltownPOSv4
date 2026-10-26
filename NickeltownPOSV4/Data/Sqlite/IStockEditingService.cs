@@ -153,6 +153,9 @@ public sealed class StockItemAdminWrite
 
     public required int StockQty { get; init; }
 
+    /// <summary>Reject a stale editor save rather than overwriting intervening sales.</summary>
+    public int? ExpectedStockQty { get; init; }
+
     public required int TrackStock { get; init; }
 
     public string? ImagePath { get; init; }
@@ -274,15 +277,17 @@ public interface IStockEditingService
     /// <summary>Receive stock: increase qty, update cost, movement, and purchase row.</summary>
     Task ReceiveStockAsync(
         StockPurchaseWrite purchase,
-        int newStockQty,
-        double costEach,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Adjusts the current database quantity and records the movement atomically.</summary>
+    Task<int> AdjustStockAsync(long itemId, int quantity, string mode, string reason, CancellationToken cancellationToken = default);
 
     /// <summary>Batch stock count: sets qty per item and writes count movements.</summary>
     Task ApplyStockCountAsync(
         IReadOnlyList<(long ItemId, int NewQty)> counts,
         IReadOnlyList<long>? countedItemIds = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        IReadOnlyDictionary<long, int>? expectedQuantities = null);
 
     /// <summary>Latest stock-count timestamp across counted items, if any.</summary>
     Task<string?> GetLatestStockCountDateAsync(CancellationToken cancellationToken = default);

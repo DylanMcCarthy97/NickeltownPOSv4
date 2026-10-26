@@ -472,8 +472,9 @@ public sealed class ShoppingListEmailTests
         public Task<bool> ApplyPitstopEodDeductionAsync(long batchId, long itemId, int quantity, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task PermanentlyDeleteStockItemAsync(long itemId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task UpdateItemAdminAsync(StockItemAdminWrite write, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task ReceiveStockAsync(StockPurchaseWrite purchase, int newStockQty, double costEach, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task ApplyStockCountAsync(IReadOnlyList<(long ItemId, int NewQty)> counts, IReadOnlyList<long>? countedItemIds = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task ReceiveStockAsync(StockPurchaseWrite purchase, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<int> AdjustStockAsync(long itemId, int quantity, string mode, string reason, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task ApplyStockCountAsync(IReadOnlyList<(long ItemId, int NewQty)> counts, IReadOnlyList<long>? countedItemIds = null, CancellationToken cancellationToken = default, IReadOnlyDictionary<long, int>? expectedQuantities = null) => throw new NotSupportedException();
         public Task<string?> GetLatestStockCountDateAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task InsertStockPurchaseAsync(StockPurchaseWrite purchase, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }

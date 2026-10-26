@@ -8,15 +8,26 @@ An interrupted connection or unconfirmed cancellation is **status unknown**, not
 
 Unfinished attempts survive restart. A tab with an unresolved payment cannot be charged again until the prior attempt is resolved. Pitstop card checkout is similarly blocked while an earlier Pitstop payment is unresolved. Cash operation is independent. This intentionally requires manager review when the system cannot prove whether a card was charged.
 
+Local sale/credit records, stock deductions, and their Square attempt links now commit together in a single database transaction. Failure to link the confirmed payment rolls the local write back. Retrying the same saved transaction repairs or reuses the existing link without another charge or stock deduction.
+
 ## Resolve an unfinished payment
 
 1. Open **Admin → Square Recovery**. Record the amount, time, transaction key and checkout ID.
-2. Check the checkout/payment in Square, using the configured environment and location. If the reader is still processing, wait or cancel it and verify its final status.
-3. If Square confirms approval, check whether a POS sale/top-up already exists. Link the existing record; do not enter a second payment. An approved Pitstop attempt with a saved recovery payload can use Recover Sale.
+2. Use **Check Square status** for an entry with a saved checkout ID. This reads the existing checkout, verifies the requested amount and AUD currency, and never creates another charge. If no ID is available, check the Square dashboard using the configured environment and location. If the reader is still processing, wait or cancel it and verify its final status.
+3. If Square confirms approval, check whether a POS sale/top-up already exists. Link the existing record; do not enter a second payment. Use **Save approved tab top-up** (manager PIN required) for an approved credit without a local record. An approved Pitstop attempt with a saved recovery payload can use Recover Sale. Both saves are idempotent.
 4. If approval exists without a recoverable POS record, reconcile the sale/top-up or refund in Square as appropriate, then enter a reconciliation note describing what was done. The status-unknown entry itself is not evidence of approval.
 5. If Square confirms cancellation or no payment, mark the attempt manually reconciled with that finding before starting a new card payment.
 
 Upgrading also surfaces historical timeout/transport failures previously labelled Failed. Already reconciled or ignored attempts remain closed. Review these against Square; their appearance does not mean a new charge occurred.
+
+## Inventory workflows
+
+The stock home screen shows active product totals, buying/out-of-stock counts, the last stock-count date, explicit on-hand and status columns, and a clear empty-search state. Untracked/order-in products display a dash for on-hand quantity instead of suggesting they are out of stock.
+
+- **Receive** adds delivery units to the latest database quantity, preserving sales made while the stock screen was open. Purchase cost and the stock movement save together. If a delivery saved but the list failed to refresh, refresh the list rather than receiving it again.
+- **Adjust** and quick adjustments update only stock, retaining product setup and prices. Decreases greater than current stock are rejected; use **Set To** for an intentional physical correction, including zero. The movement records the entered reason.
+- **Count** only marks products actually visited in the guided count. If a counted product's stock changed before saving, the entire batch is rejected without partial changes or count-date stamps. Refresh and recount while trading is paused.
+- Saving a product opened before a quantity change is rejected instead of overwriting an intervening sale. Refresh and review the item, then reapply the intended edits.
 
 ## Backups and restore rehearsal
 
@@ -43,8 +54,6 @@ Before a signed deployment, use Square sandbox to check an approved payment, a c
 Keep subsequent changes focused and independently reviewable:
 
 - Move sale orchestration from large view models into application services, retaining the shared payment state transitions and regression tests.
-- Make the local sale/top-up and payment-attempt completion one database transaction, including idempotent replays.
 - Replace destructive undo with linked reversal records while retaining operator, reason and original transaction references; define Square refund behavior separately.
-- Add an authenticated Square status refresh to recovery so confirmed approvals can be reconciled without manually checking the dashboard.
 - Review the common staff journeys on the actual till for tap count, readability, keyboard behavior and error recovery before redesigning screens.
 - Exercise interrupted MSIX installation and restore on a spare till; add a guided restore workflow after its failure handling is established.

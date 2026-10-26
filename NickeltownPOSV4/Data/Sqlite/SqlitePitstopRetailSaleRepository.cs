@@ -14,20 +14,22 @@ namespace NickeltownPOSV4.Data.Sqlite;
 public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleRepository
 {
     private readonly SqliteConnectionFactory _factory;
-    private readonly ISquarePaymentAttemptRepository _paymentAttempts;
 
     public SqlitePitstopRetailSaleRepository(
         SqliteConnectionFactory factory,
         ISquarePaymentAttemptRepository paymentAttempts)
     {
         _factory = factory;
-        _paymentAttempts = paymentAttempts;
     }
 
-    public async Task<PitstopSaleCommitResult> CommitSaleAsync(
+    public Task<PitstopSaleCommitResult> CommitSaleAsync(
         IReadOnlyList<PitstopSaleLineCommit> lines,
         PitstopSalePaymentCommit payment,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => SqliteBackground.Run(
+            () => CommitSale(lines, payment, cancellationToken), cancellationToken);
+
+    private PitstopSaleCommitResult CommitSale(IReadOnlyList<PitstopSaleLineCommit> lines,
+        PitstopSalePaymentCommit payment, CancellationToken cancellationToken)
     {
         if (lines.Count == 0)
         {
@@ -97,6 +99,8 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                             new { g = existingGuid },
                             tx,
                             cancellationToken: cancellationToken));
+                    SquarePaymentAttemptCompletion.Complete(conn, tx, payment.PaymentAttemptId,
+                        payment.SquareExternalRef, idempotencyKey, null, existingPk, existingGuid, cancellationToken);
                     tx.Commit();
                     return PitstopSaleCommitResult.Success(existingPk ?? 0, existingGuid);
                 }
@@ -126,6 +130,8 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                             new { squareRef = payment.SquareExternalRef.Trim() },
                             tx,
                             cancellationToken: cancellationToken));
+                    SquarePaymentAttemptCompletion.Complete(conn, tx, payment.PaymentAttemptId,
+                        payment.SquareExternalRef, idempotencyKey, null, existing.Id, existing.SaleGuid, cancellationToken);
                     tx.Commit();
                     return PitstopSaleCommitResult.Success(
                         existing.Id,
@@ -347,6 +353,8 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                         cancellationToken: cancellationToken));
             }
 
+            SquarePaymentAttemptCompletion.Complete(conn, tx, payment.PaymentAttemptId,
+                payment.SquareExternalRef, idempotencyKey, null, salePk, saleGuid, cancellationToken);
             tx.Commit();
             savedSalePk = salePk;
             savedSaleGuid = saleGuid;
@@ -389,33 +397,6 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
         catch (Exception ex)
         {
             return PitstopSaleCommitResult.Fail(ex.Message);
-        }
-
-        if (payment.PaymentAttemptId is > 0)
-        {
-            try
-            {
-                var marked = await _paymentAttempts
-                    .MarkCompletedAsync(
-                        payment.PaymentAttemptId.Value,
-                        payment.SquareExternalRef ?? idempotencyKey ?? savedSaleGuid,
-                        null,
-                        savedSalePk,
-                        savedSaleGuid,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-
-                if (!marked)
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[PitstopRetail] MarkCompletedAsync returned false for attempt {payment.PaymentAttemptId.Value} (sale {savedSaleGuid}). Square Recovery should surface this.");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[PitstopRetail] MarkCompletedAsync failed for attempt {payment.PaymentAttemptId.Value}: {ex.Message}");
-            }
         }
 
         return PitstopSaleCommitResult.Success(savedSalePk, savedSaleGuid);

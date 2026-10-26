@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using NickeltownPOSV4.Services.Settings;
+using NickeltownPOSV4.Services.Payments;
 using Square;
 using Square.Terminal.Checkouts;
 
@@ -16,13 +17,47 @@ namespace NickeltownPOSV4.Services;
 /// Sends card totals to a configured Square Terminal device and polls until completion (POSBarV2-equivalent flow).
 /// Uses Square .NET SDK v43+ (Fern-generated client).
 /// </summary>
-public sealed class SquareSdkTerminalSession : ISquareTerminalSession
+public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCheckoutStatusReader
 {
     private static readonly Regex Whitespace = new(@"[\s\r\n\t]+", RegexOptions.Compiled);
 
     private readonly ISquareConfigService _config;
 
     public SquareSdkTerminalSession(ISquareConfigService config) => _config = config;
+
+    public async Task<SquarePresentResult> CheckStatusAsync(string checkoutId, decimal chargedAmount, CancellationToken cancellationToken = default)
+    {
+        var cfg = await _config.LoadAsync(cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(cfg.AccessToken))
+            return SquarePresentResult.Uncertain("Configure Square before checking this payment.", checkoutId);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(20));
+        try
+        {
+            var client = new SquareClient(cfg.AccessToken.Trim(), new ClientOptions
+                { BaseUrl = string.Equals(cfg.Environment?.Trim(), "sandbox", StringComparison.OrdinalIgnoreCase) ? SquareEnvironment.Sandbox : SquareEnvironment.Production });
+            var response = await client.Terminal.Checkouts.GetAsync(new GetCheckoutsRequest { CheckoutId = checkoutId }, cancellationToken: timeout.Token).ConfigureAwait(false);
+            if (response.Errors is not null && response.Errors.Any())
+                return SquarePresentResult.Uncertain("The Square checkout could not be verified against this amount. Check the dashboard.", checkoutId);
+            return ResolveCheckedCheckout(response.Checkout, chargedAmount, checkoutId);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            return SquarePresentResult.Uncertain("Could not reach Square. Keep this payment in recovery and try again when connected.", checkoutId);
+        }
+    }
+
+    internal static SquarePresentResult ResolveCheckedCheckout(TerminalCheckout? checkout, decimal chargedAmount, string checkoutId)
+    {
+        if (checkout is null || checkout.Id != checkoutId
+            || checkout?.AmountMoney?.Amount != (long)(decimal.Round(chargedAmount, 2, MidpointRounding.AwayFromZero) * 100)
+            || checkout?.AmountMoney?.Currency != Currency.Aud)
+            return SquarePresentResult.Uncertain("The Square checkout could not be verified against this amount. Check the dashboard.", checkoutId);
+        var paymentId = checkout.PaymentIds?.FirstOrDefault();
+        if (checkout.Status == "COMPLETED" && string.IsNullOrWhiteSpace(paymentId))
+            return SquarePresentResult.Uncertain("Square has not returned a payment ID yet. Check again shortly.", checkoutId);
+        return ResolveCancelledCheckout(checkout.Status, paymentId, checkoutId, string.Empty);
+    }
 
     public Task<SquarePresentResult> PresentCardChargeAsync(
         decimal amount,

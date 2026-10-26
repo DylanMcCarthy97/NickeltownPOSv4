@@ -148,7 +148,8 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
                 SquarePaymentId = @paymentId,
                 SquareCheckoutId = COALESCE(@checkoutId, SquareCheckoutId),
                 UpdatedAt = @now
-            WHERE Id = @id
+            WHERE Id = @id AND Status != 'Completed'
+              AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
             """,
             new
             {
@@ -196,7 +197,7 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
             SET Status = @status,
                 FailureReason = @reason,
                 UpdatedAt = @now
-            WHERE Id = @id
+            WHERE Id = @id AND Status NOT IN ('Completed', 'TerminalApproved')
             """,
             new
             {

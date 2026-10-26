@@ -235,6 +235,127 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         return SquareTabCardCheckoutBuilder.ToOrchestratorRequest(checkout, tab, key);
     }
 
+    [Fact]
+    public async Task TabCreditAndAttemptCompletionCommitTogether_OrBothRollBack()
+    {
+        using var db = _factory.OpenConnection();
+        db.Execute("INSERT INTO Tabs (LegacyId, Name, Balance, IsGuest, TabType, CreatedAt, UpdatedAt) VALUES ('tab1', 'Test', 0, 0, 'Member', datetime('now'), datetime('now'))");
+        var outcome = await new SquareCardPaymentOrchestrator(new RecordingTerminal(), _attempts, new Audit()).PresentAndLogAsync(Request("atomic-tab"));
+        var metadata = new SquarePaymentCommitMetadata
+        {
+            IdempotencyKey = outcome.IdempotencyKey, SquarePaymentId = outcome.SquarePaymentId,
+            PaymentAttemptId = outcome.AttemptId, BaseAmount = 50, ChargedAmount = 50,
+        };
+        db.Execute("CREATE TRIGGER block_completion BEFORE UPDATE OF Status ON SquarePaymentAttempts WHEN NEW.Status = 'Completed' BEGIN SELECT RAISE(ABORT, 'completion blocked'); END");
+        var funds = new SqliteTabFundsService(_factory, _attempts);
+        Assert.False((await funds.CommitSquareCardTopUpAsync("tab1", 50, null, metadata)).Ok);
+        Assert.Equal(0, db.ExecuteScalar<int>("SELECT COUNT(*) FROM Payments"));
+        Assert.Equal(0, db.ExecuteScalar<int>("SELECT COUNT(*) FROM MoneyMovements"));
+        Assert.Equal(0m, db.ExecuteScalar<decimal>("SELECT Balance FROM Tabs WHERE LegacyId = 'tab1'"));
+        Assert.Equal("TerminalApproved", Assert.Single(await _recovery.GetOrphanAttemptsAsync()).Status);
+        db.Execute("DROP TRIGGER block_completion");
+        Assert.True((await funds.CommitSquareCardTopUpAsync("tab1", 50, null, metadata)).Ok);
+        Assert.True((await funds.CommitSquareCardTopUpAsync("tab1", 50, null, metadata)).Ok);
+        Assert.Equal(50m, db.ExecuteScalar<decimal>("SELECT Balance FROM Tabs WHERE LegacyId = 'tab1'"));
+        Assert.Equal(1, db.ExecuteScalar<int>("SELECT COUNT(*) FROM Payments"));
+        Assert.Equal(0, await _recovery.GetUnresolvedCountAsync());
+    }
+
+    [Fact]
+    public async Task PitstopSaleStockAndCompletionCommitTogether_OrAllRollBack()
+    {
+        using var db = _factory.OpenConnection();
+        var itemId = db.ExecuteScalar<long>("INSERT INTO Items (Name, StockQty, TrackStock, IsActive, CatalogBucket, CatalogSubCategory, StockMode, CreatedAt, UpdatedAt) VALUES ('Cola', 10, 1, 1, 'Bar', 'Drinks', 'Tracked', datetime('now'), datetime('now')); SELECT last_insert_rowid()");
+        var outcome = await new SquareCardPaymentOrchestrator(new RecordingTerminal(), _attempts, new Audit()).PresentAndLogAsync(new SquareCardPaymentRequest
+        {
+            IdempotencyKey = "atomic-pitstop", PaymentType = SquarePaymentAttemptType.PitstopSale,
+            BaseAmount = 10, ChargedAmount = 10, TerminalRequest = new SquarePaymentRequest { TotalAmount = 10 },
+        });
+        var payment = new PitstopSalePaymentCommit
+        {
+            PaymentMethod = "Card", BaseProductTotal = 10, ChargedTotal = 10,
+            IdempotencyKey = outcome.IdempotencyKey, SquareExternalRef = outcome.SquarePaymentId, PaymentAttemptId = outcome.AttemptId,
+        };
+        var lines = new[] { new PitstopSaleLineCommit { ItemId = itemId, DisplayName = "Cola", UnitPrice = 5, Quantity = 2 } };
+        var sales = new SqlitePitstopRetailSaleRepository(_factory, _attempts);
+        db.Execute("CREATE TRIGGER block_completion BEFORE UPDATE OF Status ON SquarePaymentAttempts WHEN NEW.Status = 'Completed' BEGIN SELECT RAISE(ABORT, 'completion blocked'); END");
+        Assert.False((await sales.CommitSaleAsync(lines, payment)).Ok);
+        Assert.Equal(0, db.ExecuteScalar<int>("SELECT COUNT(*) FROM PitstopSales"));
+        Assert.Equal(10, db.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = @itemId", new { itemId }));
+        db.Execute("DROP TRIGGER block_completion");
+        Assert.True((await sales.CommitSaleAsync(lines, payment)).Ok);
+        Assert.True((await sales.CommitSaleAsync(lines, payment)).Ok);
+        Assert.Equal(1, db.ExecuteScalar<int>("SELECT COUNT(*) FROM PitstopSales"));
+        Assert.Equal(8, db.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = @itemId", new { itemId }));
+        Assert.Equal(0, await _recovery.GetUnresolvedCountAsync());
+    }
+
+    [Fact]
+    public async Task RecoveryChecksExistingCheckout_AndSavesApprovedTopUpOnce()
+    {
+        using var db = _factory.OpenConnection();
+        db.Execute("INSERT INTO Tabs (LegacyId, Name, Balance, IsGuest, TabType, CreatedAt, UpdatedAt) VALUES ('tab1', 'Test', 0, 0, 'Member', datetime('now'), datetime('now'))");
+        var terminal = new RecordingTerminal { Failure = "timeout" };
+        var pending = await new SquareCardPaymentOrchestrator(terminal, _attempts, new Audit()).PresentAndLogAsync(Request("status-check"));
+        var reader = new StatusReader(SquarePresentResult.ApprovedSim("confirmed-payment", "checkout-status-check"));
+        var service = new SquareRecoveryService(_recovery, _attempts, reader, new SqliteTabFundsService(_factory, _attempts));
+        Assert.False((await service.SaveTabTopUpAsync(pending.AttemptId!.Value)).Ok);
+        Assert.True((await service.RefreshStatusAsync(pending.AttemptId.Value)).Ok);
+        Assert.Equal("checkout-status-check", reader.CheckoutId);
+        Assert.True((await service.SaveTabTopUpAsync(pending.AttemptId.Value)).Ok);
+        Assert.True((await service.SaveTabTopUpAsync(pending.AttemptId.Value)).Ok);
+        Assert.Equal(1, terminal.Calls);
+        Assert.Equal(50m, db.ExecuteScalar<decimal>("SELECT Balance FROM Tabs WHERE LegacyId = 'tab1'"));
+        Assert.Equal(1, db.ExecuteScalar<int>("SELECT COUNT(*) FROM Payments"));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RecoveryOnlyClosesAnUncertainPaymentWhenSquareConfirmsFailure(bool cancelled)
+    {
+        var terminal = new RecordingTerminal { Failure = "timeout" };
+        var outcome = await new SquareCardPaymentOrchestrator(terminal, _attempts, new Audit()).PresentAndLogAsync(Request("check-pending"));
+        var reader = new StatusReader(cancelled ? SquarePresentResult.Declined("Confirmed cancelled", cancelled: true) : SquarePresentResult.Uncertain("Still processing"));
+        var service = new SquareRecoveryService(_recovery, _attempts, reader, new SqliteTabFundsService(_factory, _attempts));
+        var result = await service.RefreshStatusAsync(outcome.AttemptId!.Value);
+        Assert.Equal(cancelled, result.Ok);
+        Assert.Equal(cancelled ? 0 : 1, await _recovery.GetUnresolvedCountAsync());
+        Assert.Equal(1, terminal.Calls);
+    }
+
+    private sealed class StatusReader(SquarePresentResult result) : ISquareCheckoutStatusReader
+    {
+        public string? CheckoutId { get; private set; }
+        public Task<SquarePresentResult> CheckStatusAsync(string checkoutId, decimal chargedAmount, CancellationToken cancellationToken = default)
+        {
+            CheckoutId = checkoutId;
+            Assert.Equal(50m, chargedAmount);
+            return Task.FromResult(result);
+        }
+    }
+
+    [Theory]
+    [InlineData(5000, true, true, true, true)]
+    [InlineData(4000, true, true, true, false)]
+    [InlineData(5000, false, true, true, false)]
+    [InlineData(5000, true, false, true, false)]
+    [InlineData(5000, true, true, false, false)]
+    public void StatusCheckVerifiesAmountCurrencyCheckoutAndPaymentId(long cents, bool aud, bool matchingCheckout, bool hasPayment, bool approved)
+    {
+        var checkout = new Square.TerminalCheckout
+        {
+            Id = matchingCheckout ? "checkout" : "other-checkout",
+            AmountMoney = new Square.Money { Amount = cents, Currency = aud ? Square.Currency.Aud : Square.Currency.Usd },
+            DeviceOptions = new Square.DeviceCheckoutOptions { DeviceId = "device" },
+            Status = "COMPLETED",
+            PaymentIds = hasPayment ? new[] { "payment" } : Array.Empty<string>(),
+        };
+        var result = SquareSdkTerminalSession.ResolveCheckedCheckout(checkout, 50, "checkout");
+        Assert.Equal(approved, result.Approved);
+        Assert.Equal(!approved, result.RequiresRecovery);
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();

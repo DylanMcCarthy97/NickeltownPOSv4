@@ -166,18 +166,18 @@ public static class StockInventoryLevelHelper
             StockVolunteerStatus.Plenty => StatusPlenty,
             StockVolunteerStatus.SellUntilGone => StatusSellUntilGone,
             StockVolunteerStatus.Gone => StatusGone,
-            _ => string.Empty,
+            _ => row.IsActive == 0 ? "Inactive" : row.OrderInMerchandise != 0 ? "Order in" : "Not tracked",
         };
 
     public static string StatusAccentColor(StockEditorRow row) =>
         ResolveStatus(row) switch
         {
             StockVolunteerStatus.OutOfStock => "#FF991B1B",
-            StockVolunteerStatus.BuyNow => "#FFDC2626",
-            StockVolunteerStatus.BuySoon => "#FFF59E0B",
-            StockVolunteerStatus.Plenty => "#FF16A34A",
+            StockVolunteerStatus.BuyNow => "#FFB91C1C",
+            StockVolunteerStatus.BuySoon => "#FF92400E",
+            StockVolunteerStatus.Plenty => "#FF166534",
             StockVolunteerStatus.SellUntilGone => "#FF7C3AED",
-            StockVolunteerStatus.Gone => "#FF9CA3AF",
+            StockVolunteerStatus.Gone => "#FF6B7280",
             _ => "#FF6B7280",
         };
 
@@ -221,10 +221,12 @@ public static class StockInventoryLevelHelper
 
     /// <summary>Slim list qty — number only (status sits beside it).</summary>
     public static string FormatStockHero(StockEditorRow row) =>
-        row.StockQty.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        row.TrackStock == 0 || row.OrderInMerchandise != 0
+            ? "—"
+            : row.StockQty.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     public static bool ShowStatusPill(StockEditorRow row) =>
-        ResolveStatus(row) != StockVolunteerStatus.NotCounted;
+        true;
 
     public static bool CanQuickAdjustStock(StockEditorRow row) =>
         row.IsActive != 0 && row.TrackStock != 0 && row.OrderInMerchandise == 0;
