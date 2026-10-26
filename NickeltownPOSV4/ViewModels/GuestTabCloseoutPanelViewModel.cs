@@ -201,6 +201,9 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         {
             if (SetProperty(ref _isBusy, value))
             {
+                OnPropertyChanged(nameof(ShowPaymentProgressOverlay));
+                OnPropertyChanged(nameof(PaymentProgressTitle));
+                OnPropertyChanged(nameof(PaymentProgressMessage));
                 NotifyPaymentState();
             }
         }
@@ -214,6 +217,9 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
             if (SetProperty(ref _isSendingSquare, value))
             {
                 OnPropertyChanged(nameof(ShowSendingSquareOverlay));
+                OnPropertyChanged(nameof(ShowPaymentProgressOverlay));
+                OnPropertyChanged(nameof(PaymentProgressTitle));
+                OnPropertyChanged(nameof(PaymentProgressMessage));
                 NotifyPaymentState();
                 CancelSquarePaymentCommand.NotifyCanExecuteChanged();
             }
@@ -221,11 +227,22 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
     }
 
     public bool ShowSendingSquareOverlay => IsSendingSquare;
+    public bool ShowPaymentProgressOverlay => IsPaymentProcessing;
+    public string PaymentProgressTitle => IsSendingSquare ? "Waiting for card" : "Updating guest tab…";
+    public string PaymentProgressMessage => IsSendingSquare
+        ? SquareWaitingMessage
+        : "Saving changes to the guest tab. Please wait…";
 
     public string SquareWaitingMessage
     {
         get => _squareWaitingMessage;
-        private set => SetProperty(ref _squareWaitingMessage, value);
+        private set
+        {
+            if (SetProperty(ref _squareWaitingMessage, value))
+            {
+                OnPropertyChanged(nameof(PaymentProgressMessage));
+            }
+        }
     }
 
     public bool IsPaymentProcessing => IsBusy || IsSendingSquare;

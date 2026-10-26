@@ -273,6 +273,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
             OnPropertyChanged(nameof(CanEditFields));
             OnPropertyChanged(nameof(IsPaymentProcessing));
+            OnPropertyChanged(nameof(ShowPaymentProgressOverlay));
             OnPropertyChanged(nameof(CanApplyFunds));
             BeginAmountEntryCommand.NotifyCanExecuteChanged();
             BeginNotesEntryCommand.NotifyCanExecuteChanged();
@@ -293,7 +294,10 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             }
 
             OnPropertyChanged(nameof(ShowSendingSquareOverlay));
+            OnPropertyChanged(nameof(PaymentProgressTitle));
+            OnPropertyChanged(nameof(CanEditFields));
             OnPropertyChanged(nameof(IsPaymentProcessing));
+            OnPropertyChanged(nameof(ShowPaymentProgressOverlay));
             OnPropertyChanged(nameof(CanApplyFunds));
             CancelSquarePaymentCommand.NotifyCanExecuteChanged();
             CancelCommand.NotifyCanExecuteChanged();
@@ -302,11 +306,20 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     }
 
     public bool ShowSendingSquareOverlay => IsSendingSquare;
+    public bool ShowPaymentProgressOverlay => IsPaymentProcessing;
+    public string PaymentProgressTitle => IsSendingSquare ? "Waiting for card" : "Saving funds…";
+    public string PaymentProgressMessage => SquareWaitingMessage;
 
     public string SquareWaitingMessage
     {
         get => _squareWaitingMessage;
-        private set => SetProperty(ref _squareWaitingMessage, value);
+        private set
+        {
+            if (SetProperty(ref _squareWaitingMessage, value))
+            {
+                OnPropertyChanged(nameof(PaymentProgressMessage));
+            }
+        }
     }
 
     public IRelayCommand CancelCommand { get; }
@@ -415,6 +428,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
         var paymentTabLegacy = _session.TargetTabLegacyId!;
         _pendingFundCommitKey ??= Guid.NewGuid().ToString("N");
+        SquareWaitingMessage = "Saving funds to the tab. Please wait…";
         IsBusy = true;
         StatusMessage = string.Empty;
         SuccessBanner = null;
@@ -479,6 +493,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                     return;
                 }
 
+                SquareWaitingMessage = "Card approved. Saving funds to the tab. Please wait…";
                 var squareResult = await _funds
                     .CommitSquareCardTopUpAsync(
                         paymentTabLegacy,

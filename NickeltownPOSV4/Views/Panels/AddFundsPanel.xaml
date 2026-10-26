@@ -136,6 +136,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox
                             x:Name="AmountInput"
+                            FontSize="22" FontWeight="SemiBold"
                             Grid.Column="0"
                             Style="{StaticResource PosTouchFieldTextBoxStyle}"
                             Text="{Binding AmountDisplay, Mode=OneWay}" />
@@ -203,7 +204,7 @@
                 FontSize="11"
                 FontWeight="SemiBold"
                 Foreground="{StaticResource PosTextSecondaryBrush}"
-                Text="Transaction type" />
+                Text="Payment method" />
 
             <GridView
                 Grid.Row="6"
@@ -358,9 +359,9 @@
 
         <Grid
             Grid.RowSpan="2"
-            Background="#CC0F172A"
+            Background="{StaticResource PosScrimBrush}"
             Canvas.ZIndex="60"
-            Visibility="{Binding ShowSendingSquareOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            Visibility="{Binding ShowPaymentProgressOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
             <Border
                 Padding="24"
                 HorizontalAlignment="Center"
@@ -372,21 +373,25 @@
                 <Border.Shadow>
                     <ThemeShadow />
                 </Border.Shadow>
-                <StackPanel MinWidth="320" Spacing="12">
+                <StackPanel Width="320" Spacing="12">
+                    <ProgressRing Width="40" Height="40" HorizontalAlignment="Center" IsActive="{Binding ShowPaymentProgressOverlay, Mode=OneWay}" />
                     <TextBlock
                         FontSize="20"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Processing card payment…" />
+                        Text="{Binding PaymentProgressTitle, Mode=OneWay}"
+                        AutomationProperties.LiveSetting="Polite" />
                     <TextBlock
                         FontSize="14"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="{Binding SquareWaitingMessage, Mode=OneWay}"
+                        Text="{Binding PaymentProgressMessage, Mode=OneWay}"
+                        AutomationProperties.LiveSetting="Polite"
                         TextWrapping="WrapWholeWords" />
                     <Button
                         HorizontalAlignment="Center"
                         MinWidth="200"
                         Command="{Binding CancelSquarePaymentCommand, Mode=OneWay}"
+                        Visibility="{Binding IsSendingSquare, Converter={StaticResource BoolToVis}, Mode=OneWay}"
                         Content="Cancel payment"
                         FontSize="14"
                         FontWeight="SemiBold"

@@ -43,6 +43,12 @@ Rehearse restoration on a separate copy, never over the running till:
 
 The backup tests restore temporary archives and verify database integrity, balances, configuration and image contents. They do not replace a rehearsal on the venue's deployment environment.
 
+## Toshiba screen checks
+
+The till polish retains the 1024×768 workspace, catalog grids, navigation positions and existing touch targets. Selected tabs have a check mark beside their balance status; secondary tab actions use an outlined surface. Pitstop shows cash/card totals with equal emphasis and a labelled Take payment action. Payment overlays remain visible during local saving as well as terminal waiting; cancellation is shown only during the terminal phase.
+
+On the Toshiba, check long guest/product names, large totals, card-fee explanations and recovery messages at the installed Windows scaling. Confirm every footer action remains visible, the selected-tab check is readable with Race Day on/off, and touch entry still opens the amount/note pads. Check cash, card, decline/cancellation and approved-payment save failure; the busy overlay must close after failure so the full recovery message can be read. Automated XAML compilation does not verify physical-screen appearance.
+
 ## Before installing a release on the till
 
 Pull requests and pushes to main run the application and standalone shopping-list tests on Windows. The MSIX release workflow must pass the same tests before packaging. CI stores TRX test results.

@@ -122,6 +122,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     private string? _pendingTransactionGuid;
 
     private bool _paymentInFlight;
+    private bool _showPaymentProgressOverlay;
 
     private static readonly JsonSerializerOptions RecoveryJsonOptions = new()
     {
@@ -519,6 +520,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
             if (SetProperty(ref _isSendingSquare, value))
             {
                 OnPropertyChanged(nameof(ShowSendingSquareOverlay));
+                OnPropertyChanged(nameof(PaymentProgressTitle));
                 OnPropertyChanged(nameof(IsPaymentLocked));
                 NotifyWork();
             }
@@ -526,11 +528,24 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     }
 
     public bool ShowSendingSquareOverlay => IsSendingSquare;
+    public bool ShowPaymentProgressOverlay
+    {
+        get => _showPaymentProgressOverlay;
+        private set => SetProperty(ref _showPaymentProgressOverlay, value);
+    }
+    public string PaymentProgressTitle => IsSendingSquare ? "Waiting for card" : "Saving sale…";
+    public string PaymentProgressMessage => SquareWaitingMessage;
 
     public string SquareWaitingMessage
     {
         get => _squareWaitingMessage;
-        private set => SetProperty(ref _squareWaitingMessage, value);
+        private set
+        {
+            if (SetProperty(ref _squareWaitingMessage, value))
+            {
+                OnPropertyChanged(nameof(PaymentProgressMessage));
+            }
+        }
     }
 
     public bool ShowCheckoutOverlay =>
@@ -1537,7 +1552,9 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         }
 
         var transactionGuid = BeginPaymentTransaction();
+        SquareWaitingMessage = "Saving the sale and updating stock. Please wait…";
         _paymentInFlight = true;
+        ShowPaymentProgressOverlay = true;
         OnPropertyChanged(nameof(IsPaymentLocked));
         IsBusy = true;
         StatusMessage = string.Empty;
@@ -1611,6 +1628,9 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
                     "Cash payment confirmation started.").ConfigureAwait(true);
             }
 
+            SquareWaitingMessage = Payment == PitstopPaymentSelection.Card
+                ? "Card approved. Saving the sale and updating stock. Please wait…"
+                : "Saving the cash sale and updating stock. Please wait…";
             var pay = PitstopSaleCommitHelper.BuildPaymentCommit(
                 Payment,
                 baseTotal,
@@ -1713,6 +1733,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         finally
         {
             _paymentInFlight = false;
+            ShowPaymentProgressOverlay = false;
             IsBusy = false;
             OnPropertyChanged(nameof(IsPaymentLocked));
             NotifyWork();

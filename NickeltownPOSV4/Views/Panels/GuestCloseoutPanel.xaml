@@ -54,7 +54,9 @@
 
         <Style x:Key="GuestCloseoutPayButtonStyle" TargetType="Button" BasedOn="{StaticResource GuestCloseoutRowActionStyle}">
 
-            <Setter Property="Background" Value="{StaticResource PosSurfaceBrush}" />
+            <Setter Property="Background" Value="{StaticResource PosButtonPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosButtonPrimaryBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
 
         </Style>
 

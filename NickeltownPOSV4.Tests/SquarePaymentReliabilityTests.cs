@@ -79,12 +79,19 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         var terminal = new RecordingTerminal();
         var orchestrator = new SquareCardPaymentOrchestrator(terminal, _attempts, new Audit());
         var funds = new SqliteTabFundsService(_factory, _attempts);
+        NickeltownPOSV4.ViewModels.AddFundsPanelViewModel? fundsPanel = null;
+        NickeltownPOSV4.ViewModels.GuestTabCloseoutPanelViewModel? guestPanel = null;
+        var progress = new List<(bool Visible, bool Sending, string Message)>();
         CommunityToolkit.Mvvm.Input.IAsyncRelayCommand submit;
         Func<string> status;
         if (guestCloseout)
         {
             var vm = new NickeltownPOSV4.ViewModels.GuestTabCloseoutPanelViewModel(funds,
                 null!, session, null!, null!, null!, null!, orchestrator, new Config());
+            guestPanel = vm;
+            Assert.False(vm.ShowPaymentProgressOverlay);
+            vm.PropertyChanged += (_, _) => progress.Add(
+                (vm.ShowPaymentProgressOverlay, vm.IsSendingSquare, vm.PaymentProgressMessage));
             vm.PayCardCommand.Execute(null);
             submit = vm.ConfirmCardCommand;
             status = () => vm.StatusMessage;
@@ -93,6 +100,10 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         {
             var vm = new NickeltownPOSV4.ViewModels.AddFundsPanelViewModel(funds,
                 session, null!, null!, null!, null!, orchestrator, new Config(), null!, new Audit(), null!, null!);
+            fundsPanel = vm;
+            Assert.False(vm.ShowPaymentProgressOverlay);
+            vm.PropertyChanged += (_, _) => progress.Add(
+                (vm.ShowPaymentProgressOverlay, vm.IsSendingSquare, vm.PaymentProgressMessage));
             vm.SelectedTile = vm.Types.Single(t => t.Key == "square");
             vm.AmountText = "50.00";
             submit = vm.ApplyCommand;
@@ -107,6 +118,19 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         Assert.Equal(1, terminal.Calls);
         Assert.Single(await _recovery.GetOrphanAttemptsAsync());
         Assert.Equal(0, db.ExecuteScalar<int>("SELECT COUNT(*) FROM Payments"));
+        var waitingIndex = progress.FindLastIndex(p => p.Visible && p.Sending);
+        Assert.True(waitingIndex >= 0);
+        Assert.Contains(progress.Skip(waitingIndex + 1), p => p.Visible && !p.Sending);
+        if (guestPanel is not null)
+        {
+            Assert.False(guestPanel.ShowPaymentProgressOverlay);
+        }
+        if (fundsPanel is not null)
+        {
+            Assert.Contains(progress, p => p.Visible && !p.Sending && p.Message.Contains("Card approved"));
+            Assert.False(fundsPanel.ShowPaymentProgressOverlay);
+            Assert.True(fundsPanel.CanEditFields);
+        }
     }
 
     [Theory]

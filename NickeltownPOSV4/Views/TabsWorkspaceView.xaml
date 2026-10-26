@@ -69,8 +69,10 @@
         </Style>
 
         <Style x:Key="TabsActionSecondaryStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionButtonStyle}">
-            <Setter Property="Background" Value="{StaticResource PosButtonSecondaryBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource PosOnAccentForegroundBrush}" />
+            <Setter Property="Background" Value="{StaticResource PosSurfaceAltBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PosTextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PosPanelBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
         </Style>
 
         <Style x:Key="TabsActionDangerStyle" TargetType="Button" BasedOn="{StaticResource TabsSideActionWideStyle}">
@@ -408,13 +410,19 @@
                                                     Foreground="{Binding BalanceForegroundKey, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
                                                     Text="{Binding TabBalanceText, Mode=OneWay}"
                                                     TextAlignment="Center" />
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    FontSize="13"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="{Binding BalanceForegroundKey, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
-                                                    Text="{Binding TabStatusLabel, Mode=OneWay}"
-                                                    TextAlignment="Center" />
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+                                                    <TextBlock FontSize="13" FontWeight="Bold"
+                                                        Foreground="{StaticResource PosAccentBrush}" Text="✓"
+                                                        AutomationProperties.Name="Selected tab"
+                                                        Visibility="{Binding TabIsSelected, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        FontSize="13"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{Binding BalanceForegroundKey, Converter={StaticResource BalanceTierToBrushConverter}, Mode=OneWay}"
+                                                        Text="{Binding TabStatusLabel, Mode=OneWay}"
+                                                        TextAlignment="Center" />
+                                                </StackPanel>
                                             </StackPanel>
                                             <TextBlock
                                                 Grid.Row="2"
