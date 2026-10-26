@@ -146,6 +146,39 @@ public sealed class StaffPinLookupCacheTests : IDisposable
             $"Second AuthenticateByPinAsync took {sw.ElapsedMilliseconds}ms after memoize.");
     }
 
+    [Theory]
+    [InlineData("Pin", false)]
+    [InlineData("pin", false)]
+    [InlineData("PIN", false)]
+    [InlineData("Pin", true)]
+    [InlineData("pin", true)]
+    [InlineData("PIN", true)]
+    public async Task ImportedPin_ResetRejectsOldPin_AndPreservesMetadata(string pinProperty, bool forced)
+    {
+        var staffId = SeedPlain("Imported", "2468", "admin");
+        using (var conn = _factory.OpenConnection())
+        {
+            conn.Execute("UPDATE Bartenders SET RawJson = @raw WHERE Id = @id",
+                new { id = staffId, raw = $"{{\"{pinProperty}\":\"2468\",\"PinHash\":\"old\",\"PinSalt\":\"old\",\"requiresPinChange\":true,\"note\":\"keep\"}}" });
+        }
+        _cache.Refresh();
+        var admin = new NickeltownPOSV4.Services.Settings.SqliteStaffAdminService(_factory, _cache);
+        if (forced) await admin.CompleteForcedPinChangeAsync(staffId, "1357");
+        else await admin.ResetPinAsync(staffId, "1357");
+
+        Assert.False(_cache.Authenticate("2468").Ok);
+        var changed = _cache.Authenticate("1357");
+        Assert.True(changed.Ok, changed.ErrorMessage);
+        using var db = _factory.OpenConnection();
+        var raw = db.ExecuteScalar<string>("SELECT RawJson FROM Bartenders WHERE Id = @id", new { id = staffId });
+        using var json = System.Text.Json.JsonDocument.Parse(raw!);
+        Assert.False(json.RootElement.TryGetProperty(pinProperty, out _));
+        Assert.False(json.RootElement.TryGetProperty("PinHash", out _));
+        Assert.False(json.RootElement.TryGetProperty("PinSalt", out _));
+        Assert.Equal("keep", json.RootElement.GetProperty("note").GetString());
+        Assert.Equal(!forced, json.RootElement.GetProperty("requiresPinChange").GetBoolean());
+    }
+
     private long SeedHashed(string name, string pin, string role)
     {
         var (hash, salt) = PosBarPinSecurity.CreateHash(pin);

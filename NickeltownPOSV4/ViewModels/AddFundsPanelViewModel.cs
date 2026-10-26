@@ -273,6 +273,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
             OnPropertyChanged(nameof(CanEditFields));
             OnPropertyChanged(nameof(IsPaymentProcessing));
+            OnPropertyChanged(nameof(ShowPaymentProgressOverlay));
             OnPropertyChanged(nameof(CanApplyFunds));
             BeginAmountEntryCommand.NotifyCanExecuteChanged();
             BeginNotesEntryCommand.NotifyCanExecuteChanged();
@@ -293,7 +294,10 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             }
 
             OnPropertyChanged(nameof(ShowSendingSquareOverlay));
+            OnPropertyChanged(nameof(PaymentProgressTitle));
+            OnPropertyChanged(nameof(CanEditFields));
             OnPropertyChanged(nameof(IsPaymentProcessing));
+            OnPropertyChanged(nameof(ShowPaymentProgressOverlay));
             OnPropertyChanged(nameof(CanApplyFunds));
             CancelSquarePaymentCommand.NotifyCanExecuteChanged();
             CancelCommand.NotifyCanExecuteChanged();
@@ -302,11 +306,20 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     }
 
     public bool ShowSendingSquareOverlay => IsSendingSquare;
+    public bool ShowPaymentProgressOverlay => IsPaymentProcessing;
+    public string PaymentProgressTitle => IsSendingSquare ? "Waiting for card" : "Saving funds…";
+    public string PaymentProgressMessage => SquareWaitingMessage;
 
     public string SquareWaitingMessage
     {
         get => _squareWaitingMessage;
-        private set => SetProperty(ref _squareWaitingMessage, value);
+        private set
+        {
+            if (SetProperty(ref _squareWaitingMessage, value))
+            {
+                OnPropertyChanged(nameof(PaymentProgressMessage));
+            }
+        }
     }
 
     public IRelayCommand CancelCommand { get; }
@@ -413,7 +426,9 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
             return;
         }
 
+        var paymentTabLegacy = _session.TargetTabLegacyId!;
         _pendingFundCommitKey ??= Guid.NewGuid().ToString("N");
+        SquareWaitingMessage = "Saving funds to the tab. Please wait…";
         IsBusy = true;
         StatusMessage = string.Empty;
         SuccessBanner = null;
@@ -449,7 +464,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                 try
                 {
                     cardOutcome = await _squarePayments.PresentAndLogAsync(
-                        SquareTabCardCheckoutBuilder.ToOrchestratorRequest(checkout, _session.TargetTabLegacyId!),
+                        SquareTabCardCheckoutBuilder.ToOrchestratorRequest(checkout, paymentTabLegacy, _pendingFundCommitKey),
                         _squareChargeCts.Token).ConfigureAwait(true);
                 }
                 finally
@@ -460,6 +475,10 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
                 if (!cardOutcome.Approved)
                 {
+                    if (!cardOutcome.RequiresRecovery)
+                    {
+                        _pendingFundCommitKey = null;
+                    }
                     StatusMessage = cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage;
                     return;
                 }
@@ -474,9 +493,10 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                     return;
                 }
 
+                SquareWaitingMessage = "Card approved. Saving funds to the tab. Please wait…";
                 var squareResult = await _funds
                     .CommitSquareCardTopUpAsync(
-                        _session.TargetTabLegacyId!,
+                        paymentTabLegacy,
                         amount,
                         Notes,
                         new SquarePaymentCommitMetadata
@@ -494,12 +514,11 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
                 if (!squareResult.Ok)
                 {
-                    StatusMessage = squareResult.ErrorMessage
-                        ?? "Square approved but the POS could not record the top-up - check Square dashboard and reconcile manually.";
+                    StatusMessage = "Card approved, but the top-up could not be saved. Retry to save it without charging again, or open Admin → Square Recovery.";
                     return;
                 }
 
-                var sqTabLegacy = _session.TargetTabLegacyId!;
+                var sqTabLegacy = paymentTabLegacy;
                 var sqBatchId = squareResult.FundCommitBatchId;
                 var sqTileLabel = _selectedTile.DisplayName;
 
@@ -526,7 +545,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
             var result = await _funds
                 .CommitFundMovementAsync(
-                    _session.TargetTabLegacyId!,
+                    paymentTabLegacy,
                     _selectedTile.Key,
                     amount,
                     Notes,
@@ -540,7 +559,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                 return;
             }
 
-            var tabLegacy = _session.TargetTabLegacyId!;
+            var tabLegacy = paymentTabLegacy;
             var batchId = result.FundCommitBatchId;
             var tileLabel = _selectedTile.DisplayName;
             var fundTabName = string.IsNullOrWhiteSpace(_session.TargetTabDisplayName)

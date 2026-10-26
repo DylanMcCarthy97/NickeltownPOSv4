@@ -50,6 +50,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
     private string _filterCatalogLabel = "All";
 
     private long? _selectedItemId;
+    private int? _detailExpectedStockQty;
 
     private long? _newItemDraftId;
 
@@ -121,11 +122,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
 
     private string _estimatedShoppingSpendText = "$0.00";
 
-    private int _summaryNeedBuyingCount;
-
-    private int _summaryOutOfStockCount;
-
-    private int _summaryTotalItemsCount;
+    private bool _isLoadingStock;
 
     private string _detailNotesText = string.Empty;
 
@@ -187,13 +184,14 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         SpecialTypeOptionItems.Add(new SpecialTypeListItem { Value = "PercentOff", Label = "Percentage off" });
         // Stock v2: four primary segments only (Drinks/Merch live under More).
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipAll, "All", "\uE8FD", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipAll)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipNeedBuying, "Need buy", "\uE946", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipNeedBuying)));
-        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipOutOfStock, "Out", "\uE7BA", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipOutOfStock)));
+        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipNeedBuying, "Need buying", "\uE946", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipNeedBuying)));
+        FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipOutOfStock, "Out of stock", "\uE7BA", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipOutOfStock)));
         FilterCards.Add(new StockFilterCardViewModel(StockManagementBrowserFilter.ChipInactive, "Inactive", "\uE7BA", StockFilterCardViewModel.AccentForFilter(StockManagementBrowserFilter.ChipInactive)));
         SelectFilterCardCommand = new RelayCommand<int>(SelectFilterCard);
         OpenItemEditCommand = new RelayCommand(OpenItemEditFromSelection, () => HasSelection);
         NavigateHomeCommand = new RelayCommand(() => CurrentScreen = StockManagementScreen.Home);
         RefreshCommand = new AsyncRelayCommand(async () => await LoadAsync());
+        ResetStockFiltersCommand = new RelayCommand(() => { SearchText = string.Empty; BrowserFilterIndex = DefaultFilterIndex; });
         SaveItemSectionCommand = new AsyncRelayCommand(() => PersistFullItemAsync(null), CanSaveDetail);
         SavePricesCommand = new AsyncRelayCommand(() => PersistFullItemAsync(null), CanSaveDetail);
         SaveStockSettingsCommand = new AsyncRelayCommand(
@@ -201,7 +199,12 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
                 string.IsNullOrWhiteSpace(StockAdjustmentReason) ? null : StockAdjustmentReason.Trim()),
             CanSaveDetail);
         SaveBarcodeCommand = new AsyncRelayCommand(() => PersistFullItemAsync(null), CanSaveDetail);
-        SelectRowCommand = new RelayCommand<StockListRowViewModel?>(r => SelectedPageRow = r);
+        SelectRowCommand = new RelayCommand<StockListRowViewModel?>(r =>
+        {
+            // An explicit reopen refreshes the editor even when this row remains selected.
+            if (r is not null && ReferenceEquals(_selectedPageRow, r)) ApplySelectionFromRow(r);
+            else SelectedPageRow = r;
+        });
         SelectBrowserFilterCommand = new RelayCommand<string>(SelectBrowserFilterFromParameter);
         StockDeltaCommand = new RelayCommand<string>(ApplyStockDeltaFromParameter, _ => HasSelection && !IsBusy);
         SummaryQuickStockCommand = new AsyncRelayCommand<string>(
@@ -218,7 +221,16 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
 
     public ObservableCollection<string> CatalogFilterOptions { get; } = new();
 
-    public string ItemCountText => $"{PageRows.Count} Item{(PageRows.Count == 1 ? string.Empty : "s")}";
+    public string ItemCountText => $"{PageRows.Count} product{(PageRows.Count == 1 ? string.Empty : "s")} shown";
+
+    public bool IsLoadingStock => _isLoadingStock;
+    public bool ShowStockEmptyState => !_isLoadingStock && PageRows.Count == 0;
+    public string StockEmptyTitle => _all.Count == 0 ? "Your inventory starts here" : "No matching products";
+    public string StockEmptyHint => _all.Count == 0
+        ? "Add your first product using + above, or refresh to load the catalog."
+        : "Clear the search or choose All to see more products. Inactive products have their own filter.";
+    public string InventorySummaryText => $"{SummaryTotalItemsText} active products · {SummaryNeedBuyingText} need buying · {SummaryOutOfStockText} out of stock";
+    public string LastStockCountText => "Last stock count: " + LastStockCountDisplay;
 
     public int NeedBuyingCount => _all.Count(StockInventoryLevelHelper.NeedsBuying);
 
@@ -297,11 +309,11 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
 
     public bool IsCatalogHealthScreen => CurrentScreen == StockManagementScreen.CatalogHealth;
 
-    public string SummaryNeedBuyingText => _summaryNeedBuyingCount.ToString(CultureInfo.InvariantCulture);
+    public string SummaryNeedBuyingText => NeedBuyingCount.ToString(CultureInfo.InvariantCulture);
 
-    public string SummaryOutOfStockText => _summaryOutOfStockCount.ToString(CultureInfo.InvariantCulture);
+    public string SummaryOutOfStockText => _all.Count(r => StockInventoryLevelHelper.ResolveStatus(r) == StockVolunteerStatus.OutOfStock).ToString(CultureInfo.InvariantCulture);
 
-    public string SummaryTotalItemsText => _summaryTotalItemsCount.ToString(CultureInfo.InvariantCulture);
+    public string SummaryTotalItemsText => _all.Count(r => r.IsActive != 0).ToString(CultureInfo.InvariantCulture);
 
     public string LastStockCountDisplay => _lastStockCountDisplay;
 
@@ -984,6 +996,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
     public IRelayCommand NavigateHomeCommand { get; }
 
     public IAsyncRelayCommand RefreshCommand { get; }
+    public IRelayCommand ResetStockFiltersCommand { get; }
 
     public IAsyncRelayCommand SaveItemSectionCommand { get; }
 
@@ -1010,6 +1023,10 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
     /// <summary>Reloads categories and stock rows from SQLite. Returns false on failure (see <see cref="StatusMessage"/>).</summary>
     public async Task<bool> LoadAsync(bool resetStatusMessage = true)
     {
+        if (_isLoadingStock) return false;
+        _isLoadingStock = true;
+        OnPropertyChanged(nameof(IsLoadingStock));
+        OnPropertyChanged(nameof(ShowStockEmptyState));
         if (resetStatusMessage)
         {
             StatusMessage = string.Empty;
@@ -1022,6 +1039,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             var lastCount = await _stock.GetLatestStockCountDateAsync().ConfigureAwait(true);
             _lastStockCountDisplay = FormatStockCountDate(lastCount);
             OnPropertyChanged(nameof(LastStockCountDisplay));
+            OnPropertyChanged(nameof(LastStockCountText));
             RebindPage();
             return true;
         }
@@ -1029,6 +1047,12 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         {
             StatusMessage = $"Load failed: {ex.Message}";
             return false;
+        }
+        finally
+        {
+            _isLoadingStock = false;
+            OnPropertyChanged(nameof(IsLoadingStock));
+            OnPropertyChanged(nameof(ShowStockEmptyState));
         }
     }
 
@@ -1247,8 +1271,8 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             return false;
         }
 
-        ApplyStockDelta(delta);
-        return await PersistFullItemAsync(null).ConfigureAwait(true);
+        if (delta == 0 || SelectedItemId is not long id) return false;
+        return await PersistStockAdjustmentAsync(id, Math.Abs(delta), delta > 0 ? "Increase" : "Decrease", "Quick stock adjustment").ConfigureAwait(true);
     }
 
     private void NotifyAllSaveCommandsCanExecuteChanged()
@@ -1309,6 +1333,13 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         OnPropertyChanged(nameof(NeedBuyingCount));
         OnPropertyChanged(nameof(NeedBuyingBadgeText));
         OnPropertyChanged(nameof(ShowNeedBuyingBadge));
+        OnPropertyChanged(nameof(SummaryNeedBuyingText));
+        OnPropertyChanged(nameof(SummaryOutOfStockText));
+        OnPropertyChanged(nameof(SummaryTotalItemsText));
+        OnPropertyChanged(nameof(InventorySummaryText));
+        OnPropertyChanged(nameof(ShowStockEmptyState));
+        OnPropertyChanged(nameof(StockEmptyTitle));
+        OnPropertyChanged(nameof(StockEmptyHint));
     }
 
     public IReadOnlyList<StockEditorRow> BuildStockCountQueue() =>
@@ -1379,6 +1410,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
 
         var snap = StockItemDetailSnapshot.FromRow(src);
+        _detailExpectedStockQty = src.StockQty;
         SelectedItemId = snap.ItemId;
         DetailName = snap.Name;
         DetailItemType = snap.ItemType;
@@ -1458,6 +1490,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
 
     private void ClearDetail()
     {
+        _detailExpectedStockQty = null;
         SelectedItemId = null;
         DetailName = string.Empty;
         DetailItemType = "Item";
@@ -1546,6 +1579,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             _newItemDraftId = id;
             ClearDetail();
             SelectedItemId = id;
+            _detailExpectedStockQty = 0;
             DetailCatalogBucket = StockCatalogTaxonomy.BucketBar;
             DetailCatalogSubCategory = StockCatalogTaxonomy.DefaultSubCategory(StockCatalogTaxonomy.BucketBar);
             DetailStockMode = StockCatalogTaxonomy.StockModeTracked;
@@ -1856,6 +1890,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
                 Name = DetailName.Trim(),
                 Sku = string.IsNullOrWhiteSpace(DetailSku) ? null : DetailSku.Trim(),
                 StockQty = saveQty,
+                ExpectedStockQty = _detailExpectedStockQty,
                 TrackStock = tr,
                 ImagePath = imagePath,
                 IsActive = DetailIsActive ? 1 : 0,
@@ -1887,6 +1922,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
                 CategoryId = null,
             };
             await _persist.UpdateItemAdminAsync(write, CancellationToken.None).ConfigureAwait(true);
+            _detailExpectedStockQty = saveQty;
 
             await _persist.UpsertPriceIfParsedAsync(id, "Bar", BarPriceText, CancellationToken.None).ConfigureAwait(true);
             await _persist.UpsertPriceIfParsedAsync(id, "Pitstop", PitstopPriceText, CancellationToken.None).ConfigureAwait(true);
@@ -2079,52 +2115,30 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             return false;
         }
 
-        if (_adjustQuantity <= 0)
+        if (_adjustQuantity < 0 || (_adjustQuantity == 0 && _adjustMode != "Set To"))
         {
             StatusMessage = "Enter an adjustment quantity greater than zero.";
             return false;
         }
 
+        var saved = await PersistStockAdjustmentAsync(id, _adjustQuantity, _adjustMode, AdjustReason).ConfigureAwait(true);
+        if (saved) CurrentScreen = StockManagementScreen.Home;
+        return saved;
+    }
+
+    private async Task<bool> PersistStockAdjustmentAsync(long itemId, int quantity, string mode, string reason)
+    {
         IsBusy = true;
         try
         {
-            var qty = src.StockQty;
-            var delta = _adjustQuantity;
-            qty = _adjustMode switch
-            {
-                "Decrease" => Math.Max(0, qty - delta),
-                "Set To" => delta,
-                _ => qty + delta,
-            };
-
-            var snap = StockItemDetailSnapshot.FromRow(src);
-            SelectedItemId = id;
-            DetailStockText = qty.ToString(CultureInfo.InvariantCulture);
-            DetailName = snap.Name;
-            DetailSku = snap.Sku;
-            DetailTrackStock = snap.TrackStock;
-            DetailStockMode = snap.StockMode;
-            DetailCatalogBucket = snap.CatalogBucket;
-            DetailCatalogSubCategory = snap.CatalogSubCategory;
-            DetailOrderInMerchandise = snap.OrderInMerchandise;
-            DetailIsActive = snap.IsActive;
-            ShowInBar = snap.ShowInBar;
-            ShowInPitstop = snap.ShowInPitstop;
-            StockAdjustmentReason = AdjustReason;
-            await PersistFullItemAsync(AdjustReason).ConfigureAwait(true);
-            CurrentScreen = StockManagementScreen.Home;
-            StatusMessage = "Stock updated.";
+            var savedQty = await _stock.AdjustStockAsync(itemId, quantity, mode, reason).ConfigureAwait(true);
+            var loaded = await LoadAsync(resetStatusMessage: false).ConfigureAwait(true);
+            StatusMessage = loaded ? $"Stock saved: {savedQty} units on hand." : "Stock was saved, but the list could not reload. Tap Refresh.";
+            PulseCatalogRefresh();
             return true;
         }
-        catch (Exception ex)
-        {
-            StatusMessage = ex.Message;
-            return false;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        catch (Exception ex) { StatusMessage = ex.Message; return false; }
+        finally { IsBusy = false; }
     }
 
     public async Task<bool> ReceiveStockAsync(
@@ -2146,26 +2160,18 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             return false;
         }
 
-        var totalItems = packsBought * packSize;
-        var costEach = totalItems > 0 ? (double)(totalPaid / totalItems) : 0d;
-        var newQty = src.StockQty + totalItems;
-        var purchase = new StockPurchaseWrite
-        {
-            ItemId = itemId,
-            PacksBought = packsBought,
-            ItemsPerPack = packSize,
-            TotalItems = totalItems,
-            TotalPaid = totalPaid,
-            CostEach = (decimal)costEach,
-        };
-
         IsBusy = true;
         try
         {
-            await _stock.ReceiveStockAsync(purchase, newQty, costEach).ConfigureAwait(true);
-
-            await LoadAsync(resetStatusMessage: false).ConfigureAwait(true);
-            StatusMessage = $"Received {totalItems} items.";
+            var totalItems = checked(packsBought * packSize);
+            var purchase = new StockPurchaseWrite
+            {
+                ItemId = itemId, PacksBought = packsBought, ItemsPerPack = packSize,
+                TotalItems = totalItems, TotalPaid = totalPaid, CostEach = totalPaid / totalItems,
+            };
+            await _stock.ReceiveStockAsync(purchase).ConfigureAwait(true);
+            var loaded = await LoadAsync(resetStatusMessage: false).ConfigureAwait(true);
+            StatusMessage = loaded ? $"Received {totalItems} units." : "Delivery was saved, but the list could not reload. Tap Refresh; do not receive this delivery again.";
             PulseCatalogRefresh();
             return true;
         }
@@ -2182,7 +2188,8 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
 
     public async Task<bool> ApplyStockCountResultsAsync(
         IReadOnlyList<(long ItemId, int NewQty)> changes,
-        IReadOnlyList<long>? countedItemIds = null)
+        IReadOnlyList<long>? countedItemIds = null,
+        IReadOnlyDictionary<long, int>? expectedQuantities = null)
     {
         if (IsBusy)
         {
@@ -2192,9 +2199,9 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         IsBusy = true;
         try
         {
-            await _stock.ApplyStockCountAsync(changes, countedItemIds).ConfigureAwait(true);
-            await LoadAsync(resetStatusMessage: false).ConfigureAwait(true);
-            StatusMessage = $"Stock count saved ({changes.Count} change{(changes.Count == 1 ? string.Empty : "s")}).";
+            await _stock.ApplyStockCountAsync(changes, countedItemIds, expectedQuantities: expectedQuantities).ConfigureAwait(true);
+            var loaded = await LoadAsync(resetStatusMessage: false).ConfigureAwait(true);
+            StatusMessage = loaded ? $"Stock count saved ({changes.Count} change{(changes.Count == 1 ? string.Empty : "s")})." : "Stock count was saved, but the list could not reload. Tap Refresh.";
             PulseCatalogRefresh();
             return true;
         }

@@ -21,9 +21,7 @@ public sealed class StockFilterCardViewModel : ObservableObject
     public string Glyph { get; }
     public string AccentColor { get; }
     /// <summary>Short segment label; count shown for actionable filters only.</summary>
-    public string CompactLabel => FilterIndex == Services.Stock.StockManagementBrowserFilter.ChipAll
-        ? Title
-        : Title + " " + Count.ToString(CultureInfo.InvariantCulture);
+    public string CompactLabel => Title + " " + Count.ToString(CultureInfo.InvariantCulture);
 
     public string ChipBackground => IsSelected ? AccentColor : "#00000000";
     public string ChipForeground => IsSelected
@@ -61,7 +59,7 @@ public sealed class StockFilterCardViewModel : ObservableObject
 
     public static string AccentForFilter(int filterIndex) => filterIndex switch
     {
-        Services.Stock.StockManagementBrowserFilter.ChipNeedBuying => "#FFF59E0B",
+        Services.Stock.StockManagementBrowserFilter.ChipNeedBuying => "#FF92400E",
         Services.Stock.StockManagementBrowserFilter.ChipOutOfStock => "#FFDC2626",
         Services.Stock.StockManagementBrowserFilter.ChipDrinks => "#FF2563EB",
         Services.Stock.StockManagementBrowserFilter.ChipMerch => "#FF7C3AED",

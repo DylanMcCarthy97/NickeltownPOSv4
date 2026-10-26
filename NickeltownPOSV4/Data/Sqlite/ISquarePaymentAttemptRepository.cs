@@ -20,6 +20,10 @@ public interface ISquarePaymentAttemptRepository
 
     Task MarkFailedAsync(long attemptId, string reason, CancellationToken cancellationToken = default);
 
+    Task SaveCheckoutIdAsync(long attemptId, string checkoutId, CancellationToken cancellationToken = default);
+
+    Task MarkUncertainAsync(long attemptId, string reason, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Marks the attempt as Completed and stores the local pointers.
     /// Implementations must not throw on missing rows; callers should check the return value

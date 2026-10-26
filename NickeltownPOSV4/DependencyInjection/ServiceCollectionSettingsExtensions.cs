@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Settings;
 using NickeltownPOSV4.Services.Updates;
+using NickeltownPOSV4.Services.Payments;
 using NickeltownPOSV4.ViewModels.Settings;
 using NickeltownPOSV4.Views.Settings;
 
@@ -11,7 +12,10 @@ internal static class ServiceCollectionSettingsExtensions
 {
     public static IServiceCollection AddSettingsServices(this IServiceCollection services)
     {
-        services.AddSingleton<ISquareTerminalSession, SquareSdkTerminalSession>();
+        services.AddSingleton<SquareSdkTerminalSession>();
+        services.AddSingleton<ISquareTerminalSession>(sp => sp.GetRequiredService<SquareSdkTerminalSession>());
+        services.AddSingleton<ISquareCheckoutStatusReader>(sp => sp.GetRequiredService<SquareSdkTerminalSession>());
+        services.AddSingleton<SquareRecoveryService>();
         services.AddSingleton<IAppSettingsRepository, SqliteAppSettingsRepository>();
         services.AddSingleton<IEmailConfigService, EmailConfigService>();
         services.AddSingleton<IEmailConfigImportService, EmailConfigImportService>();

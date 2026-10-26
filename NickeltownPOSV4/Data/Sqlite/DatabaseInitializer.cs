@@ -24,6 +24,7 @@ public sealed class DatabaseInitializer
         }
 
         ApplyOptionalColumnPatches(conn);
+        SurfaceUncertainLegacySquareAttempts(conn);
         RunCatalogV2Migration(conn);
         SeedMembershipFoundation(conn);
 
@@ -31,6 +32,23 @@ public sealed class DatabaseInitializer
     }
 
     private const string CatalogV2MigrationSettingsKey = "catalog_v2_migration_20260513";
+
+    private static void SurfaceUncertainLegacySquareAttempts(SqliteConnection conn)
+    {
+        // Older builds labelled transport failures and unconfirmed cancellations as
+        // declines. Reopen these for review without touching reconciled payments.
+        conn.Execute("""
+            UPDATE SquarePaymentAttempts
+            SET Status = 'Unknown', RecoveryStatus = 'PendingReview'
+            WHERE Status = 'Failed'
+              AND LocalPaymentId IS NULL AND PitstopSaleId IS NULL
+              AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
+              AND (FailureReason LIKE '%did not complete within%'
+                OR FailureReason LIKE 'Square request failed:%'
+                OR FailureReason LIKE 'Square API error:%'
+                OR FailureReason = 'Card payment cancelled.')
+            """);
+    }
 
     /// <summary>One-time: infer fixed Bar/Pitstop/Shared + sub-category from legacy Categories + visibility; clears CategoryId.</summary>
     private static void RunCatalogV2Migration(SqliteConnection conn)

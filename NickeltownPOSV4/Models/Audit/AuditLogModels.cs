@@ -34,6 +34,8 @@ public static class AuditActions
     public const string SquareAttemptApproved = "square.attempt_approved";
     public const string SquareAttemptCompleted = "square.attempt_completed";
     public const string SquareAttemptFailed = "square.attempt_failed";
+    public const string SquareAttemptUncertain = "square.attempt_uncertain";
+    public const string SquareRecoveryStatusChecked = "square.recovery_status_checked";
     public const string SquareAttemptMarkCompletedFailed = "square.attempt_mark_completed_failed";
     public const string SquareRecoveryLinkedPitstop = "square.recovery_linked_pitstop";
     public const string SquareRecoveryLinkedTab = "square.recovery_linked_tab";

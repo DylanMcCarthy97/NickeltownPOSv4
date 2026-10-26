@@ -93,6 +93,20 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
             };
         }
 
+        if (begin.RequiresRecovery || begin.AlreadyFailed)
+        {
+            return new SquareCardPaymentOutcome
+            {
+                RequiresRecovery = begin.RequiresRecovery,
+                DeclineReason = begin.RequiresRecovery
+                    ? "Payment status needs checking. Open Admin → Square Recovery before charging again."
+                    : "The previous payment was declined or cancelled. Start a new payment to try again.",
+                IdempotencyKey = begin.IdempotencyKey,
+                AttemptId = begin.AttemptId,
+                SquareCheckoutId = begin.SquareCheckoutId,
+            };
+        }
+
         await LogPaymentAsync(
                 AuditActions.PaymentSent,
                 begin.IdempotencyKey,
@@ -114,31 +128,29 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
                 .PresentPaymentRequestAsync(
                     request.TerminalRequest,
                     cancellationToken,
-                    begin.IdempotencyKey)
+                    begin.IdempotencyKey,
+                    checkoutId => _attempts.SaveCheckoutIdAsync(begin.AttemptId, checkoutId, CancellationToken.None))
                 .ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (Exception ex)
         {
-            await _attempts.MarkFailedAsync(begin.AttemptId, "Card payment cancelled.", CancellationToken.None)
+            // A transport error or cancellation does not prove Square rejected the charge.
+            await _attempts.MarkUncertainAsync(begin.AttemptId, ex is OperationCanceledException
+                    ? "Payment interrupted before its final status was confirmed."
+                    : "Payment connection failed before its final status was confirmed.", CancellationToken.None)
                 .ConfigureAwait(false);
             await LogPaymentAsync(
-                    AuditActions.PaymentDeclined,
-                    begin.IdempotencyKey,
-                    request.ChargedAmount,
-                    "Card payment cancelled.",
-                    success: false)
-                .ConfigureAwait(false);
-            await LogPaymentAsync(
-                    AuditActions.SquareAttemptFailed,
+                    AuditActions.SquareAttemptUncertain,
                     begin.AttemptId.ToString(),
                     request.ChargedAmount,
-                    "Card payment cancelled.",
+                    "Payment interrupted before its final status was confirmed.",
                     success: false)
                 .ConfigureAwait(false);
 
             return new SquareCardPaymentOutcome
             {
-                DeclineReason = "Card payment cancelled.",
+                RequiresRecovery = true,
+                DeclineReason = "Payment status needs checking. Open Admin → Square Recovery before charging again.",
                 IdempotencyKey = begin.IdempotencyKey,
                 AttemptId = begin.AttemptId,
             };
@@ -147,16 +159,22 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
         if (!present.Approved)
         {
             var reason = present.DeclineReason ?? "Card payment was not approved.";
-            await _attempts.MarkFailedAsync(begin.AttemptId, reason, CancellationToken.None).ConfigureAwait(false);
+            var uncertain = present.RequiresRecovery || present.TimedOut;
+            if (uncertain)
+            {
+                await _attempts.MarkUncertainAsync(begin.AttemptId, reason, CancellationToken.None).ConfigureAwait(false);
+            }
+            else
+            {
+                await _attempts.MarkFailedAsync(begin.AttemptId, reason, CancellationToken.None).ConfigureAwait(false);
+            }
+            if (!uncertain)
+            {
+                await LogPaymentAsync(AuditActions.PaymentDeclined, begin.IdempotencyKey,
+                    request.ChargedAmount, reason, success: false).ConfigureAwait(false);
+            }
             await LogPaymentAsync(
-                    AuditActions.PaymentDeclined,
-                    begin.IdempotencyKey,
-                    request.ChargedAmount,
-                    reason,
-                    success: false)
-                .ConfigureAwait(false);
-            await LogPaymentAsync(
-                    AuditActions.SquareAttemptFailed,
+                    uncertain ? AuditActions.SquareAttemptUncertain : AuditActions.SquareAttemptFailed,
                     begin.AttemptId.ToString(),
                     request.ChargedAmount,
                     reason,
@@ -165,9 +183,13 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
 
             return new SquareCardPaymentOutcome
             {
-                DeclineReason = reason,
+                RequiresRecovery = uncertain,
+                DeclineReason = uncertain
+                    ? "Payment status needs checking. Open Admin → Square Recovery before charging again."
+                    : reason,
                 IdempotencyKey = begin.IdempotencyKey,
                 AttemptId = begin.AttemptId,
+                SquareCheckoutId = present.SquareCheckoutId,
             };
         }
 

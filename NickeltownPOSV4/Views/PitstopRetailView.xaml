@@ -541,7 +541,9 @@
                                                     Grid.Column="3"
                                                     VerticalAlignment="Center"
                                                     Command="{x:Bind RemoveCommand, Mode=OneWay}"
-                                                    Style="{StaticResource PitstopCartRemoveButtonStyle}">
+                                                    Style="{StaticResource PitstopCartRemoveButtonStyle}"
+                                                    AutomationProperties.Name="Remove item"
+                                                    ToolTipService.ToolTip="Remove item">
                                                     <FontIcon
                                                         FontFamily="Segoe MDL2 Assets"
                                                         FontSize="12"
@@ -578,9 +580,8 @@
                         <TextBlock
                             FontSize="11"
                             Foreground="{StaticResource PosBalanceNegativeBrush}"
-                            MaxLines="2"
                             Text="{Binding StatusMessage, Mode=OneWay}"
-                            TextTrimming="CharacterEllipsis"
+                            AutomationProperties.LiveSetting="Polite"
                             TextWrapping="WrapWholeWords"
                             Visibility="{Binding StatusMessage, Converter={StaticResource BoolToVis}, ConverterParameter=NotEmpty, Mode=OneWay}" />
                         <Grid ColumnSpacing="8">
@@ -633,11 +634,11 @@
                                 FontSize="13"
                                 FontWeight="SemiBold"
                                 Foreground="{StaticResource PosTextPrimaryBrush}"
-                                Text="Total (Cash)" />
+                                Text="Cash total" />
                             <TextBlock
                                 Grid.Column="1"
-                                FontSize="16"
-                                FontWeight="SemiBold"
+                                FontSize="22"
+                                FontWeight="Bold"
                                 Foreground="{StaticResource PosTextPrimaryBrush}"
                                 Text="{Binding ReceiptCashTotalText, Mode=OneWay}" />
                         </Grid>
@@ -650,12 +651,12 @@
                                 FontSize="14"
                                 FontWeight="SemiBold"
                                 Foreground="{StaticResource PosTextPrimaryBrush}"
-                                Text="Total (Card)" />
+                                Text="Card total" />
                             <TextBlock
                                 Grid.Column="1"
                                 FontSize="22"
                                 FontWeight="Bold"
-                                Foreground="{StaticResource PosAccentBrush}"
+                                Foreground="{StaticResource PosTextPrimaryBrush}"
                                 Text="{Binding ReceiptCardTotalText, Mode=OneWay}" />
                         </Grid>
                     </StackPanel>
@@ -672,9 +673,9 @@
                                 <FontIcon
                                     FontFamily="Segoe MDL2 Assets"
                                     FontSize="20"
-                                    Foreground="{StaticResource PosAccentBrush}"
+                                    Foreground="{StaticResource PosOnAccentForegroundBrush}"
                                     Glyph="&#xE8C7;" />
-                                <TextBlock FontSize="18" FontWeight="Bold" Text="Pay" />
+                                <TextBlock FontSize="18" FontWeight="Bold" Text="Take payment" />
                             </StackPanel>
                         </Button>
                         <Grid ColumnSpacing="8">
@@ -1080,7 +1081,7 @@
             Grid.RowSpan="2"
             Background="{StaticResource PosScrimBrush}"
             Canvas.ZIndex="60"
-            Visibility="{Binding ShowSendingSquareOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            Visibility="{Binding ShowPaymentProgressOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
             <Border
                 Padding="24"
                 HorizontalAlignment="Center"
@@ -1092,19 +1093,22 @@
                 <Border.Shadow>
                     <ThemeShadow />
                 </Border.Shadow>
-                <StackPanel MinWidth="340" Spacing="14">
+                <StackPanel Width="340" Spacing="14">
+                    <ProgressRing Width="40" Height="40" HorizontalAlignment="Center" IsActive="{Binding ShowPaymentProgressOverlay, Mode=OneWay}" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         FontSize="20"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Processing card payment…"
+                        Text="{Binding PaymentProgressTitle, Mode=OneWay}"
+                        AutomationProperties.LiveSetting="Polite"
                         TextAlignment="Center" />
                     <TextBlock
                         HorizontalAlignment="Center"
                         FontSize="14"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="{Binding SquareWaitingMessage, Mode=OneWay}"
+                        Text="{Binding PaymentProgressMessage, Mode=OneWay}"
+                        AutomationProperties.LiveSetting="Polite"
                         TextAlignment="Center"
                         TextWrapping="WrapWholeWords" />
                     <Button
@@ -1112,6 +1116,7 @@
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         Command="{Binding CancelCardPaymentCommand}"
+                        Visibility="{Binding IsSendingSquare, Converter={StaticResource BoolToVis}, Mode=OneWay}"
                         Content="Cancel card payment"
                         FontSize="15"
                         FontWeight="SemiBold"

@@ -12,6 +12,7 @@ using NickeltownPOSV4.Models.Audit;
 using NickeltownPOSV4.Models.Payments;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Pitstop;
+using NickeltownPOSV4.Services.Payments;
 
 namespace NickeltownPOSV4.ViewModels;
 
@@ -28,6 +29,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
     private readonly IAuthenticationService _auth;
 
     private readonly IPitstopPaymentRecoveryService _paymentRecovery;
+    private readonly SquareRecoveryService _squareStatus;
 
     private string _statusMessage = string.Empty;
     private bool _isBusy;
@@ -41,7 +43,8 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         IWindowHandleProvider windowHandle,
         IInputOverlayService input,
         IAuthenticationService auth,
-        IPitstopPaymentRecoveryService paymentRecovery)
+        IPitstopPaymentRecoveryService paymentRecovery,
+        SquareRecoveryService squareStatus)
     {
         _recovery = recovery;
         _session = session;
@@ -51,6 +54,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         _input = input;
         _auth = auth;
         _paymentRecovery = paymentRecovery;
+        _squareStatus = squareStatus;
         Rows = new PagedCollection<SquareRecoveryRowVm>(pageSize: 5);
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
         BackCommand = new RelayCommand(() => _navigation.TryGoBack());
@@ -85,6 +89,8 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
                 row.ReconcileCommand.NotifyCanExecuteChanged();
                 row.LinkPitstopCommand.NotifyCanExecuteChanged();
                 row.LinkTabCommand.NotifyCanExecuteChanged();
+                row.CheckSquareCommand.NotifyCanExecuteChanged();
+                row.SaveTabTopUpCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -133,6 +139,40 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         {
             IsBusy = false;
         }
+    }
+
+    internal async Task CheckSquareAsync(SquareRecoveryRowVm row)
+    {
+        if (!_session.CanAccessTreasurer || IsBusy) return;
+        IsBusy = true;
+        try
+        {
+            var result = await _squareStatus.RefreshStatusAsync(row.AttemptId).ConfigureAwait(true);
+            await _audit.LogAsync(AuditActions.SquareRecoveryStatusChecked, AuditEntityTypes.SquareAttempt,
+                row.AttemptId.ToString(CultureInfo.InvariantCulture), row.ChargedAmount,
+                reason: result.Ok ? "Checked current checkout status in Square." : result.ErrorMessage, success: result.Ok).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
+            StatusMessage = result.Ok
+                ? "Square status checked. Approved top-ups can be saved below; confirmed cancellations and failures leave recovery."
+                : result.ErrorMessage ?? "Square status could not be checked.";
+        }
+        catch (Exception ex) { StatusMessage = "Square status check failed: " + ex.Message; }
+        finally { IsBusy = false; }
+    }
+
+    internal async Task SaveTabTopUpAsync(SquareRecoveryRowVm row)
+    {
+        if (IsBusy || !row.CanSaveTabTopUp || !_moneyLock.TryBegin()) return;
+        IsBusy = true;
+        try
+        {
+            if (!await EnsureManagerPinAsync("Save approved Square tab top-up").ConfigureAwait(true)) return;
+            var result = await _squareStatus.SaveTabTopUpAsync(row.AttemptId).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
+            StatusMessage = result.Ok ? "Approved top-up saved. The card was not charged again." : result.ErrorMessage ?? "Top-up could not be saved.";
+        }
+        catch (Exception ex) { StatusMessage = "Top-up could not be saved: " + ex.Message; }
+        finally { IsBusy = false; _moneyLock.End(); }
     }
 
     internal async Task RecoverPitstopSaleAsync(SquareRecoveryRowVm row)
@@ -366,7 +406,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         }
 
         var pin = await _input
-            .ShowKeyboardAsync(string.Empty, $"{actionLabel} — enter Admin/Treasurer PIN", CancellationToken.None)
+            .ShowPinNumpadAsync($"{actionLabel} — enter Admin/Treasurer PIN", 4, true, CancellationToken.None)
             .ConfigureAwait(true);
 
         if (string.IsNullOrWhiteSpace(pin))
@@ -486,7 +526,12 @@ public sealed class SquareRecoveryRowVm : ObservableViewModel
         _row = row;
         AttemptId = row.AttemptId;
         OccurredAtText = row.OccurredAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", Cult);
-        StatusText = string.IsNullOrWhiteSpace(row.Status) ? "—" : row.Status;
+        StatusText = row.Status switch
+        {
+            "Pending" or "Unknown" or "TimedOut" => "Status needs checking in Square",
+            "TerminalApproved" => "Approved — POS record needs saving",
+            _ => string.IsNullOrWhiteSpace(row.Status) ? "—" : row.Status,
+        };
         PaymentTypeText = string.IsNullOrWhiteSpace(row.PaymentType) ? "—" : row.PaymentType;
         TabLegacyId = row.TabLegacyId;
         BaseAmount = row.BaseAmount;
@@ -504,7 +549,11 @@ public sealed class SquareRecoveryRowVm : ObservableViewModel
         TabLegacyIdText = string.IsNullOrWhiteSpace(row.TabLegacyId) ? "—" : row.TabLegacyId;
         FailureReasonText = string.IsNullOrWhiteSpace(row.FailureReason) ? string.Empty : row.FailureReason;
 
-        HasRecoverablePayload = row.HasRecoverablePayload;
+        HasRecoverablePayload = row.HasRecoverablePayload
+            && row.Status is "TerminalApproved" or "Completed" or "Approved";
+        CanSaveTabTopUp = row.PaymentType == "TabTopUp" && row.Status is "TerminalApproved" or "Approved" or "Completed";
+        CheckSquareCommand = new AsyncRelayCommand(() => host.CheckSquareAsync(this), () => !host.IsBusy && !string.IsNullOrWhiteSpace(row.SquareCheckoutId));
+        SaveTabTopUpCommand = new AsyncRelayCommand(() => host.SaveTabTopUpAsync(this), () => !host.IsBusy && CanSaveTabTopUp);
         LinkPitstopCommand = new AsyncRelayCommand(() => host.LinkPitstopAsync(this), () => !host.IsBusy);
         LinkTabCommand = new AsyncRelayCommand(() => host.LinkTabAsync(this), () => !host.IsBusy);
         RecoverSaleCommand = new AsyncRelayCommand(() => host.RecoverPitstopSaleAsync(this), () => HasRecoverablePayload && !host.IsBusy);
@@ -552,6 +601,9 @@ public sealed class SquareRecoveryRowVm : ObservableViewModel
     public string FailureReasonText { get; }
 
     public bool HasRecoverablePayload { get; }
+    public bool CanSaveTabTopUp { get; }
+    public IAsyncRelayCommand CheckSquareCommand { get; }
+    public IAsyncRelayCommand SaveTabTopUpCommand { get; }
 
     public IAsyncRelayCommand LinkPitstopCommand { get; }
 

@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Data.Sqlite;
 using NickeltownPOSV4.Data.Sqlite;
 using NickeltownPOSV4.Services;
 
@@ -58,7 +59,7 @@ public sealed class BackupService : IBackupService
         Directory.CreateDirectory(destinationFolder);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + "_" + Guid.NewGuid().ToString("N");
         var stagingFolder = Path.Combine(Path.GetTempPath(), $"NickeltownPOSV4_backup_{timestamp}");
         Directory.CreateDirectory(stagingFolder);
 
@@ -71,7 +72,19 @@ public sealed class BackupService : IBackupService
                 conn.Execute($"VACUUM INTO '{escaped}';");
             }
 
-            CopyConfigSnapshots(stagingFolder);
+            using (var snapshot = new SqliteConnection(new SqliteConnectionStringBuilder
+                   { DataSource = stagedDbPath, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString()))
+            {
+                snapshot.Open();
+                var integrity = snapshot.ExecuteScalar<string>("PRAGMA integrity_check;");
+                if (!string.Equals(integrity, "ok", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new IOException("Backup database failed its integrity check.");
+                }
+            }
+
+            CopyConfigSnapshots(stagingFolder, cancellationToken);
+            CopyDirectory(_paths.ImagesFolder, Path.Combine(stagingFolder, "Images"), cancellationToken);
 
             var infoPath = Path.Combine(stagingFolder, "backup_info.txt");
             File.WriteAllText(
@@ -82,11 +95,6 @@ public sealed class BackupService : IBackupService
                     + $"Source DB: {_database.DatabaseFilePath}{Environment.NewLine}");
 
             var zipPath = Path.Combine(destinationFolder, $"NickeltownPOSV4_Backup_{timestamp}.zip");
-            if (File.Exists(zipPath))
-            {
-                File.Delete(zipPath);
-            }
-
             ZipFile.CreateFromDirectory(stagingFolder, zipPath, CompressionLevel.Optimal, includeBaseDirectory: false);
             return zipPath;
         }
@@ -105,24 +113,13 @@ public sealed class BackupService : IBackupService
         }
     }
 
-    private void CopyConfigSnapshots(string stagingFolder)
+    private void CopyConfigSnapshots(string stagingFolder, CancellationToken cancellationToken)
     {
         var configDir = Path.Combine(stagingFolder, "config");
         Directory.CreateDirectory(configDir);
 
-        try
-        {
-            if (Directory.Exists(_paths.ConfigFolder))
-            {
-                foreach (var file in Directory.EnumerateFiles(_paths.ConfigFolder))
-                {
-                    File.Copy(file, Path.Combine(configDir, Path.GetFileName(file)), overwrite: true);
-                }
-            }
-        }
-        catch
-        {
-        }
+        // Critical config must be included; do not report a partial archive as a backup.
+        CopyDirectory(_paths.ConfigFolder, configDir, cancellationToken);
 
         try
         {
@@ -148,6 +145,22 @@ public sealed class BackupService : IBackupService
         }
         catch
         {
+        }
+    }
+
+    private static void CopyDirectory(string source, string destination, CancellationToken cancellationToken)
+    {
+        if (!Directory.Exists(source)) return;
+        Directory.CreateDirectory(destination);
+        foreach (var file in Directory.EnumerateFiles(source))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), overwrite: false);
+        }
+        foreach (var directory in Directory.EnumerateDirectories(source))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CopyDirectory(directory, Path.Combine(destination, Path.GetFileName(directory)), cancellationToken);
         }
     }
 }

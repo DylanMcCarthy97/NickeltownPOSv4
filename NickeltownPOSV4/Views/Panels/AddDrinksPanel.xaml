@@ -787,7 +787,7 @@
                         <TextBlock
                             FontSize="22"
                             FontWeight="Bold"
-                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Foreground="{StaticResource PosAccentBrush}"
                             Text="{Binding CartTotalText, Mode=OneWay}" />
                         <Button
                             Command="{Binding AddToTabCommand, Mode=OneWay}"
@@ -813,12 +813,17 @@
             Background="{StaticResource PosBusyOverlayBrush}"
             Canvas.ZIndex="100"
             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-            <ProgressRing
-                Width="48"
-                Height="48"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="True" />
+            <Border Padding="24" CornerRadius="16" Background="{StaticResource PosSurfaceBrush}"
+                    BorderBrush="{StaticResource PosPanelBorderBrush}" BorderThickness="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="12">
+                    <ProgressRing Width="48" Height="48" HorizontalAlignment="Center" IsActive="{Binding IsBusy, Mode=OneWay}" />
+                    <TextBlock Text="Updating order…" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{StaticResource PosTextPrimaryBrush}" AutomationProperties.LiveSetting="Polite" />
+                    <TextBlock Text="Please wait before adding more items." FontSize="13"
+                               Foreground="{StaticResource PosTextSecondaryBrush}" />
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

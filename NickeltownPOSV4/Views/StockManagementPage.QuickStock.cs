@@ -80,8 +80,6 @@ public sealed partial class StockManagementPage
         if (await _vm.ApplyQuickStockDeltaAndPersistCoreAsync(delta).ConfigureAwait(true))
         {
             DismissInPageStockModal();
-            await _vm.LoadAsync(resetStatusMessage: false).ConfigureAwait(true);
-            _vm.SetStatusMessage(delta > 0 ? $"Added {delta} to stock." : $"Removed {-delta} from stock.");
         }
     }
 }

@@ -25,28 +25,79 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
         }
 
         using var conn = _factory.OpenConnection();
+        using var tx = conn.BeginTransaction();
         var existing = conn.QueryFirstOrDefault<SquareAttemptRow>(
             """
-            SELECT Id, Status, SquarePaymentId, SquareCheckoutId
+            SELECT Id, Status, SquarePaymentId, SquareCheckoutId, PaymentType, TabLegacyId,
+                   BaseAmount, SurchargeAmount, ChargedAmount, RecoveryStatus
             FROM SquarePaymentAttempts
             WHERE IdempotencyKey = @key
             LIMIT 1
             """,
-            new { key });
+            new { key }, tx);
 
         if (existing is not null)
         {
+            if (!string.Equals(existing.PaymentType, request.PaymentType.ToString(), StringComparison.Ordinal)
+                || !string.Equals(existing.TabLegacyId ?? string.Empty, request.TabLegacyId?.Trim() ?? string.Empty, StringComparison.Ordinal)
+                || existing.BaseAmount != request.BaseAmount
+                || existing.SurchargeAmount != request.SurchargeAmount
+                || existing.ChargedAmount != request.ChargedAmount)
+            {
+                tx.Commit();
+                return Task.FromResult(new SquarePaymentAttemptBeginResult
+                {
+                    AttemptId = existing.Id,
+                    IdempotencyKey = key,
+                    RequiresRecovery = true,
+                    SquarePaymentId = existing.SquarePaymentId,
+                    SquareCheckoutId = existing.SquareCheckoutId,
+                });
+            }
             var status = existing.Status ?? string.Empty;
             var completed = string.Equals(status, nameof(SquarePaymentAttemptStatus.Completed), StringComparison.OrdinalIgnoreCase);
-            var terminalApproved = string.Equals(status, nameof(SquarePaymentAttemptStatus.TerminalApproved), StringComparison.OrdinalIgnoreCase);
+            var resolved = existing.RecoveryStatus is SquareRecoveryStatuses.ManuallyReconciled
+                or SquareRecoveryStatuses.LinkedPitstop or SquareRecoveryStatuses.LinkedTab or SquareRecoveryStatuses.Ignored;
+            var terminalApproved = !resolved && string.Equals(status, nameof(SquarePaymentAttemptStatus.TerminalApproved), StringComparison.OrdinalIgnoreCase);
+            var failed = resolved || status is nameof(SquarePaymentAttemptStatus.Failed) or nameof(SquarePaymentAttemptStatus.Cancelled);
+            tx.Commit();
             return Task.FromResult(new SquarePaymentAttemptBeginResult
             {
                 AttemptId = existing.Id,
                 IdempotencyKey = key,
                 AlreadyCompleted = completed,
                 AlreadyTerminalApproved = terminalApproved,
+                AlreadyFailed = failed,
+                RequiresRecovery = !completed && !terminalApproved && !failed,
                 SquarePaymentId = existing.SquarePaymentId,
                 SquareCheckoutId = existing.SquareCheckoutId,
+            });
+        }
+
+        // Also protect a new UI session after a restart or an edited amount. An approved
+        // payment without a local record must be reconciled before collecting again.
+        var unresolved = conn.QueryFirstOrDefault<SquareAttemptRow>(
+            """
+            SELECT Id, IdempotencyKey, SquarePaymentId, SquareCheckoutId
+            FROM SquarePaymentAttempts
+            WHERE PaymentType = @paymentType
+              AND COALESCE(TabLegacyId, '') = @tabLegacyId
+              AND Status IN ('Pending', 'Unknown', 'TimedOut', 'TerminalApproved', 'Approved')
+              AND LocalPaymentId IS NULL AND PitstopSaleId IS NULL
+              AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
+            ORDER BY Id LIMIT 1
+            """,
+            new { paymentType = request.PaymentType.ToString(), tabLegacyId = request.TabLegacyId?.Trim() ?? string.Empty }, tx);
+        if (unresolved is not null)
+        {
+            tx.Commit();
+            return Task.FromResult(new SquarePaymentAttemptBeginResult
+            {
+                AttemptId = unresolved.Id,
+                IdempotencyKey = unresolved.IdempotencyKey,
+                RequiresRecovery = true,
+                SquarePaymentId = unresolved.SquarePaymentId,
+                SquareCheckoutId = unresolved.SquareCheckoutId,
             });
         }
 
@@ -71,7 +122,9 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
                 surchargeAmount = request.SurchargeAmount,
                 chargedAmount = request.ChargedAmount,
                 now,
-            });
+            }, tx);
+
+        tx.Commit();
 
         return Task.FromResult(new SquarePaymentAttemptBeginResult
         {
@@ -93,9 +146,10 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
             UPDATE SquarePaymentAttempts
             SET Status = @status,
                 SquarePaymentId = @paymentId,
-                SquareCheckoutId = @checkoutId,
+                SquareCheckoutId = COALESCE(@checkoutId, SquareCheckoutId),
                 UpdatedAt = @now
-            WHERE Id = @id
+            WHERE Id = @id AND Status != 'Completed'
+              AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
             """,
             new
             {
@@ -109,6 +163,30 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
         return Task.CompletedTask;
     }
 
+    public Task SaveCheckoutIdAsync(long attemptId, string checkoutId, CancellationToken cancellationToken = default)
+    {
+        using var conn = _factory.OpenConnection();
+        conn.Execute(new CommandDefinition(
+            "UPDATE SquarePaymentAttempts SET SquareCheckoutId = @checkoutId, UpdatedAt = @now WHERE Id = @attemptId",
+            new { attemptId, checkoutId, now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture) },
+            cancellationToken: cancellationToken));
+        return Task.CompletedTask;
+    }
+
+    public Task MarkUncertainAsync(long attemptId, string reason, CancellationToken cancellationToken = default)
+    {
+        using var conn = _factory.OpenConnection();
+        conn.Execute(new CommandDefinition(
+            """
+            UPDATE SquarePaymentAttempts
+            SET Status = 'Unknown', FailureReason = @reason, RecoveryStatus = @recoveryStatus, UpdatedAt = @now
+            WHERE Id = @attemptId AND Status NOT IN ('Completed', 'TerminalApproved')
+            """,
+            new { attemptId, reason, recoveryStatus = SquareRecoveryStatuses.PendingReview, now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture) },
+            cancellationToken: cancellationToken));
+        return Task.CompletedTask;
+    }
+
     public Task MarkFailedAsync(long attemptId, string reason, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
@@ -119,7 +197,7 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
             SET Status = @status,
                 FailureReason = @reason,
                 UpdatedAt = @now
-            WHERE Id = @id
+            WHERE Id = @id AND Status NOT IN ('Completed', 'TerminalApproved')
             """,
             new
             {
@@ -232,5 +310,13 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
         public string? SquarePaymentId { get; init; }
 
         public string? SquareCheckoutId { get; init; }
+
+        public string IdempotencyKey { get; init; } = string.Empty;
+        public string? PaymentType { get; init; }
+        public string? TabLegacyId { get; init; }
+        public decimal BaseAmount { get; init; }
+        public decimal SurchargeAmount { get; init; }
+        public decimal ChargedAmount { get; init; }
+        public string? RecoveryStatus { get; init; }
     }
 }

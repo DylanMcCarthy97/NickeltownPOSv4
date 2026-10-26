@@ -14,6 +14,7 @@ public enum SquarePaymentAttemptStatus
     Failed,
     Cancelled,
     TimedOut,
+    Unknown,
 }
 
 public sealed class SquarePaymentAttemptBeginRequest
@@ -41,6 +42,10 @@ public sealed class SquarePaymentAttemptBeginResult
 
     /// <summary>Terminal already approved this idempotency key; skip a second Square presentation.</summary>
     public bool AlreadyTerminalApproved { get; init; }
+
+    public bool RequiresRecovery { get; init; }
+
+    public bool AlreadyFailed { get; init; }
 
     public string? SquarePaymentId { get; init; }
 

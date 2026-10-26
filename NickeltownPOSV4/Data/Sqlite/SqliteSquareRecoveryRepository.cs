@@ -12,7 +12,7 @@ namespace NickeltownPOSV4.Data.Sqlite;
 public sealed class SqliteSquareRecoveryRepository : ISquareRecoveryRepository
 {
     private const string OrphanWhereClause = """
-        UPPER(TRIM(COALESCE(spa.Status,''))) IN ('TERMINALAPPROVED','COMPLETED','APPROVED')
+        UPPER(TRIM(COALESCE(spa.Status,''))) IN ('PENDING','UNKNOWN','TIMEDOUT','TERMINALAPPROVED','COMPLETED','APPROVED')
         AND (spa.PitstopSaleId IS NULL)
         AND (spa.LocalPaymentId IS NULL)
         AND (UPPER(TRIM(COALESCE(spa.RecoveryStatus,''))) NOT IN ('MANUALLYRECONCILED','LINKEDPITSTOP','LINKEDTAB','IGNORED'))

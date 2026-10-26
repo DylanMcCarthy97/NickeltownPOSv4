@@ -48,7 +48,7 @@
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Square charged the card but the POS did not record the sale or top-up. Admin/Treasurer only."
+                        Text="Check unfinished payments and approved charges missing a POS record. Confirm the final status in Square before charging again. Admin/Treasurer only."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
                 <Button
@@ -63,6 +63,7 @@
 
         <Border Grid.Row="1" Style="{StaticResource SettingsCardStyle}">
             <Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsRepeater ItemsSource="{Binding Rows.CurrentPageItems, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="8" />
@@ -77,14 +78,14 @@
                                 CornerRadius="10">
                                 <StackPanel Spacing="6">
                                     <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}">
-                                        <Run Text="Charged" />
+                                        <Run Text="Requested" />
                                         <Run Text="{Binding ChargedAmountText, Mode=OneWay}" />
                                         <Run Text=" · " />
                                         <Run Text="{Binding PaymentTypeText, Mode=OneWay}" />
                                         <Run Text=" · attempt #" />
                                         <Run Text="{Binding AttemptId, Mode=OneWay}" />
                                     </TextBlock>
-                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="{Binding OccurredAtText, Mode=OneWay}" />
                                         <Run Text=" · status " />
                                         <Run Text="{Binding StatusText, Mode=OneWay}" />
@@ -93,7 +94,7 @@
                                         <Run Text=" · operator " />
                                         <Run Text="{Binding OperatorText, Mode=OneWay}" />
                                     </TextBlock>
-                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="Square id " />
                                         <Run Text="{Binding SquarePaymentIdText, Mode=OneWay}" />
                                         <Run Text=" · checkout " />
@@ -101,7 +102,7 @@
                                         <Run Text=" · idempotency " />
                                         <Run Text="{Binding IdempotencyKeyText, Mode=OneWay}" />
                                     </TextBlock>
-                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}">
+                                    <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="Tab " />
                                         <Run Text="{Binding TabLegacyIdText, Mode=OneWay}" />
                                         <Run Text=" · base " />
@@ -123,7 +124,13 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
+                                        <Button Grid.Row="2" Grid.Column="0" MinHeight="44" Command="{Binding CheckSquareCommand}"
+                                                Content="Check Square status" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                        <Button Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" MinHeight="44" Command="{Binding SaveTabTopUpCommand}"
+                                                Content="Save approved tab top-up" Style="{StaticResource SettingsPrimaryButtonStyle}"
+                                                Visibility="{Binding CanSaveTabTopUp, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Button
                                             Grid.Row="0"
                                             Grid.Column="0"
@@ -166,6 +173,7 @@
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
+                </ScrollViewer>
                 <TextBlock
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"

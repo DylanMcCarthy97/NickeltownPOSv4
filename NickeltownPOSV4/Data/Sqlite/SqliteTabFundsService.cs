@@ -15,7 +15,6 @@ namespace NickeltownPOSV4.Data.Sqlite;
 public sealed class SqliteTabFundsService : ITabFundsService
 {
     private readonly SqliteConnectionFactory _factory;
-    private readonly ISquarePaymentAttemptRepository _paymentAttempts;
     private readonly IAuditLogService? _audit;
 
     public SqliteTabFundsService(
@@ -24,7 +23,6 @@ public sealed class SqliteTabFundsService : ITabFundsService
         IAuditLogService? audit = null)
     {
         _factory = factory;
-        _paymentAttempts = paymentAttempts;
         _audit = audit;
     }
 
@@ -194,12 +192,16 @@ public sealed class SqliteTabFundsService : ITabFundsService
         }
     }
 
-    public async Task<TabFundsCommitResult> CommitSquareCardTopUpAsync(
+    public Task<TabFundsCommitResult> CommitSquareCardTopUpAsync(
         string tabLegacyId,
         decimal baseAmountCredited,
         string? note,
         SquarePaymentCommitMetadata square,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => SqliteBackground.Run(
+            () => CommitSquareCardTopUp(tabLegacyId, baseAmountCredited, note, square, cancellationToken), cancellationToken);
+
+    private TabFundsCommitResult CommitSquareCardTopUp(string tabLegacyId, decimal baseAmountCredited,
+        string? note, SquarePaymentCommitMetadata square, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(tabLegacyId))
         {
@@ -221,7 +223,6 @@ public sealed class SqliteTabFundsService : ITabFundsService
             ? idempotencyKey
             : square.SquarePaymentId.Trim();
 
-        long? localPaymentIdForAttempt = null;
         string? committedFundBatchId = null;
 
         try
@@ -248,8 +249,13 @@ public sealed class SqliteTabFundsService : ITabFundsService
 
             if (dupKey > 0 || dupPayment > 0)
             {
+                var existing = conn.QuerySingle<(long Id, string? CommitBatchId)>(new CommandDefinition(
+                    "SELECT Id, CommitBatchId FROM Payments WHERE ExternalRef = @idempotencyKey OR SquarePaymentId = @squarePaymentId LIMIT 1",
+                    new { idempotencyKey, squarePaymentId }, tx, cancellationToken: cancellationToken));
+                SquarePaymentAttemptCompletion.Complete(conn, tx, square.PaymentAttemptId, squarePaymentId,
+                    idempotencyKey, existing.Id, null, null, cancellationToken);
                 tx.Commit();
-                return TabFundsCommitResult.Success();
+                return TabFundsCommitResult.Success(existing.CommitBatchId);
             }
 
             var tabPk = ResolveOpenTabRowId(conn, tx, tabLegacyId, cancellationToken);
@@ -371,8 +377,9 @@ public sealed class SqliteTabFundsService : ITabFundsService
                 fundCommitBatchId,
                 cancellationToken);
 
+            SquarePaymentAttemptCompletion.Complete(conn, tx, square.PaymentAttemptId, squarePaymentId,
+                idempotencyKey, localPaymentId, null, null, cancellationToken);
             tx.Commit();
-            localPaymentIdForAttempt = localPaymentId;
             committedFundBatchId = fundCommitBatchId;
             var tabLabel = SqliteActivityAudit.LoadTabLabel(conn, tx: null, tabPkValue, CancellationToken.None);
             SqliteActivityAudit.TryLog(
@@ -390,33 +397,6 @@ public sealed class SqliteTabFundsService : ITabFundsService
         catch (Exception ex)
         {
             return TabFundsCommitResult.Fail(ex.Message);
-        }
-
-        if (square.PaymentAttemptId is > 0)
-        {
-            try
-            {
-                var marked = await _paymentAttempts
-                    .MarkCompletedAsync(
-                        square.PaymentAttemptId.Value,
-                        squarePaymentId,
-                        localPaymentIdForAttempt,
-                        null,
-                        null,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-
-                if (!marked)
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[TabFunds] MarkCompletedAsync returned false for attempt {square.PaymentAttemptId.Value} (Square {squarePaymentId}). Square Recovery should surface this.");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[TabFunds] MarkCompletedAsync failed for attempt {square.PaymentAttemptId.Value}: {ex.Message}");
-            }
         }
 
         return committedFundBatchId is not null

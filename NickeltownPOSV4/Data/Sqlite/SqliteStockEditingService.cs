@@ -715,8 +715,11 @@ public sealed class SqliteStockEditingService : IStockEditingService
         if (oldQty is null)
         {
             tx.Rollback();
-            return Task.CompletedTask;
+            throw new InvalidOperationException("This item no longer exists. Refresh the stock list.");
         }
+
+        if (write.ExpectedStockQty is int expected && expected != oldQty.Value)
+            throw new InvalidOperationException("Stock changed while this item was open. Refresh and review the quantity before saving.");
 
         var img = string.IsNullOrWhiteSpace(write.ImagePath) ? null : write.ImagePath.Trim();
         var skuVal = string.IsNullOrWhiteSpace(write.Sku) ? null : write.Sku.Trim();
@@ -845,12 +848,21 @@ public sealed class SqliteStockEditingService : IStockEditingService
 
     public Task ReceiveStockAsync(
         StockPurchaseWrite purchase,
-        int newStockQty,
-        double costEach,
         CancellationToken cancellationToken = default)
     {
+        var received = checked(purchase.PacksBought * purchase.ItemsPerPack);
+        if (purchase.PacksBought <= 0 || purchase.ItemsPerPack <= 0 || purchase.TotalItems != received || purchase.TotalPaid < 0)
+            throw new ArgumentException("Enter valid packs, units per pack and total paid.");
+        var costEach = purchase.TotalPaid / received;
         using var conn = _factory.OpenConnection();
         using var tx = conn.BeginTransaction();
+
+        var current = conn.QuerySingleOrDefault<StockEditorRow>(new CommandDefinition(
+            "SELECT Id AS ItemId, Name, StockQty, TrackStock, OrderInMerchandise FROM Items WHERE Id = @id",
+            new { id = purchase.ItemId }, tx, cancellationToken: cancellationToken));
+        if (current is null || !StockCatalogTaxonomy.MaintainsOnHandQuantity(current.TrackStock, current.OrderInMerchandise))
+            throw new InvalidOperationException("Select an item that tracks on-hand stock before receiving it.");
+        var newStockQty = checked(current.StockQty + received);
 
         conn.Execute(
             new CommandDefinition(
@@ -861,7 +873,7 @@ public sealed class SqliteStockEditingService : IStockEditingService
                     UpdatedAt = datetime('now')
                 WHERE Id = @id
                 """,
-                new { q = newStockQty, cost = costEach, id = purchase.ItemId },
+                new { q = newStockQty, cost = (double)costEach, id = purchase.ItemId },
                 tx,
                 cancellationToken: cancellationToken));
 
@@ -880,14 +892,13 @@ public sealed class SqliteStockEditingService : IStockEditingService
         Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, purchase.ItemId);
 
         tx.Commit();
-        var itemName = SqliteActivityAudit.LoadItemName(conn, tx: null, purchase.ItemId, CancellationToken.None);
         SqliteActivityAudit.TryLog(
             _audit,
             AuditActions.StockManuallyAdjusted,
             AuditEntityTypes.Stock,
             purchase.ItemId.ToString(CultureInfo.InvariantCulture),
             amount: purchase.TotalItems,
-            ActivityLogText.StockReceived(itemName, purchase.TotalItems));
+            ActivityLogText.StockReceived(current.Name, purchase.TotalItems));
         return Task.CompletedTask;
     }
 
@@ -921,7 +932,7 @@ public sealed class SqliteStockEditingService : IStockEditingService
                     PerPack = purchase.ItemsPerPack,
                     Total = purchase.TotalItems,
                     Paid = (double)purchase.TotalPaid,
-                    Each = (double)purchase.CostEach,
+                    Each = (double)(purchase.TotalItems > 0 ? purchase.TotalPaid / purchase.TotalItems : purchase.CostEach),
                     Notes = string.IsNullOrWhiteSpace(purchase.Notes) ? null : purchase.Notes.Trim(),
                 },
                 tx,
@@ -931,10 +942,13 @@ public sealed class SqliteStockEditingService : IStockEditingService
     public Task ApplyStockCountAsync(
         IReadOnlyList<(long ItemId, int NewQty)> counts,
         IReadOnlyList<long>? countedItemIds = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlyDictionary<long, int>? expectedQuantities = null)
     {
+        if (counts.Any(c => c.NewQty < 0) || counts.Select(c => c.ItemId).Distinct().Count() != counts.Count)
+            throw new ArgumentException("Stock counts must contain one non-negative quantity per item.");
         var stampIds = countedItemIds is { Count: > 0 }
-            ? countedItemIds
+            ? countedItemIds.Concat(counts.Select(c => c.ItemId)).Distinct().ToList()
             : counts.Select(c => c.ItemId).Distinct().ToList();
         if (counts.Count == 0 && stampIds.Count == 0)
         {
@@ -944,6 +958,17 @@ public sealed class SqliteStockEditingService : IStockEditingService
         var now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
         using var conn = _factory.OpenConnection();
         using var tx = conn.BeginTransaction();
+
+        foreach (var id in stampIds)
+        {
+            var current = conn.QuerySingleOrDefault<StockEditorRow>(new CommandDefinition(
+                "SELECT Id AS ItemId, Name, StockQty, TrackStock, OrderInMerchandise FROM Items WHERE Id = @id",
+                new { id }, tx, cancellationToken: cancellationToken));
+            if (current is null || !StockCatalogTaxonomy.MaintainsOnHandQuantity(current.TrackStock, current.OrderInMerchandise))
+                throw new InvalidOperationException("A counted item no longer tracks stock. Refresh and restart the count.");
+            if (expectedQuantities is not null && (!expectedQuantities.TryGetValue(id, out var expected) || expected != current.StockQty))
+                throw new InvalidOperationException($"Stock changed for {current.Name} during the count. Refresh and recount before saving; no count changes were saved.");
+        }
 
         foreach (var id in stampIds)
         {
@@ -1018,6 +1043,39 @@ public sealed class SqliteStockEditingService : IStockEditingService
         }
 
         return Task.CompletedTask;
+    }
+
+    public Task<int> AdjustStockAsync(long itemId, int quantity, string mode, string reason, CancellationToken cancellationToken = default)
+    {
+        if (quantity < 0 || (quantity == 0 && mode != "Set To") || mode is not ("Increase" or "Decrease" or "Set To"))
+            throw new ArgumentException("Enter a valid adjustment quantity and type.");
+        if (string.IsNullOrWhiteSpace(reason)) throw new ArgumentException("Enter a reason for this stock adjustment.");
+        using var conn = _factory.OpenConnection();
+        using var tx = conn.BeginTransaction();
+        var item = conn.QuerySingleOrDefault<StockEditorRow>(new CommandDefinition(
+            "SELECT Id AS ItemId, Name, StockQty, TrackStock, OrderInMerchandise FROM Items WHERE Id = @itemId",
+            new { itemId }, tx, cancellationToken: cancellationToken));
+        if (item is null || !StockCatalogTaxonomy.MaintainsOnHandQuantity(item.TrackStock, item.OrderInMerchandise))
+            throw new InvalidOperationException("This item does not track on-hand stock. Refresh the stock list.");
+        var next = mode switch
+        {
+            "Set To" => quantity,
+            "Decrease" => checked(item.StockQty - quantity),
+            _ => checked(item.StockQty + quantity),
+        };
+        if (next < 0) throw new InvalidOperationException($"Only {item.StockQty} units are in stock. Enter a smaller decrease or use Set To for a stock count.");
+        conn.Execute(new CommandDefinition("UPDATE Items SET StockQty = @next, UpdatedAt = datetime('now') WHERE Id = @itemId",
+            new { next, itemId }, tx, cancellationToken: cancellationToken));
+        var delta = next - item.StockQty;
+        if (delta != 0)
+            conn.Execute(new CommandDefinition("INSERT INTO StockMovements (ItemId, DeltaQty, Reason, Reference, CreatedAt) VALUES (@itemId, @delta, @reason, 'StockAdjustment', datetime('now'))",
+                new { itemId, delta, reason = reason.Trim() }, tx, cancellationToken: cancellationToken));
+        Services.Stock.StockSaleDeductionHelper.SyncSellUntilGoneActiveFromQty(conn, tx, itemId);
+        tx.Commit();
+        if (delta != 0)
+            SqliteActivityAudit.TryLog(_audit, AuditActions.StockManuallyAdjusted, AuditEntityTypes.Stock,
+                itemId.ToString(CultureInfo.InvariantCulture), delta, ActivityLogText.StockAdjusted(item.Name, item.StockQty, next));
+        return Task.FromResult(next);
     }
 
     public Task<string?> GetLatestStockCountDateAsync(CancellationToken cancellationToken = default)

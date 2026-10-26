@@ -10,6 +10,5 @@ internal static class SqliteConstraint
 
     public static bool IsUniqueViolation(Exception ex) =>
         ex is SqliteException se
-        && (se.SqliteExtendedErrorCode is Unique or PrimaryKey
-            || se.SqliteErrorCode == 19);
+        && se.SqliteExtendedErrorCode is Unique or PrimaryKey;
 }

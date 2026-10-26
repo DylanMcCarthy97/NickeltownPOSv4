@@ -154,12 +154,20 @@ public sealed class ShoppingListEmailTests
         AssertPdfMagic(merchPdf);
         Assert.NotEqual(barPdf.Length, merchPdf.Length);
 
-        var barText = System.Text.Encoding.Latin1.GetString(barPdf);
-        var merchText = System.Text.Encoding.Latin1.GetString(merchPdf);
+        // Page streams may be compressed; searching the raw PDF bytes misses valid text.
+        var barText = ReadPageContent(barPdf);
+        var merchText = ReadPageContent(merchPdf);
         Assert.Contains("Weekly Bar Shopping List", barText, StringComparison.Ordinal);
         Assert.DoesNotContain("Club Cap", barText, StringComparison.Ordinal);
         Assert.Contains("Merchandise Shopping List", merchText, StringComparison.Ordinal);
         Assert.DoesNotContain("Lager", merchText, StringComparison.Ordinal);
+    }
+
+    private static string ReadPageContent(byte[] pdf)
+    {
+        using var reader = new iTextSharp.text.pdf.PdfReader(pdf);
+        return string.Join("\n", Enumerable.Range(1, reader.NumberOfPages)
+            .Select(page => System.Text.Encoding.Latin1.GetString(reader.GetPageContent(page))));
     }
 
     [Fact]
@@ -279,7 +287,7 @@ public sealed class ShoppingListEmailTests
         Assert.DoesNotContain("club@example.com", email.Sends[0].To);
         Assert.NotNull(email.Sends[0].Attachments);
         Assert.Single(email.Sends[0].Attachments!);
-        Assert.Contains("Bar_Shopping_List", email.Sends[0].Attachments![0].FileName, StringComparison.Ordinal);
+        Assert.Contains("Bar_Shopping_List", email.Sends[0].Attachments!.Single().FileName, StringComparison.Ordinal);
         Assert.Contains("bar shopping list", email.Sends[0].Subject, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Lager", email.Sends[0].Body, StringComparison.Ordinal);
         Assert.DoesNotContain("Club Cap", email.Sends[0].Body, StringComparison.Ordinal);
@@ -464,8 +472,9 @@ public sealed class ShoppingListEmailTests
         public Task<bool> ApplyPitstopEodDeductionAsync(long batchId, long itemId, int quantity, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task PermanentlyDeleteStockItemAsync(long itemId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task UpdateItemAdminAsync(StockItemAdminWrite write, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task ReceiveStockAsync(StockPurchaseWrite purchase, int newStockQty, double costEach, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task ApplyStockCountAsync(IReadOnlyList<(long ItemId, int NewQty)> counts, IReadOnlyList<long>? countedItemIds = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task ReceiveStockAsync(StockPurchaseWrite purchase, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<int> AdjustStockAsync(long itemId, int quantity, string mode, string reason, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task ApplyStockCountAsync(IReadOnlyList<(long ItemId, int NewQty)> counts, IReadOnlyList<long>? countedItemIds = null, CancellationToken cancellationToken = default, IReadOnlyDictionary<long, int>? expectedQuantities = null) => throw new NotSupportedException();
         public Task<string?> GetLatestStockCountDateAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task InsertStockPurchaseAsync(StockPurchaseWrite purchase, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }

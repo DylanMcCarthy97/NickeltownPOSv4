@@ -23,9 +23,20 @@ public sealed class SimulatedSquareTerminalSession : ISquareTerminalSession
         return SquarePresentResult.ApprovedSim(id);
     }
 
-    public Task<SquarePresentResult> PresentPaymentRequestAsync(
+    public async Task<SquarePresentResult> PresentPaymentRequestAsync(
         SquarePaymentRequest paymentRequest,
         CancellationToken cancellationToken = default,
-        string? idempotencyKey = null) =>
-        PresentCardChargeAsync(paymentRequest.TotalAmount, cancellationToken, paymentRequest.Note);
+        string? idempotencyKey = null,
+        Func<string, Task>? checkoutCreated = null)
+    {
+        var checkoutId = "sim_checkout_" + (idempotencyKey ?? Guid.NewGuid().ToString("N"));
+        if (checkoutCreated is not null)
+        {
+            await checkoutCreated(checkoutId).ConfigureAwait(false);
+        }
+        var result = await PresentCardChargeAsync(paymentRequest.TotalAmount, cancellationToken, paymentRequest.Note).ConfigureAwait(false);
+        return result.Approved
+            ? SquarePresentResult.ApprovedSim(result.ExternalTransactionId!, checkoutId, idempotencyKey)
+            : result;
+    }
 }

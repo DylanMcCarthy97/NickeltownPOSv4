@@ -372,32 +372,25 @@
                 Style="{StaticResource TabsSlideFooterButtonStyle}" />
         </Grid>
 
-        <Border
-            Grid.RowSpan="2"
-            Background="#CC0F172A"
-            Visibility="{Binding ShowSendingSquareOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-            <StackPanel
-                Padding="20"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Spacing="12">
-                <ProgressRing
-                    Width="40"
-                    Height="40"
-                    Foreground="White"
-                    IsActive="True" />
-                <TextBlock
-                    MaxWidth="280"
-                    FontSize="14"
-                    Foreground="White"
-                    Text="{Binding SquareWaitingMessage, Mode=OneWay}"
-                    TextAlignment="Center"
-                    TextWrapping="WrapWholeWords" />
-                <Button
-                    Command="{Binding CancelSquarePaymentCommand}"
-                    Content="Cancel card payment"
-                    Style="{StaticResource TabsSlideFooterButtonStyle}" />
-            </StackPanel>
-        </Border>
+        <Grid Grid.RowSpan="2" Background="{StaticResource PosScrimBrush}"
+              Visibility="{Binding ShowPaymentProgressOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border Padding="24" CornerRadius="16" Background="{StaticResource PosSurfaceBrush}"
+                    BorderBrush="{StaticResource PosPanelBorderBrush}" BorderThickness="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Width="280" Spacing="12">
+                    <ProgressRing Width="40" Height="40" HorizontalAlignment="Center"
+                                  IsActive="{Binding ShowPaymentProgressOverlay, Mode=OneWay}" />
+                    <TextBlock Text="{Binding PaymentProgressTitle, Mode=OneWay}" FontSize="20" FontWeight="SemiBold"
+                               Foreground="{StaticResource PosTextPrimaryBrush}" TextWrapping="WrapWholeWords"
+                               AutomationProperties.LiveSetting="Polite" />
+                    <TextBlock Text="{Binding PaymentProgressMessage, Mode=OneWay}" FontSize="14"
+                               Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords"
+                               AutomationProperties.LiveSetting="Polite" />
+                    <Button Command="{Binding CancelSquarePaymentCommand}" Content="Cancel card payment"
+                            Visibility="{Binding IsSendingSquare, Converter={StaticResource BoolToVis}, Mode=OneWay}"
+                            Style="{StaticResource TabsSlideFooterButtonStyle}" />
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

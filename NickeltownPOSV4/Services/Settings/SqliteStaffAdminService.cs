@@ -164,45 +164,29 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
 
         var (hash, salt) = PosBarPinSecurity.CreateHash(newPin4);
         using var conn = _factory.OpenConnection();
-        if (clearRequiresPinChange)
-        {
-            var rawJson = conn.QuerySingleOrDefault<string?>(
-                "SELECT RawJson FROM Bartenders WHERE Id = @Id",
-                new { Id = id });
-            var updatedJson = ClearRequiresPinChangeFlag(rawJson);
-            conn.Execute(
-                """
-                UPDATE Bartenders
-                SET PinHash = @PinHash,
-                    PinSalt = @PinSalt,
-                    LegacyPinPlain = NULL,
-                    RawJson = @RawJson,
-                    UpdatedAt = datetime('now')
-                WHERE Id = @Id
-                """,
-                new { Id = id, PinHash = hash, PinSalt = salt, RawJson = updatedJson });
-            _pinCache.Refresh();
-            return;
-        }
-
+        var rawJson = conn.QuerySingleOrDefault<string?>(
+            "SELECT RawJson FROM Bartenders WHERE Id = @Id",
+            new { Id = id });
+        var updatedJson = RemoveLegacyCredentials(rawJson, clearRequiresPinChange);
         conn.Execute(
             """
             UPDATE Bartenders
             SET PinHash = @PinHash,
                 PinSalt = @PinSalt,
                 LegacyPinPlain = NULL,
+                RawJson = @RawJson,
                 UpdatedAt = datetime('now')
             WHERE Id = @Id
             """,
-            new { Id = id, PinHash = hash, PinSalt = salt });
+            new { Id = id, PinHash = hash, PinSalt = salt, RawJson = updatedJson });
         _pinCache.Refresh();
     }
 
-    private static string ClearRequiresPinChangeFlag(string? rawJson)
+    private static string RemoveLegacyCredentials(string? rawJson, bool clearRequiresPinChange)
     {
         if (string.IsNullOrWhiteSpace(rawJson))
         {
-            return """{"requiresPinChange":false}""";
+            return clearRequiresPinChange ? """{"requiresPinChange":false}""" : "{}";
         }
 
         try
@@ -211,7 +195,11 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
             var buffer = new System.Text.Json.Nodes.JsonObject();
             foreach (var prop in doc.RootElement.EnumerateObject())
             {
-                if (string.Equals(prop.Name, "requiresPinChange", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(prop.Name, "pin", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(prop.Name, "pinHash", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(prop.Name, "pinSalt", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(prop.Name, "legacyPinPlain", StringComparison.OrdinalIgnoreCase)
+                    || (clearRequiresPinChange && string.Equals(prop.Name, "requiresPinChange", StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -219,12 +207,15 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
                 buffer[prop.Name] = System.Text.Json.Nodes.JsonNode.Parse(prop.Value.GetRawText());
             }
 
-            buffer["requiresPinChange"] = false;
+            if (clearRequiresPinChange)
+            {
+                buffer["requiresPinChange"] = false;
+            }
             return buffer.ToJsonString();
         }
         catch (JsonException)
         {
-            return """{"requiresPinChange":false}""";
+            return clearRequiresPinChange ? """{"requiresPinChange":false}""" : "{}";
         }
     }
 
