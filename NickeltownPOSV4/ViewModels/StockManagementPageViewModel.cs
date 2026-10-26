@@ -50,6 +50,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
     private string _filterCatalogLabel = "All";
 
     private long? _selectedItemId;
+    private int? _detailExpectedStockQty;
 
     private long? _newItemDraftId;
 
@@ -198,7 +199,12 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
                 string.IsNullOrWhiteSpace(StockAdjustmentReason) ? null : StockAdjustmentReason.Trim()),
             CanSaveDetail);
         SaveBarcodeCommand = new AsyncRelayCommand(() => PersistFullItemAsync(null), CanSaveDetail);
-        SelectRowCommand = new RelayCommand<StockListRowViewModel?>(r => SelectedPageRow = r);
+        SelectRowCommand = new RelayCommand<StockListRowViewModel?>(r =>
+        {
+            // An explicit reopen refreshes the editor even when this row remains selected.
+            if (r is not null && ReferenceEquals(_selectedPageRow, r)) ApplySelectionFromRow(r);
+            else SelectedPageRow = r;
+        });
         SelectBrowserFilterCommand = new RelayCommand<string>(SelectBrowserFilterFromParameter);
         StockDeltaCommand = new RelayCommand<string>(ApplyStockDeltaFromParameter, _ => HasSelection && !IsBusy);
         SummaryQuickStockCommand = new AsyncRelayCommand<string>(
@@ -1404,6 +1410,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
 
         var snap = StockItemDetailSnapshot.FromRow(src);
+        _detailExpectedStockQty = src.StockQty;
         SelectedItemId = snap.ItemId;
         DetailName = snap.Name;
         DetailItemType = snap.ItemType;
@@ -1483,6 +1490,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
 
     private void ClearDetail()
     {
+        _detailExpectedStockQty = null;
         SelectedItemId = null;
         DetailName = string.Empty;
         DetailItemType = "Item";
@@ -1571,6 +1579,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             _newItemDraftId = id;
             ClearDetail();
             SelectedItemId = id;
+            _detailExpectedStockQty = 0;
             DetailCatalogBucket = StockCatalogTaxonomy.BucketBar;
             DetailCatalogSubCategory = StockCatalogTaxonomy.DefaultSubCategory(StockCatalogTaxonomy.BucketBar);
             DetailStockMode = StockCatalogTaxonomy.StockModeTracked;
@@ -1881,7 +1890,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
                 Name = DetailName.Trim(),
                 Sku = string.IsNullOrWhiteSpace(DetailSku) ? null : DetailSku.Trim(),
                 StockQty = saveQty,
-                ExpectedStockQty = _all.FirstOrDefault(r => r.ItemId == id)?.StockQty,
+                ExpectedStockQty = _detailExpectedStockQty,
                 TrackStock = tr,
                 ImagePath = imagePath,
                 IsActive = DetailIsActive ? 1 : 0,
@@ -1913,6 +1922,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
                 CategoryId = null,
             };
             await _persist.UpdateItemAdminAsync(write, CancellationToken.None).ConfigureAwait(true);
+            _detailExpectedStockQty = saveQty;
 
             await _persist.UpsertPriceIfParsedAsync(id, "Bar", BarPriceText, CancellationToken.None).ConfigureAwait(true);
             await _persist.UpsertPriceIfParsedAsync(id, "Pitstop", PitstopPriceText, CancellationToken.None).ConfigureAwait(true);

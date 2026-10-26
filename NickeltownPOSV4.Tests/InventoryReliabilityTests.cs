@@ -154,6 +154,26 @@ public sealed class InventoryReliabilityTests : IDisposable
         Assert.Equal("Lager", db.ExecuteScalar<string>("SELECT Name FROM Items WHERE Id = @id", new { id }));
     }
 
+    [Fact]
+    public async Task RefreshingListDoesNotRelaxConflictGuardForAnOpenProductEditor()
+    {
+        var id = Seed("Lager", 10);
+        using var db = _factory.OpenConnection();
+        db.Execute("INSERT INTO ItemPrices (ItemId, Price, PriceKind, EffectiveFrom, CreatedAt) VALUES (@id, 5, 'Bar', datetime('now'), datetime('now'))", new { id });
+        var vm = ViewModel();
+        await vm.LoadAsync();
+        vm.SelectRowCommand.Execute(vm.PageRows.Single());
+        Assert.Equal("10", vm.DetailStockText);
+        db.Execute("UPDATE Items SET StockQty = 7 WHERE Id = @id", new { id });
+        await vm.LoadAsync();
+        Assert.Equal("10", vm.DetailStockText); // Unsaved editor still shows the original snapshot.
+        Assert.False(await vm.TryPersistCurrentItemAsync());
+        Assert.Contains("Stock changed", vm.StatusMessage);
+        Assert.Equal(7, db.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = @id", new { id }));
+        vm.SelectRowCommand.Execute(vm.PageRows.Single()); // Deliberately reopen and review the refreshed item.
+        Assert.Equal("7", vm.DetailStockText);
+    }
+
     public void Dispose() { SqliteConnection.ClearAllPools(); try { File.Delete(_path); } catch (IOException) { } }
 
     private sealed class Cache : IBarCatalogCache
