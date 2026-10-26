@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.7",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.7/NickeltownPOSV4_2.0.0.7_x64.msix",
+  "version": "2.0.0.8",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.8/NickeltownPOSV4_2.0.0.8_x64.msix",
   "releaseNotes": "Improved Toshiba till design and checkout feedback; safer Square payment recovery; inventory receiving, adjustments and stock-count fixes; stronger PIN resets and backups.",
   "mandatory": false
 }
