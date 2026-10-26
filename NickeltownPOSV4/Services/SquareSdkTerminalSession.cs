@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +41,8 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
     public async Task<SquarePresentResult> PresentPaymentRequestAsync(
         SquarePaymentRequest paymentRequest,
         CancellationToken cancellationToken = default,
-        string? idempotencyKey = null)
+        string? idempotencyKey = null,
+        Func<string, Task>? checkoutCreated = null)
     {
         if (paymentRequest.TotalAmount <= 0m)
         {
@@ -66,12 +69,16 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
             cfg.AccessToken.Trim(),
             new ClientOptions { BaseUrl = baseUrl });
 
+        var checkoutIdempotency = string.IsNullOrWhiteSpace(idempotencyKey)
+            ? Guid.NewGuid().ToString("N")
+            : idempotencyKey.Trim();
+
         var orderId = paymentRequest.OrderId?.Trim() ?? string.Empty;
         if (string.IsNullOrEmpty(orderId) && paymentRequest.LineItems.Count > 0)
         {
             try
             {
-                orderId = await CreateSquareOrderAsync(client, cfg, paymentRequest.LineItems, cancellationToken)
+                orderId = await CreateSquareOrderAsync(client, cfg, paymentRequest.LineItems, checkoutIdempotency, cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -104,10 +111,6 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
             OrderId = string.IsNullOrEmpty(orderId) ? null : orderId,
         };
 
-        var checkoutIdempotency = string.IsNullOrWhiteSpace(idempotencyKey)
-            ? Guid.NewGuid().ToString("N")
-            : idempotencyKey.Trim();
-
         CreateTerminalCheckoutResponse createResp;
         try
         {
@@ -121,11 +124,11 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
         }
         catch (SquareApiException ex)
         {
-            return SquarePresentResult.Declined($"Square API error: {ex.Message}");
+            return SquarePresentResult.Uncertain($"Square API response could not confirm checkout creation: {ex.Message}", idempotencyKey: checkoutIdempotency);
         }
         catch (Exception ex)
         {
-            return SquarePresentResult.Declined($"Square request failed: {ex.Message}");
+            return SquarePresentResult.Uncertain($"Square request status is unknown: {ex.Message}", idempotencyKey: checkoutIdempotency);
         }
 
         if (createResp.Errors != null && createResp.Errors.Any())
@@ -137,11 +140,24 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
         var checkoutId = createResp.Checkout?.Id;
         if (string.IsNullOrWhiteSpace(checkoutId))
         {
-            return SquarePresentResult.Declined("Square did not return a checkout id.");
+            return SquarePresentResult.Uncertain("Square did not return a checkout id.", idempotencyKey: checkoutIdempotency);
         }
 
         try
         {
+            if (checkoutCreated is not null)
+            {
+                try
+                {
+                    // Persist before polling so a restart can surface the unfinished checkout.
+                    await checkoutCreated(checkoutId).ConfigureAwait(false);
+                }
+                catch
+                {
+                    return await CancelAndConfirmAsync(client, checkoutId, checkoutIdempotency).ConfigureAwait(false);
+                }
+            }
+
             for (var i = 0; i < 40; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -154,7 +170,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
                     if (check.Errors != null && check.Errors.Any())
                     {
                         var pollMsg = string.Join("; ", check.Errors.Select(e => $"{e.Code}: {e.Detail}"));
-                        return SquarePresentResult.Declined(pollMsg);
+                        return SquarePresentResult.Uncertain(pollMsg, checkoutId, checkoutIdempotency);
                     }
 
                     var status = check.Checkout?.Status ?? string.Empty;
@@ -181,13 +197,15 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
                 await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
             }
 
-            await TryCancelCheckoutAsync(client, checkoutId, cancellationToken).ConfigureAwait(false);
-            return SquarePresentResult.Declined("Square Terminal did not complete within 2 minutes.", timedOut: true);
+            return await CancelAndConfirmAsync(client, checkoutId, checkoutIdempotency).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
-            await TryCancelCheckoutAsync(client, checkoutId, CancellationToken.None).ConfigureAwait(false);
-            return SquarePresentResult.Declined("Card payment cancelled.", cancelled: true);
+            return await CancelAndConfirmAsync(client, checkoutId, checkoutIdempotency).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return SquarePresentResult.Uncertain($"Square checkout status could not be confirmed: {ex.Message}", checkoutId, checkoutIdempotency);
         }
     }
 
@@ -195,6 +213,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
         SquareClient client,
         Models.Settings.AppSquareConfig cfg,
         IReadOnlyList<SquareTerminalLineItem> lineItems,
+        string checkoutIdempotency,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(cfg.LocationId))
@@ -255,7 +274,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
         var createResp = await client.Orders.CreateAsync(
             new CreateOrderRequest
             {
-                IdempotencyKey = Guid.NewGuid().ToString(),
+                IdempotencyKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("order:" + checkoutIdempotency))),
                 Order = new Order
                 {
                     LocationId = cfg.LocationId.Trim(),
@@ -302,6 +321,43 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession
 
         return note;
     }
+
+    private static async Task<SquarePresentResult> CancelAndConfirmAsync(
+        SquareClient client,
+        string checkoutId,
+        string idempotencyKey)
+    {
+        // Cancellation is a request, not proof that the charge stopped. Independently
+        // query the final state, including a completion that raced the cancel request.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        await TryCancelCheckoutAsync(client, checkoutId, timeout.Token).ConfigureAwait(false);
+        try
+        {
+            var response = await client.Terminal.Checkouts.GetAsync(
+                new GetCheckoutsRequest { CheckoutId = checkoutId },
+                cancellationToken: timeout.Token).ConfigureAwait(false);
+            if (response.Errors is null || !response.Errors.Any())
+            {
+                return ResolveCancelledCheckout(response.Checkout?.Status,
+                    response.Checkout?.PaymentIds?.FirstOrDefault(), checkoutId, idempotencyKey);
+            }
+        }
+        catch
+        {
+            // Keep the checkout visible for manual reconciliation when offline.
+        }
+
+        return SquarePresentResult.Uncertain("Square checkout has no confirmed final status.", checkoutId, idempotencyKey);
+    }
+
+    internal static SquarePresentResult ResolveCancelledCheckout(string? status, string? paymentId, string checkoutId, string idempotencyKey) =>
+        status?.ToUpperInvariant() switch
+        {
+            "COMPLETED" => SquarePresentResult.ApprovedSim(paymentId ?? checkoutId, checkoutId, idempotencyKey),
+            "CANCELED" => SquarePresentResult.Declined("Payment cancelled on Square Terminal.", cancelled: true),
+            "FAILED" => SquarePresentResult.Declined("Square Terminal reported payment failed."),
+            _ => SquarePresentResult.Uncertain("Square checkout has no confirmed final status.", checkoutId, idempotencyKey),
+        };
 
     private static async Task TryCancelCheckoutAsync(
         SquareClient client,

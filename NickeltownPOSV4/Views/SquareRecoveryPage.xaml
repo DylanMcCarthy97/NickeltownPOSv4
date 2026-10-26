@@ -48,7 +48,7 @@
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Square charged the card but the POS did not record the sale or top-up. Admin/Treasurer only."
+                        Text="Check unfinished payments and approved charges missing a POS record. Confirm the final status in Square before charging again. Admin/Treasurer only."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
                 <Button
@@ -77,7 +77,7 @@
                                 CornerRadius="10">
                                 <StackPanel Spacing="6">
                                     <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}">
-                                        <Run Text="Charged" />
+                                        <Run Text="Requested" />
                                         <Run Text="{Binding ChargedAmountText, Mode=OneWay}" />
                                         <Run Text=" · " />
                                         <Run Text="{Binding PaymentTypeText, Mode=OneWay}" />

@@ -36,6 +36,8 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
     private readonly PitstopCashNumpadHostViewModel _cashNumpad = new();
     private readonly MoneyActionLock _moneyLock = new();
     private string? _pendingCommitKey;
+    private string? _pendingCardCommitKey;
+    private string? _cardTargetTab;
 
     private string _statusMessage = string.Empty;
     private bool _isBusy;
@@ -452,6 +454,13 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         var tabName = TargetTabTitle;
         var tabLegacy = _session.TargetTabLegacyId!;
 
+        if (!string.Equals(_cardTargetTab, tabLegacy, StringComparison.Ordinal))
+        {
+            _pendingCardCommitKey = null;
+            _cardTargetTab = tabLegacy;
+        }
+        _pendingCardCommitKey ??= Guid.NewGuid().ToString("N");
+
         IsBusy = true;
         StatusMessage = string.Empty;
         try
@@ -481,7 +490,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
             try
             {
                 cardOutcome = await _squarePayments.PresentAndLogAsync(
-                    SquareTabCardCheckoutBuilder.ToOrchestratorRequest(checkout, tabLegacy),
+                    SquareTabCardCheckoutBuilder.ToOrchestratorRequest(checkout, tabLegacy, _pendingCardCommitKey),
                     _squareChargeCts.Token).ConfigureAwait(true);
             }
             finally
@@ -492,6 +501,10 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
             if (!cardOutcome.Approved)
             {
+                if (!cardOutcome.RequiresRecovery)
+                {
+                    _pendingCardCommitKey = null;
+                }
                 StatusMessage = cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage;
                 return;
             }
@@ -518,8 +531,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
                 if (!squareResult.Ok)
                 {
-                    StatusMessage = squareResult.ErrorMessage
-                        ?? "Square approved but the POS could not record the payment.";
+                    StatusMessage = "Card approved, but the payment could not be saved. Retry to save it without charging again, or open Admin → Square Recovery.";
                     return;
                 }
 
@@ -571,6 +583,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
     private async Task FinishCloseoutAsync()
     {
+        _pendingCardCommitKey = null;
         if (!string.IsNullOrWhiteSpace(_session.TargetTabLegacyId))
         {
             var del = await _tabs

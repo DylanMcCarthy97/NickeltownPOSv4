@@ -33,4 +33,11 @@ public sealed class AppUpdateServiceTests
             "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/update-feed/update-manifest.json?nocache=",
             path);
     }
+
+    [Fact]
+    public void ResolvePackageUri_UsesFeedDirectoryWhenGivenManifestWithQuery()
+    {
+        Assert.Equal("https://example.com/feed/app.msix", AppUpdateService.ResolvePackageUri(
+            "https://example.com/feed/update-manifest.json?nocache=1", "app.msix"));
+    }
 }

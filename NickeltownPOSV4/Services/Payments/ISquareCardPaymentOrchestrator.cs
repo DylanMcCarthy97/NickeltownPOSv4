@@ -29,6 +29,8 @@ public sealed class SquareCardPaymentOutcome
 
     public bool AlreadyRecorded { get; init; }
 
+    public bool RequiresRecovery { get; init; }
+
     public string? DeclineReason { get; init; }
 
     public string IdempotencyKey { get; init; } = string.Empty;

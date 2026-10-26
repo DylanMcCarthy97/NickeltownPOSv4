@@ -32,6 +32,10 @@ public sealed class PitstopPaymentRecoveryService : IPitstopPaymentRecoveryServi
 
     public async Task<SquareRecoveryUpdateResult> RecoverPitstopSaleAsync(long attemptId, CancellationToken cancellationToken = default)
     {
+        var rows = await _recovery.GetOrphanAttemptsAsync(cancellationToken).ConfigureAwait(false);
+        var row = System.Linq.Enumerable.FirstOrDefault(rows, r => r.AttemptId == attemptId);
+        if (row is not null && row.Status is not ("TerminalApproved" or "Completed" or "Approved"))
+            return SquareRecoveryUpdateResult.Fail("Confirm the payment is approved in Square before recording a recovered sale.");
         var json = await _recovery.GetRecoveryPayloadJsonAsync(attemptId, cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json)) return SquareRecoveryUpdateResult.Fail("No recoverable sale payload for this payment.");
         PitstopPaymentRecoveryPayload? payload;

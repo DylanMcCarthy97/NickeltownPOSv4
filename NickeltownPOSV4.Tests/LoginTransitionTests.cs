@@ -48,7 +48,8 @@ public sealed class LoginTransitionTests
         Assert.Equal(0, nav.Forced);
         Assert.Equal(0, nav.Login);
         Assert.False(vm.IsBusy);
-        Assert.Contains("auth.ok", LoginTransitionProbe.LastSummary, StringComparison.Ordinal);
+        // The real MainShell completes the probe on load; this navigation fake does not load a page.
+        Assert.Contains("auth.ok", string.Join('\n', LoginTransitionProbe.LastLines), StringComparison.Ordinal);
     }
 
     [Fact]

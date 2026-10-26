@@ -41,7 +41,7 @@ public sealed class PitstopCatalogQueryTests : IDisposable
     {
         var products = await _query.GetPitstopProductsAsync(null);
         var water = Assert.Single(products, p => p.Name == "Water");
-        Assert.Equal(2.00m, water.PitstopPrice);
+        Assert.Equal(2.00d, water.PitstopPrice);
         Assert.Contains("Drinks", await _query.GetPitstopCategoryNamesAsync());
         var bySku = await _query.FindBySkuAsync("WAT");
         Assert.NotNull(bySku);

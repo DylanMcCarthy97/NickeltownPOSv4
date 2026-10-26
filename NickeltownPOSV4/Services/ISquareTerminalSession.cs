@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,6 +49,18 @@ public sealed class SquarePresentResult
 
     public bool Cancelled { get; init; }
 
+    /// <summary>Square may have accepted the charge; do not treat this as a decline.</summary>
+    public bool RequiresRecovery { get; init; }
+
+    public static SquarePresentResult Uncertain(string reason, string? checkoutId = null, string? idempotencyKey = null) =>
+        new()
+        {
+            RequiresRecovery = true,
+            DeclineReason = reason,
+            SquareCheckoutId = checkoutId,
+            IdempotencyKey = idempotencyKey,
+        };
+
     public static SquarePresentResult ApprovedSim(string externalId, string? checkoutId = null, string? idempotencyKey = null) =>
         new()
         {
@@ -82,5 +95,6 @@ public interface ISquareTerminalSession
     Task<SquarePresentResult> PresentPaymentRequestAsync(
         SquarePaymentRequest paymentRequest,
         CancellationToken cancellationToken = default,
-        string? idempotencyKey = null);
+        string? idempotencyKey = null,
+        Func<string, Task>? checkoutCreated = null);
 }

@@ -1,0 +1,32 @@
+name: Build and test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Test application
+        run: dotnet test NickeltownPOSV4.Tests/NickeltownPOSV4.Tests.csproj -p:Platform=x64 -p:AppxPackageSigningEnabled=false --logger "trx;LogFileName=application.trx" --results-directory TestResults
+      - name: Test standalone shopping list logic
+        run: dotnet test tools/ShoppingListLogic.Tests/ShoppingListLogic.Tests.csproj --logger "trx;LogFileName=shopping-list.trx" --results-directory TestResults
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/*.trx
+          if-no-files-found: warn

@@ -486,7 +486,12 @@ public sealed class SquareRecoveryRowVm : ObservableViewModel
         _row = row;
         AttemptId = row.AttemptId;
         OccurredAtText = row.OccurredAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", Cult);
-        StatusText = string.IsNullOrWhiteSpace(row.Status) ? "—" : row.Status;
+        StatusText = row.Status switch
+        {
+            "Pending" or "Unknown" or "TimedOut" => "Status needs checking in Square",
+            "TerminalApproved" => "Approved — POS record needs saving",
+            _ => string.IsNullOrWhiteSpace(row.Status) ? "—" : row.Status,
+        };
         PaymentTypeText = string.IsNullOrWhiteSpace(row.PaymentType) ? "—" : row.PaymentType;
         TabLegacyId = row.TabLegacyId;
         BaseAmount = row.BaseAmount;
@@ -504,7 +509,8 @@ public sealed class SquareRecoveryRowVm : ObservableViewModel
         TabLegacyIdText = string.IsNullOrWhiteSpace(row.TabLegacyId) ? "—" : row.TabLegacyId;
         FailureReasonText = string.IsNullOrWhiteSpace(row.FailureReason) ? string.Empty : row.FailureReason;
 
-        HasRecoverablePayload = row.HasRecoverablePayload;
+        HasRecoverablePayload = row.HasRecoverablePayload
+            && row.Status is "TerminalApproved" or "Completed" or "Approved";
         LinkPitstopCommand = new AsyncRelayCommand(() => host.LinkPitstopAsync(this), () => !host.IsBusy);
         LinkTabCommand = new AsyncRelayCommand(() => host.LinkTabAsync(this), () => !host.IsBusy);
         RecoverSaleCommand = new AsyncRelayCommand(() => host.RecoverPitstopSaleAsync(this), () => HasRecoverablePayload && !host.IsBusy);
