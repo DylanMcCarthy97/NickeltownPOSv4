@@ -74,31 +74,35 @@ public sealed class SqliteSquarePaymentAttemptRepository : ISquarePaymentAttempt
             });
         }
 
-        // Also protect a new UI session after a restart or an edited amount. An approved
-        // payment without a local record must be reconciled before collecting again.
-        var unresolved = conn.QueryFirstOrDefault<SquareAttemptRow>(
-            """
-            SELECT Id, IdempotencyKey, SquarePaymentId, SquareCheckoutId
-            FROM SquarePaymentAttempts
-            WHERE PaymentType = @paymentType
-              AND COALESCE(TabLegacyId, '') = @tabLegacyId
-              AND Status IN ('Pending', 'Unknown', 'TimedOut', 'TerminalApproved', 'Approved')
-              AND LocalPaymentId IS NULL AND PitstopSaleId IS NULL
-              AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
-            ORDER BY Id LIMIT 1
-            """,
-            new { paymentType = request.PaymentType.ToString(), tabLegacyId = request.TabLegacyId?.Trim() ?? string.Empty }, tx);
-        if (unresolved is not null)
+        // Tab top-ups share a tab identity, so an unfinished charge on that tab must be
+        // reconciled before collecting again. Pitstop sales are independent carts: block
+        // only the same transaction key, never every later Pitstop card payment.
+        if (request.PaymentType == SquarePaymentAttemptType.TabTopUp)
         {
-            tx.Commit();
-            return Task.FromResult(new SquarePaymentAttemptBeginResult
+            var unresolved = conn.QueryFirstOrDefault<SquareAttemptRow>(
+                """
+                SELECT Id, IdempotencyKey, SquarePaymentId, SquareCheckoutId
+                FROM SquarePaymentAttempts
+                WHERE PaymentType = @paymentType
+                  AND COALESCE(TabLegacyId, '') = @tabLegacyId
+                  AND Status IN ('Pending', 'Unknown', 'TimedOut', 'TerminalApproved', 'Approved')
+                  AND LocalPaymentId IS NULL AND PitstopSaleId IS NULL
+                  AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
+                ORDER BY Id LIMIT 1
+                """,
+                new { paymentType = request.PaymentType.ToString(), tabLegacyId = request.TabLegacyId?.Trim() ?? string.Empty }, tx);
+            if (unresolved is not null)
             {
-                AttemptId = unresolved.Id,
-                IdempotencyKey = unresolved.IdempotencyKey,
-                RequiresRecovery = true,
-                SquarePaymentId = unresolved.SquarePaymentId,
-                SquareCheckoutId = unresolved.SquareCheckoutId,
-            });
+                tx.Commit();
+                return Task.FromResult(new SquarePaymentAttemptBeginResult
+                {
+                    AttemptId = unresolved.Id,
+                    IdempotencyKey = unresolved.IdempotencyKey,
+                    RequiresRecovery = true,
+                    SquarePaymentId = unresolved.SquarePaymentId,
+                    SquareCheckoutId = unresolved.SquareCheckoutId,
+                });
+            }
         }
 
         var now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);

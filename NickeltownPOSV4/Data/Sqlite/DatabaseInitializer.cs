@@ -25,6 +25,7 @@ public sealed class DatabaseInitializer
 
         ApplyOptionalColumnPatches(conn);
         SurfaceUncertainLegacySquareAttempts(conn);
+        RecloseUncheckableLegacySquareAttempts(conn);
         RunCatalogV2Migration(conn);
         SeedMembershipFoundation(conn);
 
@@ -33,20 +34,40 @@ public sealed class DatabaseInitializer
 
     private const string CatalogV2MigrationSettingsKey = "catalog_v2_migration_20260513";
 
+    private static readonly string LegacyUncertainFailureReasonClause = """
+        (FailureReason LIKE '%did not complete within%'
+          OR FailureReason LIKE 'Square request failed:%'
+          OR FailureReason LIKE 'Square API error:%'
+          OR FailureReason = 'Card payment cancelled.')
+        """;
+
     private static void SurfaceUncertainLegacySquareAttempts(SqliteConnection conn)
     {
         // Older builds labelled transport failures and unconfirmed cancellations as
-        // declines. Reopen these for review without touching reconciled payments.
-        conn.Execute("""
+        // declines. Reopen only rows that can actually be checked in Square.
+        conn.Execute($"""
             UPDATE SquarePaymentAttempts
             SET Status = 'Unknown', RecoveryStatus = 'PendingReview'
             WHERE Status = 'Failed'
               AND LocalPaymentId IS NULL AND PitstopSaleId IS NULL
+              AND SquareCheckoutId IS NOT NULL AND TRIM(SquareCheckoutId) != ''
               AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
-              AND (FailureReason LIKE '%did not complete within%'
-                OR FailureReason LIKE 'Square request failed:%'
-                OR FailureReason LIKE 'Square API error:%'
-                OR FailureReason = 'Card payment cancelled.')
+              AND {LegacyUncertainFailureReasonClause}
+            """);
+    }
+
+    private static void RecloseUncheckableLegacySquareAttempts(SqliteConnection conn)
+    {
+        // 2.0.0.8 reopened historical Failed rows that have no checkout ID. Check Square
+        // status cannot resolve them, and one leftover Pitstop row blocked every card sale.
+        conn.Execute($"""
+            UPDATE SquarePaymentAttempts
+            SET Status = 'Failed', RecoveryStatus = NULL
+            WHERE Status = 'Unknown'
+              AND LocalPaymentId IS NULL AND PitstopSaleId IS NULL
+              AND (SquareCheckoutId IS NULL OR TRIM(SquareCheckoutId) = '')
+              AND UPPER(TRIM(COALESCE(RecoveryStatus, ''))) NOT IN ('MANUALLYRECONCILED', 'LINKEDPITSTOP', 'LINKEDTAB', 'IGNORED')
+              AND {LegacyUncertainFailureReasonClause}
             """);
     }
 

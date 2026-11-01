@@ -230,27 +230,70 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
     public async Task UpgradeSurfacesOldTimeouts_ButPreservesConfirmedDeclinesAndReconciledRows()
     {
         using var db = _factory.OpenConnection();
-        foreach (var key in new[] { "old-timeout", "cancelled-on-reader", "reconciled" })
-        {
-            db.Execute("""
-                INSERT INTO SquarePaymentAttempts
-                  (IdempotencyKey, Status, PaymentType, BaseAmount, SurchargeAmount, ChargedAmount, FailureReason, RecoveryStatus, CreatedAt, UpdatedAt)
-                VALUES (@key, 'Failed', 'TabTopUp', 50, 0, 50, @reason, @recovery, datetime('now'), datetime('now'))
-                """, new
-                {
-                    key,
-                    reason = key == "cancelled-on-reader" ? "Payment cancelled on Square Terminal." : "Square Terminal did not complete within 2 minutes.",
-                    recovery = key == "reconciled" ? SquareRecoveryStatuses.ManuallyReconciled : null,
-                });
-        }
+        db.Execute("""
+            INSERT INTO SquarePaymentAttempts
+              (IdempotencyKey, Status, PaymentType, BaseAmount, SurchargeAmount, ChargedAmount, FailureReason, RecoveryStatus, SquareCheckoutId, CreatedAt, UpdatedAt)
+            VALUES
+              ('old-timeout', 'Failed', 'TabTopUp', 50, 0, 50, 'Square Terminal did not complete within 2 minutes.', NULL, 'checkout-old-timeout', datetime('now'), datetime('now')),
+              ('old-timeout-no-id', 'Failed', 'PitstopSale', 20, 0, 20, 'Square Terminal did not complete within 2 minutes.', NULL, NULL, datetime('now'), datetime('now')),
+              ('cancelled-on-reader', 'Failed', 'TabTopUp', 50, 0, 50, 'Payment cancelled on Square Terminal.', NULL, NULL, datetime('now'), datetime('now')),
+              ('reconciled', 'Failed', 'TabTopUp', 50, 0, 50, 'Square Terminal did not complete within 2 minutes.', @recovery, NULL, datetime('now'), datetime('now'))
+            """, new { recovery = SquareRecoveryStatuses.ManuallyReconciled });
         var initializer = new DatabaseInitializer(_factory);
         await initializer.InitializeAsync();
         await initializer.InitializeAsync();
         var row = Assert.Single(await _recovery.GetOrphanAttemptsAsync());
         Assert.Equal("old-timeout", row.IdempotencyKey);
         Assert.Equal("Unknown", row.Status);
+        Assert.Equal("Failed", db.ExecuteScalar<string>("SELECT Status FROM SquarePaymentAttempts WHERE IdempotencyKey = 'old-timeout-no-id'"));
         Assert.Equal("Failed", db.ExecuteScalar<string>("SELECT Status FROM SquarePaymentAttempts WHERE IdempotencyKey = 'cancelled-on-reader'"));
         Assert.Equal(SquareRecoveryStatuses.ManuallyReconciled, db.ExecuteScalar<string>("SELECT RecoveryStatus FROM SquarePaymentAttempts WHERE IdempotencyKey = 'reconciled'"));
+    }
+
+    [Fact]
+    public async Task UpgradeReclosesUncheckableLegacyUnknowns_ThatBlockedPitstop()
+    {
+        using var db = _factory.OpenConnection();
+        db.Execute("""
+            INSERT INTO SquarePaymentAttempts
+              (IdempotencyKey, Status, PaymentType, BaseAmount, SurchargeAmount, ChargedAmount, FailureReason, RecoveryStatus, CreatedAt, UpdatedAt)
+            VALUES
+              ('legacy-unknown-pitstop', 'Unknown', 'PitstopSale', 15, 0, 15, 'Square request failed: connection reset', 'PendingReview', datetime('now'), datetime('now')),
+              ('genuine-unknown-pitstop', 'Unknown', 'PitstopSale', 12, 0, 12, 'Payment connection failed before its final status was confirmed.', 'PendingReview', datetime('now'), datetime('now'))
+            """);
+        await new DatabaseInitializer(_factory).InitializeAsync();
+        Assert.Equal("Failed", db.ExecuteScalar<string>("SELECT Status FROM SquarePaymentAttempts WHERE IdempotencyKey = 'legacy-unknown-pitstop'"));
+        Assert.Equal("Unknown", db.ExecuteScalar<string>("SELECT Status FROM SquarePaymentAttempts WHERE IdempotencyKey = 'genuine-unknown-pitstop'"));
+        Assert.Equal("genuine-unknown-pitstop", Assert.Single(await _recovery.GetOrphanAttemptsAsync()).IdempotencyKey);
+    }
+
+    [Fact]
+    public async Task UncertainPitstopPayment_DoesNotBlockALaterPitstopSale()
+    {
+        var terminal = new RecordingTerminal { Failure = "timeout" };
+        var orchestrator = new SquareCardPaymentOrchestrator(terminal, _attempts, new Audit());
+        var first = await orchestrator.PresentAndLogAsync(PitstopRequest("pitstop-timeout"));
+        Assert.True(first.RequiresRecovery);
+        Assert.Equal(1, await _recovery.GetUnresolvedCountAsync());
+
+        terminal.Failure = null;
+        var later = await orchestrator.PresentAndLogAsync(PitstopRequest("pitstop-next-sale"));
+        Assert.True(later.Approved);
+        Assert.False(later.RequiresRecovery);
+        Assert.Equal(2, terminal.Calls);
+        Assert.Contains(
+            await _recovery.GetOrphanAttemptsAsync(),
+            row => row.IdempotencyKey == "pitstop-timeout" && row.Status == "Unknown");
+    }
+
+    [Fact]
+    public async Task UncertainPitstopPayment_SameKeyStillRequiresRecovery()
+    {
+        var terminal = new RecordingTerminal { Failure = "timeout" };
+        var orchestrator = new SquareCardPaymentOrchestrator(terminal, _attempts, new Audit());
+        Assert.True((await orchestrator.PresentAndLogAsync(PitstopRequest("same-pitstop"))).RequiresRecovery);
+        Assert.True((await orchestrator.PresentAndLogAsync(PitstopRequest("same-pitstop"))).RequiresRecovery);
+        Assert.Equal(1, terminal.Calls);
     }
 
     private static SquareCardPaymentRequest Request(string key, decimal amount = 50, string tab = "tab1")
@@ -258,6 +301,16 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         var checkout = SquareTabCardCheckoutBuilder.Build(amount, 0, "Top-up", "Bar Tab", null, "Top-up", "BarTopUp", "Test");
         return SquareTabCardCheckoutBuilder.ToOrchestratorRequest(checkout, tab, key);
     }
+
+    private static SquareCardPaymentRequest PitstopRequest(string key, decimal amount = 10) =>
+        new()
+        {
+            IdempotencyKey = key,
+            PaymentType = SquarePaymentAttemptType.PitstopSale,
+            BaseAmount = amount,
+            ChargedAmount = amount,
+            TerminalRequest = new SquarePaymentRequest { TotalAmount = amount },
+        };
 
     [Fact]
     public async Task TabCreditAndAttemptCompletionCommitTogether_OrBothRollBack()

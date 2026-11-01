@@ -6,7 +6,7 @@ Top-ups and guest closeouts retain their payment key when saving an approved cha
 
 An interrupted connection or unconfirmed cancellation is **status unknown**, not a declined card. The POS saves the checkout ID as soon as Square creates it. Cancellation is followed by a final status check: completed payments are recorded as approved; confirmed cancellations can be retried with a new key; other outcomes remain in Square Recovery.
 
-Unfinished attempts survive restart. A tab with an unresolved payment cannot be charged again until the prior attempt is resolved. Pitstop card checkout is similarly blocked while an earlier Pitstop payment is unresolved. Cash operation is independent. This intentionally requires manager review when the system cannot prove whether a card was charged.
+Unfinished attempts survive restart. A tab with an unresolved payment cannot be charged again until the prior attempt is resolved. Pitstop card checkout only blocks retry of that same transaction; a later cart can still be charged. Unresolved Pitstop attempts stay in Square Recovery for manager review. Cash operation is independent.
 
 Local sale/credit records, stock deductions, and their Square attempt links now commit together in a single database transaction. Failure to link the confirmed payment rolls the local write back. Retrying the same saved transaction repairs or reuses the existing link without another charge or stock deduction.
 
@@ -18,7 +18,7 @@ Local sale/credit records, stock deductions, and their Square attempt links now 
 4. If approval exists without a recoverable POS record, reconcile the sale/top-up or refund in Square as appropriate, then enter a reconciliation note describing what was done. The status-unknown entry itself is not evidence of approval.
 5. If Square confirms cancellation or no payment, mark the attempt manually reconciled with that finding before starting a new card payment.
 
-Upgrading also surfaces historical timeout/transport failures previously labelled Failed. Already reconciled or ignored attempts remain closed. Review these against Square; their appearance does not mean a new charge occurred.
+Upgrading only reopens historical timeout/transport failures that have a saved checkout ID. Already reconciled or ignored attempts remain closed. Leftover 2.0.0.8 rows with no checkout ID return to Failed so they stop blocking Pitstop card checkout. Review remaining recovery items against Square; their appearance does not mean a new charge occurred.
 
 ## Inventory workflows
 
