@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using NickeltownPOSV4.DependencyInjection;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Settings;
+using NickeltownPOSV4.Services.Updates;
 using NickeltownPOSV4.Services.Logging;
 using NickeltownPOSV4.Themes;
 using System;
@@ -34,6 +35,7 @@ public partial class App : Application
         if (dispatcher is not null)
         {
             Services.GetRequiredService<PosCatalogAutoRefreshService>().Start(dispatcher);
+            Services.GetRequiredService<AppUpdateLiveService>().Start(dispatcher);
         }
 
         _window.Activate();

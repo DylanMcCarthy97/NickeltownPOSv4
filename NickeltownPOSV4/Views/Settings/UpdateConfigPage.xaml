@@ -45,7 +45,7 @@
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Check for a new version, install it, then the till restarts." />
+                        Text="The till looks for new versions itself. You do not need to check every time." />
                     <TextBlock
                         Margin="0,10,0,0"
                         FontWeight="SemiBold"
@@ -63,12 +63,12 @@
 
         <Border Grid.Row="2" Style="{StaticResource SettingsCardStyle}">
             <StackPanel Spacing="12">
-                <CheckBox Content="Check for updates when the app starts" IsChecked="{Binding CheckOnStartup, Mode=TwoWay}" />
-                <CheckBox Content="Install updates without asking" IsChecked="{Binding AutoInstall, Mode=TwoWay}" />
+                <CheckBox Content="Keep looking for updates" IsChecked="{Binding CheckOnStartup, Mode=TwoWay}" />
+                <CheckBox Content="Install when nobody is signed in" IsChecked="{Binding AutoInstall, Mode=TwoWay}" />
                 <TextBlock
                     FontSize="13"
                     Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="Tap Check for update to see if a new version is ready. The till will restart after it installs."
+                    Text="If a new version is ready, the till installs it on the login screen. It will not update in the middle of a sale. The till restarts itself after it installs."
                     TextWrapping="Wrap" />
                 <TextBlock
                     Foreground="#FFB91C1C"

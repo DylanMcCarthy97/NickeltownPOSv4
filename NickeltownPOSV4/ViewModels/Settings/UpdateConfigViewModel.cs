@@ -44,7 +44,7 @@ public sealed class UpdateConfigViewModel : ObservableViewModel
 
     public string CurrentBuildText => $"This version: {AppVersionInfo.CurrentVersionString}";
 
-    public string FeedSourceSummary => "New versions arrive automatically. Tap Check for update if you want to look now.";
+    public string FeedSourceSummary => "New versions install themselves on the login screen. Tap Check for update only if you want to look now.";
 
     public bool CheckOnStartup
     {

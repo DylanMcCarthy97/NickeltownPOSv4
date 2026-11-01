@@ -25,6 +25,14 @@ public sealed class AppUpdateConfigService : IAppUpdateConfigService
                        ?? new AppUpdateConfig();
         // Feed is product-fixed; never honour a stale/empty custom URL from older builds.
         existing.FeedBaseUrl = AppUpdateConfig.BuiltInFeedBaseUrl;
+        if (!existing.LiveDefaultsApplied)
+        {
+            existing.CheckOnStartup = true;
+            existing.AutoInstall = true;
+            existing.LiveDefaultsApplied = true;
+            await SaveAsync(existing, cancellationToken).ConfigureAwait(false);
+        }
+
         return existing;
     }
 

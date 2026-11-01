@@ -31,6 +31,7 @@ internal static class ServiceCollectionSettingsExtensions
         services.AddSingleton<IStaffAdminService, SqliteStaffAdminService>();
         services.AddSingleton<IAppUpdateConfigService, AppUpdateConfigService>();
         services.AddSingleton<IAppUpdateService, AppUpdateService>();
+        services.AddSingleton<AppUpdateLiveService>();
 
         services.AddTransient<BackupViewModel>();
         services.AddTransient<ComPortConfigViewModel>();

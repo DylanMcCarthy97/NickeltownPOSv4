@@ -22,5 +22,11 @@ public sealed class AppUpdateConfig
     public bool CheckOnStartup { get; set; } = true;
 
     /// <summary>When true, installs without prompting (kiosk mode). When false, staff confirm first.</summary>
-    public bool AutoInstall { get; set; }
+    public bool AutoInstall { get; set; } = true;
+
+    /// <summary>
+    /// One-time flag so older tills pick up self-update defaults
+    /// (look while open + install on the login screen).
+    /// </summary>
+    public bool LiveDefaultsApplied { get; set; }
 }
