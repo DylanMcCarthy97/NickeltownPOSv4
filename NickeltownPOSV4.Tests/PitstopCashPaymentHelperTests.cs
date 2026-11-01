@@ -43,6 +43,32 @@ public sealed class PitstopCashPaymentHelperTests
     }
 
     [Fact]
+    public void IsCompleteSaleEnabled_WhenCashSheetOpenAndPaid_IgnoresCheckoutOverlayLock()
+    {
+        Assert.True(PitstopCashPaymentHelper.IsCompleteSaleEnabled(
+            cashSheetOpen: true,
+            isBusy: false,
+            isSendingSquare: false,
+            paymentInFlight: false,
+            received: 20m,
+            saleTotal: 17.50m));
+    }
+
+    [Theory]
+    [InlineData(false, false, false, false, 20, 17.50, false)]
+    [InlineData(true, true, false, false, 20, 17.50, false)]
+    [InlineData(true, false, true, false, 20, 17.50, false)]
+    [InlineData(true, false, false, true, 20, 17.50, false)]
+    [InlineData(true, false, false, false, 10, 17.50, false)]
+    [InlineData(true, false, false, false, 17.50, 17.50, true)]
+    public void IsCompleteSaleEnabled_BlocksOnlyBusyChargeOrShortTender(
+        bool sheetOpen, bool busy, bool sending, bool inFlight, decimal received, decimal total, bool expected)
+    {
+        Assert.Equal(expected, PitstopCashPaymentHelper.IsCompleteSaleEnabled(
+            sheetOpen, busy, sending, inFlight, received, total));
+    }
+
+    [Fact]
     public void FormatTenderLabel_DropsCentsForWholeNotes()
     {
         Assert.Equal("$20", PitstopCashPaymentHelper.FormatTenderLabel(20m));

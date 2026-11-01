@@ -15,6 +15,22 @@ public static class PitstopCashPaymentHelper
     public static bool IsConfirmEnabled(decimal received, decimal saleTotal, bool isCashSheetOpen) =>
         isCashSheetOpen && received >= saleTotal;
 
+    /// <summary>
+    /// Complete sale must stay available while the cash sheet is open.
+    /// Catalog lock from the checkout overlay must not disable it.
+    /// </summary>
+    public static bool IsCompleteSaleEnabled(
+        bool cashSheetOpen,
+        bool isBusy,
+        bool isSendingSquare,
+        bool paymentInFlight,
+        decimal received,
+        decimal saleTotal) =>
+        !isBusy
+        && !isSendingSquare
+        && !paymentInFlight
+        && IsConfirmEnabled(received, saleTotal, cashSheetOpen);
+
     public static bool IsShortWarning(decimal received, decimal saleTotal, bool isCashSheetOpen) =>
         isCashSheetOpen && received < saleTotal;
 
