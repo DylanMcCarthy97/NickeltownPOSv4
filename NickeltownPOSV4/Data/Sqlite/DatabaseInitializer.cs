@@ -24,23 +24,22 @@ public sealed class DatabaseInitializer
         cancellationToken.ThrowIfCancellationRequested();
         using var conn = _factory.OpenConnection();
         var installed = conn.ExecuteScalar<long>("PRAGMA user_version");
-        if (installed >= CurrentSchemaVersion)
+        if (installed < CurrentSchemaVersion)
         {
-            return Task.CompletedTask;
+            foreach (var stmt in SchemaStatements)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                conn.Execute(stmt);
+            }
+
+            ApplyOptionalColumnPatches(conn);
+            conn.Execute($"PRAGMA user_version = {CurrentSchemaVersion}");
         }
 
-        foreach (var stmt in SchemaStatements)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            conn.Execute(stmt);
-        }
-
-        ApplyOptionalColumnPatches(conn);
         SurfaceUncertainLegacySquareAttempts(conn);
         RecloseUncheckableLegacySquareAttempts(conn);
         RunCatalogV2Migration(conn);
         SeedMembershipFoundation(conn);
-        conn.Execute($"PRAGMA user_version = {CurrentSchemaVersion}");
 
         return Task.CompletedTask;
     }
