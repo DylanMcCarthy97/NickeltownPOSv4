@@ -5,13 +5,13 @@ using NickeltownPOSV4.Data.Sqlite;
 namespace NickeltownPOSV4.Services;
 
 /// <summary>
-/// Periodically invalidates cached bar catalog data and notifies POS surfaces to reload
-/// (Add Drinks, Pitstop, tabs list).
+/// Periodically invalidates cached bar catalog data and reloads open drink lists.
+/// Does not rebuild the tabs board — that only refreshes after a real tab change.
 /// </summary>
 public sealed class PosCatalogAutoRefreshService
 {
-    /// <summary>How often open POS screens pick up stock/pricing/special changes.</summary>
-    public static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(30);
+    /// <summary>How often open drink screens pick up stock or price changes.</summary>
+    public static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(90);
 
     private readonly ITabWorkspaceRefreshBus _refreshBus;
     private readonly IBarCatalogCache _barCatalogCache;
@@ -43,6 +43,6 @@ public sealed class PosCatalogAutoRefreshService
     public void PulseRefresh()
     {
         _barCatalogCache.Invalidate();
-        _refreshBus.RequestRefresh();
+        _refreshBus.RequestCatalogRefresh();
     }
 }

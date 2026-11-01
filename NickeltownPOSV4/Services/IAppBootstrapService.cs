@@ -34,6 +34,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
     private readonly IShotMixerBootstrapper _shotMixer;
     private readonly ICustomAmountBootstrapper _customAmount;
     private readonly IBackupService _backup;
+    private readonly IBarCatalogCache _barCatalog;
     private readonly Microsoft.Extensions.Logging.ILogger<AppBootstrapService> _logger;
 
     public AppBootstrapService(
@@ -44,6 +45,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
         IShotMixerBootstrapper shotMixer,
         ICustomAmountBootstrapper customAmount,
         IBackupService backup,
+        IBarCatalogCache barCatalog,
         Microsoft.Extensions.Logging.ILogger<AppBootstrapService> logger)
     {
         _storagePaths = storagePaths;
@@ -53,6 +55,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
         _shotMixer = shotMixer;
         _customAmount = customAmount;
         _backup = backup;
+        _barCatalog = barCatalog;
         _logger = logger;
     }
 
@@ -73,8 +76,10 @@ public sealed class AppBootstrapService : IAppBootstrapService
             _pinCache.Refresh(cancellationToken);
 
             progress?.Report("Loading bar configuration…");
-            await _shotMixer.EnsureAsync(cancellationToken).ConfigureAwait(false);
-            await _customAmount.EnsureAsync(cancellationToken).ConfigureAwait(false);
+            await Task.WhenAll(
+                _shotMixer.EnsureAsync(cancellationToken),
+                _customAmount.EnsureAsync(cancellationToken)).ConfigureAwait(false);
+            _ = _barCatalog.GetOrLoadAsync(cancellationToken);
 
             progress?.Report("Starting backup…");
             _ = _backup.CreateAutomaticBackupAsync("App startup");

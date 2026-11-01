@@ -189,7 +189,7 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
         _squareRecoveryRows = squareRecoveryRows;
         _squareRecovery = squareRecovery;
         _pitstopRecovery = pitstopRecovery;
-        _refreshBus.RefreshRequested += OnSharedPosDataRefreshRequested;
+        _refreshBus.CatalogRefreshRequested += OnSharedPosDataRefreshRequested;
         _session.PropertyChanged += OnSessionPropertyChanged;
 
         CategoryChips = new ObservableCollection<PitstopCategoryChipViewModel>();
@@ -705,9 +705,10 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
     public async Task InitializeAsync()
     {
         StartClock();
-        await LoadPreferencesAsync().ConfigureAwait(true);
-        await RefreshSquareStatusPillAsync().ConfigureAwait(true);
-        await RefreshHeldSaleCountAsync().ConfigureAwait(true);
+        await Task.WhenAll(
+            LoadPreferencesAsync(),
+            RefreshSquareStatusPillAsync(),
+            RefreshHeldSaleCountAsync()).ConfigureAwait(true);
         if (!ShowCardFixOverlay)
         {
             await OpenLeftoverCardFixIfNeededAsync().ConfigureAwait(true);
@@ -1255,8 +1256,11 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
         StatusMessage = string.Empty;
         try
         {
-            var cats = await _catalog.GetPitstopCategoryNamesAsync(CancellationToken.None).ConfigureAwait(true);
-            var products = await _catalog.GetPitstopProductsAsync(null, CancellationToken.None).ConfigureAwait(true);
+            var catsTask = _catalog.GetPitstopCategoryNamesAsync(CancellationToken.None);
+            var productsTask = _catalog.GetPitstopProductsAsync(null, CancellationToken.None);
+            await Task.WhenAll(catsTask, productsTask).ConfigureAwait(true);
+            var cats = await catsTask.ConfigureAwait(true);
+            var products = await productsTask.ConfigureAwait(true);
             _allProducts.Clear();
             _allProducts.AddRange(products);
 

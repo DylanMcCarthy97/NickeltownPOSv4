@@ -129,6 +129,12 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     private readonly List<TabCardModel> _archivedTabCards = new();
 
+    private string? _openTabsFingerprint;
+
+    private int _boardRefreshBusy;
+
+    private int _boardRefreshQueued;
+
     private bool _isAddDrinksWorkspaceOpen;
     private readonly MoneyActionLock _moneyLock = new();
 
@@ -478,8 +484,11 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
     private void UpdateWelcomeFromSession() =>
         BartenderWelcome = TabsBoardHintsHelper.FormatWelcomeText(_session.IsSignedIn, _session.DisplayName);
 
-    private void OnTabsRefreshRequested(object? sender, EventArgs e) =>
+    private void OnTabsRefreshRequested(object? sender, EventArgs e)
+    {
+        Interlocked.Exchange(ref _boardRefreshQueued, 1);
         _ = RefreshTabsFromDatabaseAsync();
+    }
 
     private void ApplyBathurstFlagToCells()
     {
@@ -601,38 +610,73 @@ public sealed class TabsWorkspaceViewModel : ObservableViewModel
 
     public async Task RefreshTabsFromDatabaseAsync()
     {
+        Interlocked.Exchange(ref _boardRefreshQueued, 1);
+        if (Interlocked.Exchange(ref _boardRefreshBusy, 1) != 0)
+        {
+            return;
+        }
+
         LoginTransitionProbe.Mark("tabs.refresh.begin");
         try
         {
-            var rows = await _tabQuery.GetOpenTabCardsAsync().ConfigureAwait(true);
-            LoginTransitionProbe.Mark("tabs.openCards");
-            _fullOpenTabs.Clear();
-            _fullOpenTabs.AddRange(TabsBoardCatalogHelper.SortForBoard(rows));
-            DataStatusHint = TabsBoardHintsHelper.BuildLiveTabsStatusHint(_fullOpenTabs);
-
-            if (BoardMode == TabsBoardMode.ArchivedTabs)
+            do
             {
-                await LoadArchivedTabCardsAsync().ConfigureAwait(true);
-            }
+                Interlocked.Exchange(ref _boardRefreshQueued, 0);
+                var rows = await _tabQuery.GetOpenTabCardsAsync().ConfigureAwait(true);
+                LoginTransitionProbe.Mark("tabs.openCards");
+                var sorted = TabsBoardCatalogHelper.SortForBoard(rows);
+                var fingerprint = TabsBoardSnapshot.Fingerprint(sorted);
+                var unchanged = _openTabsFingerprint is not null && fingerprint == _openTabsFingerprint;
 
-            UpdateModeCounts();
-            RebuildBoardPage();
-            TryReselectTabAfterReload();
-            LoginTransitionProbe.Mark("tabs.boardReady");
+                if (!unchanged)
+                {
+                    _fullOpenTabs.Clear();
+                    _fullOpenTabs.AddRange(sorted);
+                    _openTabsFingerprint = fingerprint;
+                    DataStatusHint = TabsBoardHintsHelper.BuildLiveTabsStatusHint(_fullOpenTabs);
+                    if (BoardMode == TabsBoardMode.ArchivedTabs)
+                    {
+                        await LoadArchivedTabCardsAsync().ConfigureAwait(true);
+                    }
 
-            if (BoardMode != TabsBoardMode.ArchivedTabs)
-            {
-                _ = RefreshArchivedCountThenNotifyAsync();
+                    UpdateModeCounts();
+                    RebuildBoardPage();
+                    TryReselectTabAfterReload();
+                }
+                else if (BoardMode == TabsBoardMode.ArchivedTabs)
+                {
+                    await LoadArchivedTabCardsAsync().ConfigureAwait(true);
+                    UpdateModeCounts();
+                    RebuildBoardPage();
+                    TryReselectTabAfterReload();
+                }
+
+                LoginTransitionProbe.Mark("tabs.boardReady");
+
+                if (BoardMode != TabsBoardMode.ArchivedTabs)
+                {
+                    _ = RefreshArchivedCountThenNotifyAsync();
+                }
             }
+            while (Interlocked.Exchange(ref _boardRefreshQueued, 0) == 1);
         }
         catch
         {
             _fullOpenTabs.Clear();
             _archivedTabCards.Clear();
+            _openTabsFingerprint = null;
             DataStatusHint = TabsBoardHintsHelper.SqliteErrorMessage;
             UpdateModeCounts();
             RebuildBoardPage();
             TryReselectTabAfterReload();
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _boardRefreshBusy, 0);
+            if (Interlocked.Exchange(ref _boardRefreshQueued, 0) == 1)
+            {
+                _ = RefreshTabsFromDatabaseAsync();
+            }
         }
 
         RaiseToolbarHeaderHints();

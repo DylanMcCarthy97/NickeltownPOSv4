@@ -74,6 +74,8 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
 
     private bool _awaitingOpenPriceEntry;
 
+    private bool _catalogReloadRunning;
+
     public AddDrinksPanelViewModel(
         IItemCatalogQuery catalog,
         IAddDrinksSession session,
@@ -111,7 +113,7 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
         ShotMixerCommand = new AsyncRelayCommand(RunShotMixerFlowAsync, () => !IsBusy);
 
         SelectedRows.CollectionChanged += OnSelectedRowsChanged;
-        _refreshBus.RefreshRequested += OnCatalogRefreshRequested;
+        _refreshBus.CatalogRefreshRequested += OnCatalogRefreshRequested;
 
         RefreshTargetTabTitle();
 
@@ -357,6 +359,12 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
 
     public async Task LoadCatalogAsync()
     {
+        if (_catalogReloadRunning)
+        {
+            return;
+        }
+
+        _catalogReloadRunning = true;
         StatusMessage = string.Empty;
         RefreshTargetTabTitle();
 
@@ -410,6 +418,10 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
         {
             StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the drink list"));
             CatalogPageItems.Clear();
+        }
+        finally
+        {
+            _catalogReloadRunning = false;
         }
     }
 

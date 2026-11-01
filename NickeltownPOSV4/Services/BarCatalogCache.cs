@@ -41,8 +41,11 @@ public sealed class BarCatalogCache : IBarCatalogCache
     {
         try
         {
-            var categories = await _query.GetBarCategoryNamesAsync(cancellationToken).ConfigureAwait(false);
-            var products = await _query.GetBarProductsAsync(null, cancellationToken).ConfigureAwait(false);
+            var categoriesTask = _query.GetBarCategoryNamesAsync(cancellationToken);
+            var productsTask = _query.GetBarProductsAsync(null, cancellationToken);
+            await Task.WhenAll(categoriesTask, productsTask).ConfigureAwait(false);
+            var categories = await categoriesTask.ConfigureAwait(false);
+            var products = await productsTask.ConfigureAwait(false);
             var snapshot = new BarCatalogSnapshot
             {
                 CategoryNames = categories,

@@ -13,10 +13,22 @@ public sealed class DatabaseInitializer
 
     public DatabaseInitializer(SqliteConnectionFactory factory) => _factory = factory;
 
+    /// <summary>
+    /// Bump this when adding tables, columns, or indexes so existing tills apply them once.
+    /// Later startups skip the schema grind when this version is already stored.
+    /// </summary>
+    public const int CurrentSchemaVersion = 12;
+
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var conn = _factory.OpenConnection();
+        var installed = conn.ExecuteScalar<long>("PRAGMA user_version");
+        if (installed >= CurrentSchemaVersion)
+        {
+            return Task.CompletedTask;
+        }
+
         foreach (var stmt in SchemaStatements)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -28,6 +40,7 @@ public sealed class DatabaseInitializer
         RecloseUncheckableLegacySquareAttempts(conn);
         RunCatalogV2Migration(conn);
         SeedMembershipFoundation(conn);
+        conn.Execute($"PRAGMA user_version = {CurrentSchemaVersion}");
 
         return Task.CompletedTask;
     }
@@ -385,6 +398,7 @@ public sealed class DatabaseInitializer
         TryAddColumn(conn, "Bartenders", "IsDeveloper", "ALTER TABLE Bartenders ADD COLUMN IsDeveloper INTEGER NOT NULL DEFAULT 0");
         conn.Execute("CREATE INDEX IF NOT EXISTS IX_Bartenders_Active_LegacyPinPlain ON Bartenders(IsActive, LegacyPinPlain) WHERE LegacyPinPlain IS NOT NULL");
         conn.Execute("CREATE INDEX IF NOT EXISTS IX_TabEntries_TabId_EntryType ON TabEntries(TabId, EntryType)");
+        conn.Execute("CREATE INDEX IF NOT EXISTS IX_Tabs_BoardOpen ON Tabs(IsArchived, IsDeleted, IsClosed)");
         BackfillBartenderLegacyPinPlain(conn);
         TryAddColumn(conn, "Tabs", "IsGuest", "ALTER TABLE Tabs ADD COLUMN IsGuest INTEGER NOT NULL DEFAULT 0");
         TryAddColumn(conn, "Tabs", "Notes", "ALTER TABLE Tabs ADD COLUMN Notes TEXT");
