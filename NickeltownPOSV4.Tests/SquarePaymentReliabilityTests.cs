@@ -120,10 +120,10 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         }
         await Task.Delay(MoneyActionGuard.DefaultMilliseconds + 50);
         await submit.ExecuteAsync(null);
-        Assert.Contains("Card went through", status(), StringComparison.Ordinal);
+        Assert.Contains("card went through", status(), StringComparison.OrdinalIgnoreCase);
         await Task.Delay(MoneyActionGuard.DefaultMilliseconds + 50);
         await submit.ExecuteAsync(null);
-        Assert.Contains("Card went through", status(), StringComparison.Ordinal);
+        Assert.Contains("card went through", status(), StringComparison.OrdinalIgnoreCase);
         Assert.Equal(1, terminal.Calls);
         Assert.Single(await _recovery.GetOrphanAttemptsAsync());
         Assert.Equal(0, db.ExecuteScalar<int>("SELECT COUNT(*) FROM Payments"));

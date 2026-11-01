@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.11",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.11/NickeltownPOSV4_2.0.0.11_x64.msix",
-  "releaseNotes": "If a card payment does not finish, staff fix it on the till. The till checks the reader (does not charge anyone), saves the sale or tab credit if they paid, or they can try the card again or take cash. Errors are plain English. Admin is Everyday and Setup.",
+  "version": "2.0.0.12",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.12/NickeltownPOSV4_2.0.0.12_x64.msix",
+  "releaseNotes": "The till opens faster and the tab board no longer reloads itself every half minute. Stuck cards are still fixed on the till: the reader is checked (no charge), the sale or credit is saved if they paid, or staff can try the card again or take cash.",
   "mandatory": false
 }
