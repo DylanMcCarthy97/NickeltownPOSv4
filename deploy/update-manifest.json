@@ -1,6 +1,6 @@
 {
   "version": "2.0.0.9",
   "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.9/NickeltownPOSV4_2.0.0.9_x64.msix",
-  "releaseNotes": "Fixes Pitstop card checkout getting stuck on Check Square status after 2.0.0.8. Later Pitstop sales can be charged again; leftover attempts stay in Square Recovery.",
+  "releaseNotes": "Fixes Pitstop cash Complete sale staying disabled so the till can open again. Cash sales record and kick the drawer; leftover Square recovery still does not block later carts.",
   "mandatory": false
 }

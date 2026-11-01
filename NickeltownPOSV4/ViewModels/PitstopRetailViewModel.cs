@@ -588,9 +588,13 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         && received >= _cashSaleTotal;
 
     public bool CashConfirmEnabled =>
-        !IsPaymentLocked
-        && _cashNumpad.TryPeekCurrency(out var received)
-        && PitstopCashPaymentHelper.IsConfirmEnabled(received, _cashSaleTotal, IsCashSheetOpen);
+        PitstopCashPaymentHelper.IsCompleteSaleEnabled(
+            IsCashSheetOpen,
+            IsBusy,
+            IsSendingSquare,
+            _paymentInFlight,
+            _cashNumpad.TryPeekCurrency(out var received) ? received : 0m,
+            _cashSaleTotal);
 
     public bool PayButtonEnabled => CanStartPayment();
 
