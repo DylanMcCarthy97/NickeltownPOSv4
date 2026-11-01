@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.10",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.10/NickeltownPOSV4_2.0.0.10_x64.msix",
-  "releaseNotes": "Fixes Pitstop cash Complete sale staying disabled so the till can open again. Cash sales record and kick the drawer; leftover Square recovery still does not block later carts.",
+  "version": "2.0.0.11",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.11/NickeltownPOSV4_2.0.0.11_x64.msix",
+  "releaseNotes": "If a card payment does not finish, staff fix it on the till. The till checks the reader (does not charge anyone), saves the sale or tab credit if they paid, or they can try the card again or take cash. Errors are plain English. Admin is Everyday and Setup.",
   "mandatory": false
 }
