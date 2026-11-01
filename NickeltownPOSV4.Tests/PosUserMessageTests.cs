@@ -64,6 +64,7 @@ public sealed class PosUserMessageTests
     {
         Assert.True(PosUserMessage.LooksTechnical("SQLite database is locked"));
         Assert.True(PosUserMessage.LooksTechnical("Missing idempotency key"));
+        Assert.True(PosUserMessage.LooksTechnical("Square API response could not confirm checkout creation: ACCESS_TOKEN_EXPIRED"));
         Assert.False(PosUserMessage.LooksTechnical("That PIN is already in use. Pick a different 4-digit PIN."));
         Assert.False(PosUserMessage.LooksTechnical("Not enough stock for “Coke” (have 1, need 2)."));
     }

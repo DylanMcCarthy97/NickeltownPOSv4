@@ -117,6 +117,8 @@ public static class PosUserMessage
         "disk i/o",
         "i/o error",
         "access token",
+        "access_token",
+        "square api",
         "idempotency",
         "checkout id",
     ];
