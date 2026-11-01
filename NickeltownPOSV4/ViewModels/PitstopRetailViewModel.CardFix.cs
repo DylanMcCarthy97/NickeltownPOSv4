@@ -13,6 +13,7 @@ public sealed partial class PitstopRetailViewModel
     private long _cardFixAttemptId;
     private decimal _cardFixAmount;
     private bool _cardFixCanRebuildSale;
+    private bool _cardFixCanAskReader = true;
     private bool _showCardFixOverlay;
     private bool _showCardFixBanner;
     private string _cardFixBannerText = string.Empty;
@@ -92,11 +93,20 @@ public sealed partial class PitstopRetailViewModel
         {
             var existing = await FindPitstopCardAsync(attemptId).ConfigureAwait(true);
             hasCheckoutId = !string.IsNullOrWhiteSpace(existing?.SquareCheckoutId);
+            if (existing is not null)
+            {
+                _cardFixCanRebuildSale = existing.HasRecoverablePayload || canRebuildSale;
+            }
         }
 
+        _cardFixCanAskReader = hasCheckoutId;
         var step = PitstopCardFixGuide.OpeningStep(theyPaid, hasCheckoutId);
 
         ApplyCardFixCopy(step);
+        if (step == PitstopCardFixStep.Paid && !_cardFixCanRebuildSale)
+        {
+            ClearCart();
+        }
         ShowPaymentProgressOverlay = false;
         ShowCardFixOverlay = true;
         await RefreshCardFixBannerAsync().ConfigureAwait(true);
@@ -107,6 +117,7 @@ public sealed partial class PitstopRetailViewModel
         _cardFixAttemptId = 0;
         _cardFixAmount = amount;
         _cardFixCanRebuildSale = false;
+        _cardFixCanAskReader = false;
         ApplyCardFixCopy(PitstopCardFixStep.NotCharged);
         ShowPaymentProgressOverlay = false;
         ShowCardFixOverlay = true;
@@ -146,12 +157,19 @@ public sealed partial class PitstopRetailViewModel
 
             _cardFixAmount = row.ChargedAmount;
             _cardFixCanRebuildSale = row.HasRecoverablePayload;
+            _cardFixCanAskReader = !string.IsNullOrWhiteSpace(row.SquareCheckoutId);
             var approved = IsApprovedStatus(row.Status);
             var confirmedNotPaid = check.Ok && !approved;
-            ApplyCardFixCopy(PitstopCardFixGuide.AfterSquareCheck(approved, confirmedNotPaid, row.HasRecoverablePayload));
+            var step = PitstopCardFixGuide.AfterSquareCheck(approved, confirmedNotPaid, row.HasRecoverablePayload);
             if (!check.Ok && !approved)
             {
-                ApplyCardFixCopy(PitstopCardFixStep.Unknown);
+                step = PitstopCardFixStep.Unknown;
+            }
+
+            ApplyCardFixCopy(step);
+            if (step == PitstopCardFixStep.Paid && !_cardFixCanRebuildSale)
+            {
+                ClearCart();
             }
         }
         catch
@@ -244,7 +262,7 @@ public sealed partial class PitstopRetailViewModel
 
     private void ApplyCardFixCopy(PitstopCardFixStep step)
     {
-        _cardFixCopy = PitstopCardFixGuide.Build(step, _cardFixAmount, _cardFixCanRebuildSale);
+        _cardFixCopy = PitstopCardFixGuide.Build(step, _cardFixAmount, _cardFixCanRebuildSale, _cardFixCanAskReader);
         RaiseCardFixCopy();
     }
 

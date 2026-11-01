@@ -1632,20 +1632,43 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
                     StatusMessage = cardOutcome.RequiresRecovery
                         ? PosUserMessage.CardNeedsChecking
                         : (cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage);
-                    Payment = PitstopPaymentSelection.None;
-                    CloseAllCheckoutUi();
-                    ClearPaymentTransaction();
                     if (cardOutcome.RequiresRecovery && cardOutcome.AttemptId is > 0)
                     {
+                        var pendingPay = PitstopSaleCommitHelper.BuildPaymentCommit(
+                            PitstopPaymentSelection.Card,
+                            baseTotal,
+                            charged,
+                            _cardSurchargePercent,
+                            _pendingCardFee,
+                            cardOutcome.SquarePaymentId,
+                            cardOutcome.SquareCheckoutId,
+                            cardOutcome.IdempotencyKey ?? transactionGuid,
+                            cardOutcome.AttemptId,
+                            cashReceived: null,
+                            cashChange: null,
+                            _session.ActiveStaffId,
+                            _session.DisplayName);
+                        await RegisterRecoveryAsync(
+                                cardOutcome.AttemptId.Value,
+                                transactionGuid,
+                                lines,
+                                pendingPay)
+                            .ConfigureAwait(true);
+                        Payment = PitstopPaymentSelection.None;
+                        CloseAllCheckoutUi();
+                        ClearPaymentTransaction();
                         await OpenCardFixAsync(
                                 cardOutcome.AttemptId.Value,
                                 charged,
                                 theyPaid: false,
-                                canRebuildSale: false)
+                                canRebuildSale: true)
                             .ConfigureAwait(true);
                     }
                     else
                     {
+                        Payment = PitstopPaymentSelection.None;
+                        CloseAllCheckoutUi();
+                        ClearPaymentTransaction();
                         OpenCardFixNotCharged(charged);
                     }
 

@@ -27,11 +27,12 @@ public sealed class PitstopCardFixGuideTests
     }
 
     [Fact]
-    public void Paid_WithoutPayload_DoesNotOfferSave()
+    public void Paid_WithoutPayload_DoesNotOfferSaveOrCashForSameSale()
     {
         var copy = PitstopCardFixGuide.Build(PitstopCardFixStep.Paid, 8m, canRebuildSale: false);
         Assert.True(copy.ShowOk);
         Assert.False(copy.ShowSaveSale);
+        Assert.Contains("Do not take cash for this same sale", copy.Body, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -93,5 +94,15 @@ public sealed class PitstopCardFixGuideTests
         Assert.True(copy.ShowNotCharged);
         Assert.False(copy.ShowSaveSale);
         Assert.Contains("They weren't charged", copy.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Unknown_WithoutReaderCheckout_OnlyOffersNotCharged()
+    {
+        var copy = PitstopCardFixGuide.Build(PitstopCardFixStep.Unknown, 7m, canRebuildSale: true, canAskReader: false);
+        Assert.False(copy.ShowCheck);
+        Assert.True(copy.ShowNotCharged);
+        Assert.DoesNotContain("Find out if they paid again", copy.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Admin", copy.Body, StringComparison.OrdinalIgnoreCase);
     }
 }

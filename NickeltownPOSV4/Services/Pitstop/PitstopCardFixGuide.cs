@@ -40,7 +40,11 @@ public sealed class PitstopCardFixCopy
 /// </summary>
 public static class PitstopCardFixGuide
 {
-    public static PitstopCardFixCopy Build(PitstopCardFixStep step, decimal amount, bool canRebuildSale)
+    public static PitstopCardFixCopy Build(
+        PitstopCardFixStep step,
+        decimal amount,
+        bool canRebuildSale,
+        bool canAskReader = true)
     {
         var money = amount.ToString("C2");
         return step switch
@@ -50,7 +54,7 @@ public static class PitstopCardFixGuide
                 Title = "They paid",
                 Body = canRebuildSale
                     ? "The card went through. Tap Save the sale. Do not charge them again."
-                    : "The card went through, but this till cannot rebuild the sale. Write down the amount and keep selling with cash.",
+                    : "The card went through, but this till cannot rebuild the sale. Write down the amount. Do not take cash for this same sale.",
                 AmountText = money,
                 ShowSaveSale = canRebuildSale,
                 ShowOk = !canRebuildSale,
@@ -72,9 +76,11 @@ public static class PitstopCardFixGuide
             PitstopCardFixStep.Unknown => new PitstopCardFixCopy
             {
                 Title = "We still can't tell",
-                Body = "Look at the card reader. If it says approved, tap Find out if they paid again. If it says cancelled or nothing happened, tap They weren't charged.",
+                Body = canAskReader
+                    ? "Look at the card reader. If it says approved, tap Find out if they paid again. If it says cancelled or nothing happened, tap They weren't charged."
+                    : "Look at the card reader. If it says cancelled or nothing happened, tap They weren't charged. If it says approved, write down the amount. Do not charge them again.",
                 AmountText = money,
-                ShowCheck = true,
+                ShowCheck = canAskReader,
                 ShowNotCharged = true,
             },
             _ => new PitstopCardFixCopy

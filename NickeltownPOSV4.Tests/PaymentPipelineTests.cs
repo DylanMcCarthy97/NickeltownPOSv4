@@ -285,6 +285,52 @@ public sealed class PaymentPipelineTests : IDisposable
     }
 
     [Fact]
+    public async Task PitstopRecovery_AfterUncertainCheck_SavesUsingApprovedPaymentId()
+    {
+        var key = "recovery-timeout-then-paid";
+        var begin = await _attempts.BeginAsync(new SquarePaymentAttemptBeginRequest
+        {
+            PaymentType = SquarePaymentAttemptType.PitstopSale,
+            IdempotencyKey = key,
+            BaseAmount = 10m,
+            ChargedAmount = 10m,
+        });
+        await _attempts.MarkUncertainAsync(begin.AttemptId, "Payment connection failed before its final status was confirmed.");
+
+        var payload = new PitstopPaymentRecoveryPayload
+        {
+            TransactionGuid = key,
+            PaymentMethod = "Card",
+            Lines =
+            [
+                new PitstopSaleLineCommit { ItemId = 1, DisplayName = "Cola", UnitPrice = 5m, Quantity = 2 },
+            ],
+            Payment = new PitstopSalePaymentCommit
+            {
+                PaymentMethod = "Card",
+                BaseProductTotal = 10m,
+                ChargedTotal = 10m,
+                IdempotencyKey = key,
+                PaymentAttemptId = begin.AttemptId,
+            },
+        };
+        var json = JsonSerializer.Serialize(
+            payload,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        await _attempts.SaveRecoveryPayloadAsync(begin.AttemptId, json);
+        await _attempts.MarkTerminalApprovedAsync(begin.AttemptId, "sq-late-1", "chk-late-1");
+
+        var recover = await _paymentRecovery.RecoverPitstopSaleAsync(begin.AttemptId);
+        Assert.True(recover.Ok, recover.ErrorMessage);
+
+        using var conn = _factory.OpenConnection();
+        Assert.Equal(1L, conn.ExecuteScalar<long>("SELECT COUNT(1) FROM PitstopSales WHERE IdempotencyKey = @k", new { k = key }));
+        Assert.Equal("sq-late-1", conn.ExecuteScalar<string>("SELECT SquareExternalRef FROM PitstopSales WHERE IdempotencyKey = @k", new { k = key }));
+        Assert.Equal(98, conn.ExecuteScalar<int>("SELECT StockQty FROM Items WHERE Id = 1"));
+        Assert.Equal(0, await _recovery.GetUnresolvedCountAsync());
+    }
+
+    [Fact]
     public async Task PitstopEod_Reconciliation_ExcludesBar()
     {
         await _funds.CommitFundMovementAsync("tab1", "cash", 10m, null);
