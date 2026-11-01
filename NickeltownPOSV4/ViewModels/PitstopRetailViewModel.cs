@@ -708,7 +708,10 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
         await LoadPreferencesAsync().ConfigureAwait(true);
         await RefreshSquareStatusPillAsync().ConfigureAwait(true);
         await RefreshHeldSaleCountAsync().ConfigureAwait(true);
-        await RefreshCardFixBannerAsync().ConfigureAwait(true);
+        if (!ShowCardFixOverlay)
+        {
+            await OpenLeftoverCardFixIfNeededAsync().ConfigureAwait(true);
+        }
     }
 
     public async Task RefreshHeldSaleCountAsync(CancellationToken cancellationToken = default)

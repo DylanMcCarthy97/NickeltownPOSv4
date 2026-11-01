@@ -148,8 +148,13 @@ public sealed partial class PitstopRetailViewModel
         ShowCardFixOverlay = true;
     }
 
-    private async Task OpenCardFixFromBannerAsync()
+    internal async Task OpenLeftoverCardFixIfNeededAsync()
     {
+        if (ShowCardFixOverlay)
+        {
+            return;
+        }
+
         var row = await FindOpenPitstopCardAsync().ConfigureAwait(true);
         if (row is null)
         {
@@ -157,9 +162,11 @@ public sealed partial class PitstopRetailViewModel
             return;
         }
 
-        var paid = IsApprovedStatus(row.Status);
-        await OpenCardFixAsync(row.AttemptId, row.ChargedAmount, paid, row.HasRecoverablePayload).ConfigureAwait(true);
+        await OpenCardFixAsync(row.AttemptId, row.ChargedAmount, IsApprovedStatus(row.Status), row.HasRecoverablePayload)
+            .ConfigureAwait(true);
     }
+
+    private Task OpenCardFixFromBannerAsync() => OpenLeftoverCardFixIfNeededAsync();
 
     private async Task CheckCardFixAsync()
     {
