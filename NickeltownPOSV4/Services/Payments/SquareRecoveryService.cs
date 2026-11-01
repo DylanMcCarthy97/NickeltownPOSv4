@@ -54,7 +54,7 @@ public sealed class SquareRecoveryService
         if (row is null) return SquareRecoveryUpdateResult.Success(); // Already saved or reconciled.
         if (row.PaymentType != "TabTopUp" || row.Status is not ("TerminalApproved" or "Approved" or "Completed")
             || string.IsNullOrWhiteSpace(row.SquarePaymentId) || string.IsNullOrWhiteSpace(row.TabLegacyId))
-            return SquareRecoveryUpdateResult.Fail("Confirm the tab payment is approved in Square before saving its top-up.");
+            return SquareRecoveryUpdateResult.Fail("Find out if they paid first. Do not charge them again.");
         var saved = await _funds.CommitSquareCardTopUpAsync(row.TabLegacyId, row.BaseAmount, "Recovered approved Square top-up",
             new SquarePaymentCommitMetadata
             {

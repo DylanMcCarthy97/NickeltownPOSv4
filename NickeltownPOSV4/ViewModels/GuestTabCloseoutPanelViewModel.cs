@@ -33,6 +33,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
     private readonly ITabWorkspaceUndoStack _undo;
     private readonly ISquareCardPaymentOrchestrator _squarePayments;
     private readonly ISquareConfigService _squareConfig;
+    private readonly TabCardFixSession _cardFix;
     private readonly PitstopCashNumpadHostViewModel _cashNumpad = new();
     private readonly MoneyActionLock _moneyLock = new();
     private string? _pendingCommitKey;
@@ -59,7 +60,10 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         IInputOverlayService inputOverlay,
         ITabWorkspaceUndoStack undo,
         ISquareCardPaymentOrchestrator squarePayments,
-        ISquareConfigService squareConfig)
+        ISquareConfigService squareConfig,
+        ISquareRecoveryRepository squareRecoveryRows,
+        SquareRecoveryService squareRecovery,
+        IPitstopPaymentRecoveryService paymentRecovery)
     {
         _funds = funds;
         _tabs = tabs;
@@ -70,6 +74,17 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         _undo = undo;
         _squarePayments = squarePayments;
         _squareConfig = squareConfig;
+        _cardFix = new TabCardFixSession(squareRecoveryRows, squareRecovery, paymentRecovery, savedNoun: "payment");
+        _cardFix.OnRetryCard = () => _ = RetryCardAfterFixAsync();
+        _cardFix.OnTakeCash = OpenCashAfterCardFix;
+        _cardFix.OnSavedAsync = AfterCardPaymentSavedAsync;
+        _cardFix.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(TabCardFixSession.ShowOverlay))
+            {
+                NotifyPaymentState();
+            }
+        };
 
         CancelCommand = new RelayCommand(CancelOrClosePanel);
         CancelSquarePaymentCommand = new RelayCommand(CancelSquarePayment, () => IsSendingSquare);
@@ -95,6 +110,8 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
     public IAsyncRelayCommand ConfirmCashCommand { get; }
 
     public IAsyncRelayCommand ConfirmCardCommand { get; }
+
+    public TabCardFixSession CardFix => _cardFix;
 
     public bool IsSummaryStep => _step == CloseoutStep.Summary;
 
@@ -265,6 +282,12 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         RefreshCardPricing();
     }
 
+    public async Task PrepareAsync()
+    {
+        RefreshFromSession();
+        await _cardFix.OpenLeftoverForTabAsync(_session.TargetTabLegacyId).ConfigureAwait(true);
+    }
+
     private void UpdateAmountDue()
     {
         _amountDue = _session.TargetTabBalance is { } bal ? Math.Abs(bal) : 0m;
@@ -295,6 +318,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
     private bool CanPay() =>
         !IsPaymentProcessing
+        && !_cardFix.ShowOverlay
         && IsSummaryStep
         && _session.TargetTabBalance is not 0m
         && !string.IsNullOrWhiteSpace(_session.TargetTabLegacyId);
@@ -518,11 +542,21 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
             if (!cardOutcome.Approved)
             {
-                if (!cardOutcome.RequiresRecovery)
+                StatusMessage = cardOutcome.RequiresRecovery
+                    ? PosUserMessage.CardNeedsChecking
+                    : (cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage);
+                if (cardOutcome.RequiresRecovery && cardOutcome.AttemptId is > 0)
+                {
+                    await _cardFix
+                        .OpenAsync(cardOutcome.AttemptId.Value, checkout.ChargeTotal, theyPaid: false, canRebuild: true)
+                        .ConfigureAwait(true);
+                }
+                else
                 {
                     _pendingCardCommitKey = null;
+                    _cardFix.OpenNotCharged(checkout.ChargeTotal);
                 }
-                StatusMessage = cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage;
+
                 return;
             }
 
@@ -548,7 +582,14 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
                 if (!squareResult.Ok)
                 {
-                    StatusMessage = "Card went through, but we couldn't save the payment. Tap again to save it. Do not charge them again.";
+                    StatusMessage = PosUserMessage.CardApprovedUnsaved;
+                    if (cardOutcome.AttemptId is > 0)
+                    {
+                        await _cardFix
+                            .OpenAsync(cardOutcome.AttemptId.Value, checkout.ChargeTotal, theyPaid: true, canRebuild: true)
+                            .ConfigureAwait(true);
+                    }
+
                     return;
                 }
 
@@ -596,6 +637,27 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
                 _refreshBus.RequestRefresh();
                 return true;
             });
+    }
+
+    private Task AfterCardPaymentSavedAsync() => FinishCloseoutAsync();
+
+    private async Task RetryCardAfterFixAsync()
+    {
+        _cardFix.Hide();
+        _pendingCardCommitKey = null;
+        SetStep(CloseoutStep.CardConfirm);
+        await ConfirmCardAsync().ConfigureAwait(true);
+    }
+
+    private void OpenCashAfterCardFix()
+    {
+        _cardFix.Hide();
+        StatusMessage = string.Empty;
+        _cashNumpad.Reset(0m);
+        _cashNumpad.PropertyChanged -= OnCashNumpadPropertyChanged;
+        _cashNumpad.PropertyChanged += OnCashNumpadPropertyChanged;
+        SetStep(CloseoutStep.Cash);
+        RaiseCashUi();
     }
 
     private async Task FinishCloseoutAsync()

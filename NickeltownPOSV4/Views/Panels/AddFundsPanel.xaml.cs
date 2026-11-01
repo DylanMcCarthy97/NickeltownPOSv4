@@ -21,6 +21,7 @@ public sealed partial class AddFundsPanel : UserControl
 
         AmountInput.GotFocus += (_, _) => vm.BeginAmountEntryCommand.Execute(null);
         NotesInput.GotFocus += (_, _) => vm.BeginNotesEntryCommand.Execute(null);
+        _ = vm.PrepareAsync();
         Loaded -= OnLoaded;
     }
 }

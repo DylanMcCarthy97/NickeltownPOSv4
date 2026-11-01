@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -83,6 +84,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     private readonly IAuditLogService _audit;
     private readonly IWindowHandleProvider _windowHandle;
     private readonly IAuthenticationService _auth;
+    private readonly TabCardFixSession _cardFix;
     private readonly MoneyActionLock _moneyLock = new();
     private string? _pendingFundCommitKey;
 
@@ -111,7 +113,10 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
         IUserSessionService userSession,
         IAuditLogService audit,
         IWindowHandleProvider windowHandle,
-        IAuthenticationService auth)
+        IAuthenticationService auth,
+        ISquareRecoveryRepository squareRecoveryRows,
+        SquareRecoveryService squareRecovery,
+        IPitstopPaymentRecoveryService paymentRecovery)
     {
         _funds = funds;
         _session = session;
@@ -125,6 +130,18 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
         _audit = audit;
         _windowHandle = windowHandle;
         _auth = auth;
+        _cardFix = new TabCardFixSession(squareRecoveryRows, squareRecovery, paymentRecovery, savedNoun: "credit");
+        _cardFix.OnRetryCard = () => _ = RetryCardAfterFixAsync();
+        _cardFix.OnTakeCash = () => _ = TakeCashAfterFixAsync();
+        _cardFix.OnSavedAsync = AfterCardCreditSavedAsync;
+        _cardFix.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(TabCardFixSession.ShowOverlay))
+            {
+                OnPropertyChanged(nameof(CanApplyFunds));
+                ApplyCommand.NotifyCanExecuteChanged();
+            }
+        };
 
         foreach (var type in BuildTypes())
         {
@@ -328,7 +345,19 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     public IAsyncRelayCommand BeginAmountEntryCommand { get; }
     public IAsyncRelayCommand BeginNotesEntryCommand { get; }
 
+    public TabCardFixSession CardFix => _cardFix;
+
     public bool CanApplyFunds => CanApply();
+
+    public async Task PrepareAsync()
+    {
+        RefreshHeader();
+        await _cardFix.OpenLeftoverForTabAsync(_session.TargetTabLegacyId).ConfigureAwait(true);
+        if (_cardFix.ShowOverlay && _cardFix.Amount > 0m && !TryParseAmount(AmountText, false, out _))
+        {
+            AmountText = _cardFix.Amount.ToString("0.00", CultureInfo.InvariantCulture);
+        }
+    }
 
     private void RefreshHeader()
     {
@@ -400,6 +429,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
     private bool CanApply() =>
         !IsPaymentProcessing
+        && !_cardFix.ShowOverlay
         && _selectedTile is not null
         && TryParseAmount(AmountText, SupportsSignedAmount, out var amount)
         && amount != 0m
@@ -475,11 +505,21 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
                 if (!cardOutcome.Approved)
                 {
-                    if (!cardOutcome.RequiresRecovery)
+                    StatusMessage = cardOutcome.RequiresRecovery
+                        ? PosUserMessage.CardNeedsChecking
+                        : (cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage);
+                    if (cardOutcome.RequiresRecovery && cardOutcome.AttemptId is > 0)
+                    {
+                        await _cardFix
+                            .OpenAsync(cardOutcome.AttemptId.Value, checkout.ChargeTotal, theyPaid: false, canRebuild: true)
+                            .ConfigureAwait(true);
+                    }
+                    else
                     {
                         _pendingFundCommitKey = null;
+                        _cardFix.OpenNotCharged(checkout.ChargeTotal);
                     }
-                    StatusMessage = cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage;
+
                     return;
                 }
 
@@ -514,7 +554,14 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
                 if (!squareResult.Ok)
                 {
-                    StatusMessage = "Card went through, but we couldn't save the credit. Tap again to save it. Do not charge them again.";
+                    StatusMessage = PosUserMessage.CardApprovedUnsaved;
+                    if (cardOutcome.AttemptId is > 0)
+                    {
+                        await _cardFix
+                            .OpenAsync(cardOutcome.AttemptId.Value, checkout.ChargeTotal, theyPaid: true, canRebuild: true)
+                            .ConfigureAwait(true);
+                    }
+
                     return;
                 }
 
@@ -802,6 +849,46 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     {
         _squareChargeCts?.Dispose();
         _squareChargeCts = null;
+    }
+
+    private async Task AfterCardCreditSavedAsync()
+    {
+        _pendingFundCommitKey = null;
+        SuccessBanner = $"Recorded: {AmountDisplay} card for {TargetTabTitle}.";
+        _refreshBus.RequestRefresh();
+        await Task.CompletedTask;
+    }
+
+    private async Task RetryCardAfterFixAsync()
+    {
+        _cardFix.Hide();
+        _pendingFundCommitKey = null;
+        var square = Types.FirstOrDefault(t => t.Key == "square");
+        if (square is not null)
+        {
+            SelectedTile = square;
+        }
+
+        if (CanApply())
+        {
+            await ApplyAsync().ConfigureAwait(true);
+        }
+    }
+
+    private async Task TakeCashAfterFixAsync()
+    {
+        _cardFix.Hide();
+        _pendingFundCommitKey = null;
+        var cash = Types.FirstOrDefault(t => t.Key == "cash");
+        if (cash is not null)
+        {
+            SelectedTile = cash;
+        }
+
+        if (CanApply())
+        {
+            await ApplyAsync().ConfigureAwait(true);
+        }
     }
 
     private void ClosePanel()

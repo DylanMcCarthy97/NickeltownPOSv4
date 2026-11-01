@@ -399,5 +399,82 @@
                 </StackPanel>
             </Border>
         </Grid>
+
+        <Grid
+            Grid.RowSpan="2"
+            Background="{StaticResource PosScrimBrush}"
+            Canvas.ZIndex="70"
+            Visibility="{Binding CardFix.ShowOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border
+                Padding="22"
+                MaxWidth="400"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16">
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        FontSize="22"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding CardFix.Title, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <TextBlock
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Text="{Binding CardFix.AmountText, Mode=OneWay}" />
+                    <TextBlock
+                        FontSize="16"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding CardFix.Body, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding CardFix.CheckCommand}"
+                        Content="{Binding CardFix.CheckLabel, Mode=OneWay}"
+                        Style="{StaticResource FundsFooterApplyStyle}"
+                        Visibility="{Binding CardFix.ShowCheck, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding CardFix.SaveCommand}"
+                        Content="{Binding CardFix.SaveLabel, Mode=OneWay}"
+                        Style="{StaticResource FundsFooterApplyStyle}"
+                        Visibility="{Binding CardFix.ShowSave, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding CardFix.MarkNotChargedCommand}"
+                        Content="{Binding CardFix.NotChargedLabel, Mode=OneWay}"
+                        Style="{StaticResource FundsFooterCancelStyle}"
+                        Visibility="{Binding CardFix.ShowNotCharged, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding CardFix.RetryCardCommand}"
+                        Content="{Binding CardFix.RetryCardLabel, Mode=OneWay}"
+                        Style="{StaticResource FundsFooterApplyStyle}"
+                        Visibility="{Binding CardFix.ShowRetryCard, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding CardFix.TakeCashCommand}"
+                        Content="{Binding CardFix.TakeCashLabel, Mode=OneWay}"
+                        Style="{StaticResource FundsFooterCancelStyle}"
+                        Visibility="{Binding CardFix.ShowTakeCash, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding CardFix.DismissCommand}"
+                        Content="{Binding CardFix.OkLabel, Mode=OneWay}"
+                        Style="{StaticResource FundsFooterCancelStyle}"
+                        Visibility="{Binding CardFix.ShowOk, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

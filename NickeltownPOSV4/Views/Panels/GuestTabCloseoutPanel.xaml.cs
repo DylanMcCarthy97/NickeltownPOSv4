@@ -16,7 +16,7 @@ public sealed partial class GuestTabCloseoutPanel : UserControl
     {
         if (DataContext is GuestTabCloseoutPanelViewModel vm)
         {
-            vm.RefreshFromSession();
+            _ = vm.PrepareAsync();
         }
 
         Loaded -= OnLoaded;
