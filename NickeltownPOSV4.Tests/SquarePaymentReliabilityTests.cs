@@ -192,6 +192,8 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         var first = await orchestrator.PresentAndLogAsync(Request("declined"));
         Assert.False(first.Approved);
         Assert.False(first.RequiresRecovery);
+        Assert.True(first.Cancelled);
+        Assert.Equal(PosUserMessage.CardCancelled, first.DeclineReason);
         Assert.Equal(0, await _recovery.GetUnresolvedCountAsync());
         terminal.Failure = null;
         Assert.False((await orchestrator.PresentAndLogAsync(Request("declined"))).Approved);
@@ -408,6 +410,7 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         var service = new SquareRecoveryService(_recovery, _attempts, reader, new SqliteTabFundsService(_factory, _attempts));
         var result = await service.RefreshStatusAsync(outcome.AttemptId!.Value);
         Assert.Equal(cancelled, result.Ok);
+        Assert.Equal(cancelled, result.Cancelled);
         Assert.Equal(cancelled ? 0 : 1, await _recovery.GetUnresolvedCountAsync());
         Assert.Equal(1, terminal.Calls);
     }

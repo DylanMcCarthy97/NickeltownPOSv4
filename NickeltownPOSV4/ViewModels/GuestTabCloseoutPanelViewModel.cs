@@ -77,6 +77,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
         _cardFix = new TabCardFixSession(squareRecoveryRows, squareRecovery, paymentRecovery, savedNoun: "payment");
         _cardFix.OnRetryCard = () => _ = RetryCardAfterFixAsync();
         _cardFix.OnTakeCash = OpenCashAfterCardFix;
+        _cardFix.OnCancelled = () => StatusMessage = PosUserMessage.CardCancelled;
         _cardFix.OnSavedAsync = AfterCardPaymentSavedAsync;
         _cardFix.PropertyChanged += (_, e) =>
         {
@@ -545,7 +546,11 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
                 StatusMessage = cardOutcome.RequiresRecovery
                     ? PosUserMessage.CardNeedsChecking
                     : (cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage);
-                if (cardOutcome.RequiresRecovery && cardOutcome.AttemptId is > 0)
+                var next = PitstopCardFixGuide.OpenKind(
+                    cardOutcome.Approved,
+                    cardOutcome.RequiresRecovery,
+                    cardOutcome.Cancelled);
+                if (next == CardFixOpenKind.Recovery && cardOutcome.AttemptId is > 0)
                 {
                     await _cardFix
                         .OpenAsync(cardOutcome.AttemptId.Value, checkout.ChargeTotal, theyPaid: false, canRebuild: true)
@@ -554,7 +559,10 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
                 else
                 {
                     _pendingCardCommitKey = null;
-                    _cardFix.OpenNotCharged(checkout.ChargeTotal);
+                    if (next == CardFixOpenKind.NotCharged)
+                    {
+                        _cardFix.OpenNotCharged(checkout.ChargeTotal);
+                    }
                 }
 
                 return;

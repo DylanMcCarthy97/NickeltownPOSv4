@@ -277,17 +277,14 @@ public sealed class SystemCheckViewModel : ObservableViewModel
                     ? "Test mode is on — card payments are not real."
                     : null));
 
-            Rows.Add(new SystemCheckRowVm(
-                "Square shop",
-                string.IsNullOrWhiteSpace(cfg.LocationId) ? "Not set" : "Set",
-                string.IsNullOrWhiteSpace(cfg.LocationId) ? SystemCheckSeverity.Error : SystemCheckSeverity.Ok,
-                string.IsNullOrWhiteSpace(cfg.LocationId) ? "Card payments need a Square shop. Open Admin → Setup → Card reader." : null));
+            var readerIsSet = !string.IsNullOrWhiteSpace(cfg.DeviceId);
+            Rows.Add(SquareSetupCheck.ShopRow(cfg.LocationId, readerIsSet));
 
             Rows.Add(new SystemCheckRowVm(
                 "Card reader",
-                string.IsNullOrWhiteSpace(cfg.DeviceId) ? "Not set" : "Set",
-                string.IsNullOrWhiteSpace(cfg.DeviceId) ? SystemCheckSeverity.Error : SystemCheckSeverity.Ok,
-                string.IsNullOrWhiteSpace(cfg.DeviceId) ? "The card reader is not set up. Open Admin → Setup → Card reader." : null));
+                readerIsSet ? "Set" : "Not set",
+                readerIsSet ? SystemCheckSeverity.Ok : SystemCheckSeverity.Error,
+                readerIsSet ? null : "The card reader is not set up. Ask a manager to open Card reader settings."));
         }
         catch (Exception)
         {
@@ -295,7 +292,7 @@ public sealed class SystemCheckViewModel : ObservableViewModel
                 "Card reader",
                 "Cannot read",
                 SystemCheckSeverity.Error,
-                "We couldn't read card settings. Open Admin → Setup → Card reader."));
+                "We couldn't read card settings. Ask a manager to open Card reader settings."));
         }
 
         // 4. Pitstop status

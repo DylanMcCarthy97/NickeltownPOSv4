@@ -46,9 +46,21 @@ public sealed class PitstopCardFixGuideTests
         Assert.Contains("This sale is still on the till", copy.Body, StringComparison.Ordinal);
         Assert.True(copy.ShowRetryCard);
         Assert.True(copy.ShowTakeCash);
-        Assert.False(copy.ShowOk);
+        Assert.True(copy.ShowOk);
+        Assert.Equal("Keep the sale", copy.OkLabel);
         Assert.False(copy.ShowSaveSale);
         Assert.DoesNotContain("new sale", copy.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Cancelled_ClosesInsteadOfAskingWhatToDo()
+    {
+        Assert.Equal(CardFixOpenKind.None, PitstopCardFixGuide.OpenKind(approved: false, requiresRecovery: false, cancelled: true));
+        Assert.Equal(CardFixOpenKind.NotCharged, PitstopCardFixGuide.OpenKind(approved: false, requiresRecovery: false, cancelled: false));
+        Assert.Equal(CardFixOpenKind.Recovery, PitstopCardFixGuide.OpenKind(approved: false, requiresRecovery: true, cancelled: true));
+        Assert.Equal(PitstopCardFixStep.Cancelled, PitstopCardFixGuide.AfterSquareCheck(approved: false, confirmedNotPaid: true, canRebuildSale: false, cancelled: true));
+        Assert.True(PitstopCardFixGuide.ShouldCloseQuietly(PitstopCardFixStep.Cancelled));
+        Assert.False(PitstopCardFixGuide.ShouldCloseQuietly(PitstopCardFixStep.NotCharged));
     }
 
     [Fact]
@@ -89,6 +101,7 @@ public sealed class PitstopCardFixGuideTests
         Assert.Equal(PitstopCardFixStep.Paid, PitstopCardFixGuide.AfterSquareCheck(approved: true, confirmedNotPaid: false, canRebuildSale: true));
         Assert.Equal(PitstopCardFixStep.NotCharged, PitstopCardFixGuide.AfterSquareCheck(approved: false, confirmedNotPaid: true, canRebuildSale: false));
         Assert.Equal(PitstopCardFixStep.Unknown, PitstopCardFixGuide.AfterSquareCheck(approved: false, confirmedNotPaid: false, canRebuildSale: true));
+        Assert.Equal(PitstopCardFixStep.Cancelled, PitstopCardFixGuide.AfterSquareCheck(approved: false, confirmedNotPaid: true, canRebuildSale: false, cancelled: true));
     }
 
     [Fact]
@@ -106,6 +119,7 @@ public sealed class PitstopCardFixGuideTests
     [InlineData(PitstopCardFixStep.Paid, true)]
     [InlineData(PitstopCardFixStep.Paid, false)]
     [InlineData(PitstopCardFixStep.NotCharged, false)]
+    [InlineData(PitstopCardFixStep.Cancelled, false)]
     [InlineData(PitstopCardFixStep.Unknown, true)]
     [InlineData(PitstopCardFixStep.Saved, true)]
     public void Copy_NeverSendsStaffToAdminOrPin(PitstopCardFixStep step, bool canRebuildSale)

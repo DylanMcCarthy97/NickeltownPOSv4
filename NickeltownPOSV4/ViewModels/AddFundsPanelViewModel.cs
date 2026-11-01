@@ -133,6 +133,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
         _cardFix = new TabCardFixSession(squareRecoveryRows, squareRecovery, paymentRecovery, savedNoun: "credit");
         _cardFix.OnRetryCard = () => _ = RetryCardAfterFixAsync();
         _cardFix.OnTakeCash = () => _ = TakeCashAfterFixAsync();
+        _cardFix.OnCancelled = () => StatusMessage = PosUserMessage.CardCancelled;
         _cardFix.OnSavedAsync = AfterCardCreditSavedAsync;
         _cardFix.PropertyChanged += (_, e) =>
         {
@@ -512,7 +513,11 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                     StatusMessage = cardOutcome.RequiresRecovery
                         ? PosUserMessage.CardNeedsChecking
                         : (cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage);
-                    if (cardOutcome.RequiresRecovery && cardOutcome.AttemptId is > 0)
+                    var next = PitstopCardFixGuide.OpenKind(
+                        cardOutcome.Approved,
+                        cardOutcome.RequiresRecovery,
+                        cardOutcome.Cancelled);
+                    if (next == CardFixOpenKind.Recovery && cardOutcome.AttemptId is > 0)
                     {
                         await _cardFix
                             .OpenAsync(cardOutcome.AttemptId.Value, checkout.ChargeTotal, theyPaid: false, canRebuild: true)
@@ -521,7 +526,10 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
                     else
                     {
                         _pendingFundCommitKey = null;
-                        _cardFix.OpenNotCharged(checkout.ChargeTotal);
+                        if (next == CardFixOpenKind.NotCharged)
+                        {
+                            _cardFix.OpenNotCharged(checkout.ChargeTotal);
+                        }
                     }
 
                     return;

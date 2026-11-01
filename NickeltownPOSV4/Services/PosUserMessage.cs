@@ -11,6 +11,7 @@ public static class PosUserMessage
 {
     public const string Generic = "Something went wrong. Try again.";
     public const string Cancelled = "Cancelled.";
+    public const string CardCancelled = "Cancelled. Nothing was taken.";
     public const string NoPermission = "You do not have permission for that action.";
     public const string Network = "Network error. Check your connection and try again.";
     public const string TimedOut = "Timed out. Try again.";

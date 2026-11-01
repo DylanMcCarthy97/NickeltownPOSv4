@@ -50,9 +50,12 @@ public sealed class SquareRecoveryUpdateResult
 {
     public bool Ok { get; init; }
 
+    public bool Cancelled { get; init; }
+
     public string? ErrorMessage { get; init; }
 
-    public static SquareRecoveryUpdateResult Success() => new() { Ok = true };
+    public static SquareRecoveryUpdateResult Success(bool cancelled = false) =>
+        new() { Ok = true, Cancelled = cancelled };
 
     public static SquareRecoveryUpdateResult Fail(string message) =>
         new() { Ok = false, ErrorMessage = message };

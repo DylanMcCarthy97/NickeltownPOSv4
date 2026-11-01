@@ -1641,7 +1641,11 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
                     StatusMessage = cardOutcome.RequiresRecovery
                         ? PosUserMessage.CardNeedsChecking
                         : (cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage);
-                    if (cardOutcome.RequiresRecovery && cardOutcome.AttemptId is > 0)
+                    var next = PitstopCardFixGuide.OpenKind(
+                        cardOutcome.Approved,
+                        cardOutcome.RequiresRecovery,
+                        cardOutcome.Cancelled);
+                    if (next == CardFixOpenKind.Recovery && cardOutcome.AttemptId is > 0)
                     {
                         var pendingPay = PitstopSaleCommitHelper.BuildPaymentCommit(
                             PitstopPaymentSelection.Card,
@@ -1678,7 +1682,10 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
                         Payment = PitstopPaymentSelection.None;
                         CloseAllCheckoutUi();
                         ClearPaymentTransaction();
-                        OpenCardFixNotCharged(charged);
+                        if (next == CardFixOpenKind.NotCharged)
+                        {
+                            OpenCardFixNotCharged(charged);
+                        }
                     }
 
                     return;

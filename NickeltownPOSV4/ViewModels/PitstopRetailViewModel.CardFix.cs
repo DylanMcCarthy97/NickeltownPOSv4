@@ -192,10 +192,22 @@ public sealed partial class PitstopRetailViewModel
             _cardFixCanAskReader = !string.IsNullOrWhiteSpace(row.SquareCheckoutId);
             var approved = IsApprovedStatus(row.Status);
             var confirmedNotPaid = check.Ok && !approved;
-            var step = PitstopCardFixGuide.AfterSquareCheck(approved, confirmedNotPaid, row.HasRecoverablePayload);
+            var step = PitstopCardFixGuide.AfterSquareCheck(
+                approved,
+                confirmedNotPaid,
+                row.HasRecoverablePayload,
+                check.Cancelled);
             if (!check.Ok && !approved)
             {
                 step = PitstopCardFixStep.Unknown;
+            }
+
+            if (PitstopCardFixGuide.ShouldCloseQuietly(step))
+            {
+                ShowCardFixOverlay = false;
+                StatusMessage = PosUserMessage.CardCancelled;
+                await RefreshCardFixBannerAsync().ConfigureAwait(true);
+                return;
             }
 
             ApplyCardFixCopy(step);

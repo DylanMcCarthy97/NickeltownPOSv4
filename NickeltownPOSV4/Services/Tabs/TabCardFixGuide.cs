@@ -46,10 +46,20 @@ public static class TabCardFixGuide
             PitstopCardFixStep.NotCharged => new PitstopCardFixCopy
             {
                 Title = "They weren't charged",
-                Body = "No money was taken. Try the card again, or take cash.",
+                Body = "No money was taken. Try the card again, take cash, or go back.",
                 AmountText = money,
                 ShowRetryCard = true,
                 ShowTakeCash = true,
+                ShowOk = true,
+                OkLabel = "Go back",
+            },
+            PitstopCardFixStep.Cancelled => new PitstopCardFixCopy
+            {
+                Title = "Cancelled",
+                Body = "Nothing was taken.",
+                AmountText = money,
+                ShowOk = true,
+                OkLabel = "Go back",
             },
             PitstopCardFixStep.Saved => new PitstopCardFixCopy
             {

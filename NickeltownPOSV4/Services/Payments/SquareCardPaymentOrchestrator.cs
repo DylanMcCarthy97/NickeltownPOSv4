@@ -184,9 +184,12 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
             return new SquareCardPaymentOutcome
             {
                 RequiresRecovery = uncertain,
+                Cancelled = present.Cancelled,
                 DeclineReason = uncertain
                     ? PosUserMessage.CardNeedsChecking
-                    : reason,
+                    : present.Cancelled
+                        ? PosUserMessage.CardCancelled
+                        : reason,
                 IdempotencyKey = begin.IdempotencyKey,
                 AttemptId = begin.AttemptId,
                 SquareCheckoutId = present.SquareCheckoutId,

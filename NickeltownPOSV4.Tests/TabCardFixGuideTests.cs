@@ -13,6 +13,8 @@ public sealed class TabCardFixGuideTests
         Assert.Contains("Try the card again", copy.Body, StringComparison.Ordinal);
         Assert.True(copy.ShowRetryCard);
         Assert.True(copy.ShowTakeCash);
+        Assert.True(copy.ShowOk);
+        Assert.Equal("Go back", copy.OkLabel);
         Assert.DoesNotContain("Admin", copy.Body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("new sale", copy.Body, StringComparison.OrdinalIgnoreCase);
     }
@@ -54,6 +56,7 @@ public sealed class TabCardFixGuideTests
     [InlineData(PitstopCardFixStep.Paid, true)]
     [InlineData(PitstopCardFixStep.Paid, false)]
     [InlineData(PitstopCardFixStep.NotCharged, false)]
+    [InlineData(PitstopCardFixStep.Cancelled, false)]
     [InlineData(PitstopCardFixStep.Unknown, true)]
     [InlineData(PitstopCardFixStep.Saved, true)]
     public void Copy_NeverSendsStaffToAdminOrPin(PitstopCardFixStep step, bool canRebuild)

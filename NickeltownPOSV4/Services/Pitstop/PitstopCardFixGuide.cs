@@ -7,8 +7,16 @@ public enum PitstopCardFixStep
     Saving,
     Paid,
     NotCharged,
+    Cancelled,
     Unknown,
     Saved,
+}
+
+public enum CardFixOpenKind
+{
+    None,
+    Recovery,
+    NotCharged,
 }
 
 public sealed class PitstopCardFixCopy
@@ -85,10 +93,20 @@ public static class PitstopCardFixGuide
             PitstopCardFixStep.NotCharged => new PitstopCardFixCopy
             {
                 Title = "They weren't charged",
-                Body = "No money was taken. This sale is still on the till. Try the card again, or take cash.",
+                Body = "No money was taken. This sale is still on the till. Try the card again, take cash, or keep the sale.",
                 AmountText = money,
                 ShowRetryCard = true,
                 ShowTakeCash = true,
+                ShowOk = true,
+                OkLabel = "Keep the sale",
+            },
+            PitstopCardFixStep.Cancelled => new PitstopCardFixCopy
+            {
+                Title = "Cancelled",
+                Body = "Nothing was taken. The sale is still here.",
+                AmountText = money,
+                ShowOk = true,
+                OkLabel = "Keep the sale",
             },
             PitstopCardFixStep.Saved => new PitstopCardFixCopy
             {
@@ -128,11 +146,20 @@ public static class PitstopCardFixGuide
         return hasCheckoutId ? PitstopCardFixStep.AskCheck : PitstopCardFixStep.Unknown;
     }
 
-    public static PitstopCardFixStep AfterSquareCheck(bool approved, bool confirmedNotPaid, bool canRebuildSale)
+    public static PitstopCardFixStep AfterSquareCheck(
+        bool approved,
+        bool confirmedNotPaid,
+        bool canRebuildSale,
+        bool cancelled = false)
     {
         if (approved)
         {
             return PitstopCardFixStep.Paid;
+        }
+
+        if (cancelled)
+        {
+            return PitstopCardFixStep.Cancelled;
         }
 
         if (confirmedNotPaid)
@@ -143,6 +170,24 @@ public static class PitstopCardFixGuide
         _ = canRebuildSale;
         return PitstopCardFixStep.Unknown;
     }
+
+    public static CardFixOpenKind OpenKind(bool approved, bool requiresRecovery, bool cancelled)
+    {
+        if (approved)
+        {
+            return CardFixOpenKind.None;
+        }
+
+        if (requiresRecovery)
+        {
+            return CardFixOpenKind.Recovery;
+        }
+
+        return cancelled ? CardFixOpenKind.None : CardFixOpenKind.NotCharged;
+    }
+
+    public static bool ShouldCloseQuietly(PitstopCardFixStep step) =>
+        step == PitstopCardFixStep.Cancelled;
 
     public static string BannerText(decimal amount) =>
         $"A card still needs a look — {amount.ToString("C2")}";

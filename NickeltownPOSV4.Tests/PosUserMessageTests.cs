@@ -64,8 +64,10 @@ public sealed class PosUserMessageTests
     {
         Assert.Contains("Do not run the card again", PosUserMessage.CardNeedsChecking, StringComparison.Ordinal);
         Assert.Contains("Do not charge them again", PosUserMessage.CardApprovedUnsaved, StringComparison.Ordinal);
+        Assert.Equal("Cancelled. Nothing was taken.", PosUserMessage.CardCancelled);
         Assert.DoesNotContain("Admin", PosUserMessage.CardNeedsChecking, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Admin", PosUserMessage.CardApprovedUnsaved, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Admin", PosUserMessage.CardCancelled, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Fix payments", PosUserMessage.CardNeedsChecking, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Fix payments", PosUserMessage.CardApprovedUnsaved, StringComparison.OrdinalIgnoreCase);
     }

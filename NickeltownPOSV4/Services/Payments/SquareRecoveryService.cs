@@ -43,7 +43,7 @@ public sealed class SquareRecoveryService
         {
             await _attempts.MarkFailedAsync(row.AttemptId, status.DeclineReason ?? "Square confirmed the payment did not complete.", CancellationToken.None).ConfigureAwait(false);
             await _recovery.AddNoteAsync(row.AttemptId, "Square confirmed cancellation or failure; no POS credit was added.", CancellationToken.None).ConfigureAwait(false);
-            return SquareRecoveryUpdateResult.Success();
+            return SquareRecoveryUpdateResult.Success(cancelled: status.Cancelled);
         }
         return SquareRecoveryUpdateResult.Fail(status.DeclineReason ?? "Square has not confirmed a final status. Keep this payment in recovery.");
     }

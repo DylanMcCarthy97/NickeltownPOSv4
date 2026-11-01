@@ -52,6 +52,8 @@ public sealed class TabCardFixSession : ObservableViewModel
 
     public Action? OnTakeCash { get; set; }
 
+    public Action? OnCancelled { get; set; }
+
     public Func<Task>? OnSavedAsync { get; set; }
 
     public IAsyncRelayCommand CheckCommand { get; }
@@ -209,10 +211,17 @@ public sealed class TabCardFixSession : ObservableViewModel
             _canAskReader = !string.IsNullOrWhiteSpace(row.SquareCheckoutId);
             var approved = _canRebuild;
             var confirmedNotPaid = check.Ok && !approved;
-            var step = PitstopCardFixGuide.AfterSquareCheck(approved, confirmedNotPaid, _canRebuild);
+            var step = PitstopCardFixGuide.AfterSquareCheck(approved, confirmedNotPaid, _canRebuild, check.Cancelled);
             if (!check.Ok && !approved)
             {
                 step = PitstopCardFixStep.Unknown;
+            }
+
+            if (PitstopCardFixGuide.ShouldCloseQuietly(step))
+            {
+                ShowOverlay = false;
+                OnCancelled?.Invoke();
+                return;
             }
 
             Apply(step);
