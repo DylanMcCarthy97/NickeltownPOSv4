@@ -32,6 +32,10 @@ public sealed class PitstopCardFixGuideTests
         var copy = PitstopCardFixGuide.Build(PitstopCardFixStep.Paid, 8m, canRebuildSale: false);
         Assert.True(copy.ShowOk);
         Assert.False(copy.ShowSaveSale);
+        Assert.Equal("I've written it down", copy.OkLabel);
+        Assert.True(PitstopCardFixGuide.WrittenDownClearsBanner(PitstopCardFixStep.Paid, canRebuildSale: false));
+        Assert.False(PitstopCardFixGuide.WrittenDownClearsBanner(PitstopCardFixStep.Paid, canRebuildSale: true));
+        Assert.False(PitstopCardFixGuide.WrittenDownClearsBanner(PitstopCardFixStep.NotCharged, canRebuildSale: false));
         Assert.Contains("Do not take cash for this same sale", copy.Body, StringComparison.Ordinal);
     }
 

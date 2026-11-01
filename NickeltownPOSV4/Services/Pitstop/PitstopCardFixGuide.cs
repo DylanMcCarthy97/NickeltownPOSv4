@@ -58,6 +58,7 @@ public static class PitstopCardFixGuide
                 AmountText = money,
                 ShowSaveSale = canRebuildSale,
                 ShowOk = !canRebuildSale,
+                OkLabel = canRebuildSale ? "OK — keep selling" : "I've written it down",
             },
             PitstopCardFixStep.NotCharged => new PitstopCardFixCopy
             {
@@ -122,4 +123,7 @@ public static class PitstopCardFixGuide
 
     public static string BannerText(decimal amount) =>
         $"A card still needs a look — {amount.ToString("C2")}";
+
+    public static bool WrittenDownClearsBanner(PitstopCardFixStep step, bool canRebuildSale) =>
+        step == PitstopCardFixStep.Paid && !canRebuildSale;
 }

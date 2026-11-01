@@ -14,6 +14,7 @@ public sealed partial class PitstopRetailViewModel
     private decimal _cardFixAmount;
     private bool _cardFixCanRebuildSale;
     private bool _cardFixCanAskReader = true;
+    private PitstopCardFixStep _cardFixStep = PitstopCardFixStep.AskCheck;
     private bool _showCardFixOverlay;
     private bool _showCardFixBanner;
     private string _cardFixBannerText = string.Empty;
@@ -25,7 +26,7 @@ public sealed partial class PitstopRetailViewModel
 
     public IAsyncRelayCommand MarkCardNotChargedCommand { get; private set; } = null!;
 
-    public IRelayCommand DismissCardFixCommand { get; private set; } = null!;
+    public IAsyncRelayCommand DismissCardFixCommand { get; private set; } = null!;
 
     public IAsyncRelayCommand OpenCardFixFromBannerCommand { get; private set; } = null!;
 
@@ -254,14 +255,23 @@ public sealed partial class PitstopRetailViewModel
         NotifyCardFixCommands();
     }
 
-    private void DismissCardFix()
+    private async Task DismissCardFixAsync()
     {
+        if (PitstopCardFixGuide.WrittenDownClearsBanner(_cardFixStep, _cardFixCanRebuildSale)
+            && _cardFixAttemptId > 0)
+        {
+            await _squareRecoveryRows
+                .MarkManuallyReconciledAsync(_cardFixAttemptId, "Staff wrote down the amount (Pitstop till)")
+                .ConfigureAwait(true);
+        }
+
         ShowCardFixOverlay = false;
-        _ = RefreshCardFixBannerAsync();
+        await RefreshCardFixBannerAsync().ConfigureAwait(true);
     }
 
     private void ApplyCardFixCopy(PitstopCardFixStep step)
     {
+        _cardFixStep = step;
         _cardFixCopy = PitstopCardFixGuide.Build(step, _cardFixAmount, _cardFixCanRebuildSale, _cardFixCanAskReader);
         RaiseCardFixCopy();
     }

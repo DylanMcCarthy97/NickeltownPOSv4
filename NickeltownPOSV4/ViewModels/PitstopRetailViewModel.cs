@@ -222,7 +222,7 @@ public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitst
         CheckCardFixCommand = new AsyncRelayCommand(CheckCardFixAsync, () => CanRunCardFix && CardFixShowCheck);
         SaveCardFixSaleCommand = new AsyncRelayCommand(SaveCardFixSaleAsync, () => CanRunCardFix && CardFixShowSaveSale);
         MarkCardNotChargedCommand = new AsyncRelayCommand(MarkCardNotChargedAsync, () => CanRunCardFix && CardFixShowNotCharged);
-        DismissCardFixCommand = new RelayCommand(DismissCardFix, () => ShowCardFixOverlay && CardFixShowOk);
+        DismissCardFixCommand = new AsyncRelayCommand(DismissCardFixAsync, () => ShowCardFixOverlay && CardFixShowOk);
         OpenCardFixFromBannerCommand = new AsyncRelayCommand(OpenCardFixFromBannerAsync, () => ShowCardFixBanner);
     }
 
