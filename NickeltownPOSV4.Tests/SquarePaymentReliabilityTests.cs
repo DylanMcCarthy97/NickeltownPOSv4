@@ -4,6 +4,7 @@ using NickeltownPOSV4.Models.Audit;
 using NickeltownPOSV4.Models.Payments;
 using NickeltownPOSV4.Services;
 using NickeltownPOSV4.Services.Payments;
+using NickeltownPOSV4.Services.Pitstop;
 using Xunit;
 
 namespace NickeltownPOSV4.Tests;
@@ -79,6 +80,12 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         var terminal = new RecordingTerminal();
         var orchestrator = new SquareCardPaymentOrchestrator(terminal, _attempts, new Audit());
         var funds = new SqliteTabFundsService(_factory, _attempts);
+        var squareRecovery = new SquareRecoveryService(
+            _recovery,
+            _attempts,
+            new StatusReader(SquarePresentResult.Uncertain("unused")),
+            funds);
+        var paymentRecovery = new NoopPaymentRecovery();
         NickeltownPOSV4.ViewModels.AddFundsPanelViewModel? fundsPanel = null;
         NickeltownPOSV4.ViewModels.GuestTabCloseoutPanelViewModel? guestPanel = null;
         var progress = new List<(bool Visible, bool Sending, string Message)>();
@@ -87,7 +94,8 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         if (guestCloseout)
         {
             var vm = new NickeltownPOSV4.ViewModels.GuestTabCloseoutPanelViewModel(funds,
-                null!, session, null!, null!, null!, null!, orchestrator, new Config());
+                null!, session, null!, null!, null!, null!, orchestrator, new Config(),
+                _recovery, squareRecovery, paymentRecovery);
             guestPanel = vm;
             Assert.False(vm.ShowPaymentProgressOverlay);
             vm.PropertyChanged += (_, _) => progress.Add(
@@ -99,7 +107,8 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         else
         {
             var vm = new NickeltownPOSV4.ViewModels.AddFundsPanelViewModel(funds,
-                session, null!, null!, null!, null!, orchestrator, new Config(), null!, new Audit(), null!, null!);
+                session, null!, null!, null!, null!, orchestrator, new Config(), null!, new Audit(), null!, null!,
+                _recovery, squareRecovery, paymentRecovery);
             fundsPanel = vm;
             Assert.False(vm.ShowPaymentProgressOverlay);
             vm.PropertyChanged += (_, _) => progress.Add(
@@ -468,6 +477,15 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         public Task<NickeltownPOSV4.Models.Settings.AppSquareConfig> LoadAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new NickeltownPOSV4.Models.Settings.AppSquareConfig());
         public Task SaveAsync(NickeltownPOSV4.Models.Settings.AppSquareConfig config, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class NoopPaymentRecovery : IPitstopPaymentRecoveryService
+    {
+        public Task<SquareRecoveryUpdateResult> RecoverPitstopSaleAsync(long attemptId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(SquareRecoveryUpdateResult.Success());
+
+        public Task<SquareRecoveryUpdateResult> IgnoreAsync(long attemptId, string? note, CancellationToken cancellationToken = default) =>
+            Task.FromResult(SquareRecoveryUpdateResult.Success());
     }
 
     private sealed class Audit : IAuditLogService
