@@ -250,7 +250,7 @@ public sealed class SettingsPageViewModel : ObservableViewModel
                 ? "The sale was saved and stock was taken off."
                 : PosUserMessage.IsOperatorSafe(result.ErrorMessage)
                     ? result.ErrorMessage!
-                    : "We couldn't save that sale. Open Fix payments and try again.").ConfigureAwait(true);
+                    : "We couldn't save that sale. Open Pitstop and tap Fix it.").ConfigureAwait(true);
         await RefreshPaymentRecoveryAlertAsync().ConfigureAwait(true);
     }
 

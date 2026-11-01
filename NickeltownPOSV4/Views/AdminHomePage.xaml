@@ -62,7 +62,7 @@
                 <TextBlock
                     FontSize="13"
                     Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="Don't charge this card again until this is fixed."
+                    Text="Open Pitstop and tap Fix it. Don't charge this card again."
                     TextWrapping="WrapWholeWords" />
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>

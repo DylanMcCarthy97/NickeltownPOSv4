@@ -33,17 +33,17 @@ public sealed class PitstopPaymentRecoveryService : IPitstopPaymentRecoveryServi
         var rows = await _recovery.GetOrphanAttemptsAsync(cancellationToken).ConfigureAwait(false);
         var row = System.Linq.Enumerable.FirstOrDefault(rows, r => r.AttemptId == attemptId);
         if (row is not null && row.Status is not ("TerminalApproved" or "Completed" or "Approved"))
-            return SquareRecoveryUpdateResult.Fail("Confirm the payment is approved in Square before recording a recovered sale.");
+            return SquareRecoveryUpdateResult.Fail("Find out if they paid first. Do not charge them again.");
         var json = await _recovery.GetRecoveryPayloadJsonAsync(attemptId, cancellationToken).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(json)) return SquareRecoveryUpdateResult.Fail("No recoverable sale payload for this payment.");
+        if (string.IsNullOrWhiteSpace(json)) return SquareRecoveryUpdateResult.Fail("This till cannot rebuild the sale. Write down the amount and keep selling with cash.");
         PitstopPaymentRecoveryPayload? payload;
         try { payload = JsonSerializer.Deserialize<PitstopPaymentRecoveryPayload>(json, JsonOptions); }
-        catch { return SquareRecoveryUpdateResult.Fail("Recovery payload is invalid."); }
-        if (payload is null || payload.Lines.Count == 0) return SquareRecoveryUpdateResult.Fail("Recovery payload is empty.");
+        catch { return SquareRecoveryUpdateResult.Fail("We couldn't read that sale. Try Find out if they paid again."); }
+        if (payload is null || payload.Lines.Count == 0) return SquareRecoveryUpdateResult.Fail("This till cannot rebuild the sale. Write down the amount and keep selling with cash.");
         var commit = await _sales.CommitSaleAsync(payload.Lines, payload.Payment, cancellationToken).ConfigureAwait(false);
-        if (!commit.Ok) return SquareRecoveryUpdateResult.Fail(commit.ErrorMessage ?? "Could not commit recovered sale.");
+        if (!commit.Ok) return SquareRecoveryUpdateResult.Fail(commit.ErrorMessage ?? "We couldn't save that sale. Try Find out if they paid again.");
         if (commit.SalePk is > 0)
-            await _recovery.LinkPitstopSaleAsync(attemptId, commit.SalePk.Value, "Recovered from admin", cancellationToken).ConfigureAwait(false);
+            await _recovery.LinkPitstopSaleAsync(attemptId, commit.SalePk.Value, "Recovered from Pitstop till", cancellationToken).ConfigureAwait(false);
         await _audit.LogAsync(AuditActions.PaymentSaleSaved, AuditEntityTypes.PitstopSale, commit.SaleGuid, payload.Payment.ChargedTotal, reason: $"Recovered Pitstop sale from attempt {attemptId}.").ConfigureAwait(false);
         await _audit.LogAsync(AuditActions.StockDeducted, AuditEntityTypes.PitstopSale, commit.SaleGuid, reason: "Stock deducted during payment recovery.").ConfigureAwait(false);
         return SquareRecoveryUpdateResult.Success();

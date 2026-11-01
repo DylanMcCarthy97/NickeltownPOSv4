@@ -274,6 +274,8 @@ public sealed class SquarePaymentReliabilityTests : IDisposable
         var orchestrator = new SquareCardPaymentOrchestrator(terminal, _attempts, new Audit());
         var first = await orchestrator.PresentAndLogAsync(PitstopRequest("pitstop-timeout"));
         Assert.True(first.RequiresRecovery);
+        Assert.Equal(PosUserMessage.CardNeedsChecking, first.DeclineReason);
+        Assert.DoesNotContain("Admin", first.DeclineReason, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(1, await _recovery.GetUnresolvedCountAsync());
 
         terminal.Failure = null;

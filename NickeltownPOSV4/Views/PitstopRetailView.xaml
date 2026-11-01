@@ -164,14 +164,53 @@
         <Grid
             Grid.Row="1"
             Margin="8,10,8,4"
-            ColumnSpacing="12">
+            ColumnSpacing="12"
+            RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="31*" />
                 <ColumnDefinition Width="19*" MinWidth="280" />
             </Grid.ColumnDefinitions>
 
+            <Border
+                Grid.Row="0"
+                Grid.ColumnSpan="2"
+                Padding="12,8"
+                Background="#33C62828"
+                BorderBrush="#FFC62828"
+                BorderThickness="1"
+                CornerRadius="10"
+                Visibility="{Binding ShowCardFixBanner, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+                <Grid ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding CardFixBannerText, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Button
+                        Grid.Column="1"
+                        MinHeight="40"
+                        MinWidth="88"
+                        Command="{Binding OpenCardFixFromBannerCommand}"
+                        Content="Fix it"
+                        Style="{StaticResource PitstopPaymentCardButtonStyle}" />
+                </Grid>
+            </Border>
+
             <!-- Left: categories + product grid + pager -->
-            <Grid Grid.Column="0" RowSpacing="6">
+            <Grid
+                Grid.Row="1"
+                Grid.Column="0"
+                RowSpacing="6">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -414,6 +453,7 @@
 
             <!-- Right: receipt-style current sale -->
             <Border
+                Grid.Row="1"
                 Grid.Column="1"
                 Padding="10,8,10,10"
                 Background="{StaticResource PosSurfaceBrush}"
@@ -1122,6 +1162,69 @@
                         FontWeight="SemiBold"
                         Style="{StaticResource TabsHeaderActionButtonStyle}"
                         UseSystemFocusVisuals="False" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="2"
+            Background="{StaticResource PosScrimBrush}"
+            Canvas.ZIndex="70"
+            Visibility="{Binding ShowCardFixOverlay, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Border
+                Padding="22"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MaxWidth="420"
+                Background="{StaticResource PosSurfaceBrush}"
+                BorderBrush="{StaticResource PosBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="16">
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        FontSize="22"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding CardFixTitle, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <TextBlock
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Text="{Binding CardFixAmountText, Mode=OneWay}" />
+                    <TextBlock
+                        FontSize="16"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="{Binding CardFixBody, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                    <Button
+                        MinHeight="56"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding CheckCardFixCommand}"
+                        Content="{Binding CardFixCheckLabel, Mode=OneWay}"
+                        Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                        Visibility="{Binding CardFixShowCheck, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="56"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding SaveCardFixSaleCommand}"
+                        Content="{Binding CardFixSaveLabel, Mode=OneWay}"
+                        Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                        Visibility="{Binding CardFixShowSaveSale, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding MarkCardNotChargedCommand}"
+                        Content="{Binding CardFixNotChargedLabel, Mode=OneWay}"
+                        Style="{StaticResource PitstopPaymentCashButtonStyle}"
+                        Visibility="{Binding CardFixShowNotCharged, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding DismissCardFixCommand}"
+                        Content="{Binding CardFixOkLabel, Mode=OneWay}"
+                        Style="{StaticResource TabsHeaderActionButtonStyle}"
+                        Visibility="{Binding CardFixShowOk, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                 </StackPanel>
             </Border>
         </Grid>

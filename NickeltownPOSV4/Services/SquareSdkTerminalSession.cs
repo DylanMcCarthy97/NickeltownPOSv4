@@ -163,7 +163,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
         }
         catch (Exception ex)
         {
-            return SquarePresentResult.Uncertain("We couldn't tell if the card reader started. Check Fix payments before charging again.", idempotencyKey: checkoutIdempotency);
+            return SquarePresentResult.Uncertain("We couldn't tell if the card reader started. Do not run the card again.", idempotencyKey: checkoutIdempotency);
         }
 
         if (createResp.Errors != null && createResp.Errors.Any())
@@ -238,7 +238,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
         }
         catch (Exception ex)
         {
-            return SquarePresentResult.Uncertain("We couldn't confirm the card result. Check Fix payments before charging again.", checkoutId, checkoutIdempotency);
+            return SquarePresentResult.Uncertain("We couldn't confirm the card result. Do not run the card again.", checkoutId, checkoutIdempotency);
         }
     }
 

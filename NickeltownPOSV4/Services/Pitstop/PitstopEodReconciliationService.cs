@@ -161,7 +161,7 @@ public sealed class PitstopEodReconciliationService
 
         if (unresolvedSquare > 0)
         {
-            warnings.Add($"{unresolvedSquare} card payment(s) still need fixing in Admin → Setup → Fix payments.");
+            warnings.Add($"{unresolvedSquare} card payment(s) still need a look on the Pitstop till.");
         }
 
         var cardCharged = pit.CardChargedTotal;

@@ -21,7 +21,7 @@ using NickeltownPOSV4.Views.Panels;
 
 namespace NickeltownPOSV4.ViewModels;
 
-public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetailCartHost
+public sealed partial class PitstopRetailViewModel : ObservableViewModel, IPitstopRetailCartHost
 {
     public const string ChipAll = PitstopCatalogChipKeys.All;
 
@@ -68,6 +68,12 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
     private readonly IAuthSignOutService _signOut;
 
     private readonly IAuditLogService _audit;
+
+    private readonly ISquareRecoveryRepository _squareRecoveryRows;
+
+    private readonly SquareRecoveryService _squareRecovery;
+
+    private readonly IPitstopPaymentRecoveryService _pitstopRecovery;
 
     private readonly List<PitstopCatalogProductRow> _allProducts = new();
 
@@ -159,7 +165,10 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         IRootNavigationCoordinator rootNav,
         ISerialCashDrawerService cashDrawer,
         IAuditLogService audit,
-        IAuthSignOutService signOut)
+        IAuthSignOutService signOut,
+        ISquareRecoveryRepository squareRecoveryRows,
+        SquareRecoveryService squareRecovery,
+        IPitstopPaymentRecoveryService pitstopRecovery)
     {
         _catalog = catalog;
         _sales = sales;
@@ -177,6 +186,9 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         _cashDrawer = cashDrawer;
         _audit = audit;
         _signOut = signOut;
+        _squareRecoveryRows = squareRecoveryRows;
+        _squareRecovery = squareRecovery;
+        _pitstopRecovery = pitstopRecovery;
         _refreshBus.RefreshRequested += OnSharedPosDataRefreshRequested;
         _session.PropertyChanged += OnSessionPropertyChanged;
 
@@ -207,6 +219,11 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         RemoveSelectedCartItemCommand = new RelayCommand(RemoveSelectedCartItem, () => !IsBusy && SelectedCartLine is not null);
         SelectChipCommand = new RelayCommand<PitstopCategoryChipViewModel>(SelectChip);
         SignOutCommand = new RelayCommand(SignOut);
+        CheckCardFixCommand = new AsyncRelayCommand(CheckCardFixAsync, () => CanRunCardFix && CardFixShowCheck);
+        SaveCardFixSaleCommand = new AsyncRelayCommand(SaveCardFixSaleAsync, () => CanRunCardFix && CardFixShowSaveSale);
+        MarkCardNotChargedCommand = new AsyncRelayCommand(MarkCardNotChargedAsync, () => CanRunCardFix && CardFixShowNotCharged);
+        DismissCardFixCommand = new RelayCommand(DismissCardFix, () => ShowCardFixOverlay && CardFixShowOk);
+        OpenCardFixFromBannerCommand = new AsyncRelayCommand(OpenCardFixFromBannerAsync, () => ShowCardFixBanner);
     }
 
     public IRelayCommand SignOutCommand { get; }
@@ -552,7 +569,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         IsPaySheetOpen || IsCardFeeSheetOpen || IsCashSheetOpen || IsCashChangeSheetOpen;
 
     /// <summary>True while checkout or Square is in progress — blocks catalog edits and duplicate Pay.</summary>
-    public bool IsPaymentLocked => IsBusy || IsSendingSquare || _paymentInFlight || ShowCheckoutOverlay;
+    public bool IsPaymentLocked => IsBusy || IsSendingSquare || _paymentInFlight || ShowCheckoutOverlay || ShowCardFixOverlay;
 
     public string CashReceivedDisplay =>
         PitstopCashPaymentHelper.FormatMoneyLabel(
@@ -689,6 +706,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         await LoadPreferencesAsync().ConfigureAwait(true);
         await RefreshSquareStatusPillAsync().ConfigureAwait(true);
         await RefreshHeldSaleCountAsync().ConfigureAwait(true);
+        await RefreshCardFixBannerAsync().ConfigureAwait(true);
     }
 
     public async Task RefreshHeldSaleCountAsync(CancellationToken cancellationToken = default)
@@ -1611,10 +1629,26 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
 
                 if (!cardOutcome.Approved)
                 {
-                    StatusMessage = cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage;
+                    StatusMessage = cardOutcome.RequiresRecovery
+                        ? PosUserMessage.CardNeedsChecking
+                        : (cardOutcome.DeclineReason ?? PitstopSaleCommitHelper.PaymentNotRecordedMessage);
                     Payment = PitstopPaymentSelection.None;
                     CloseAllCheckoutUi();
                     ClearPaymentTransaction();
+                    if (cardOutcome.RequiresRecovery && cardOutcome.AttemptId is > 0)
+                    {
+                        await OpenCardFixAsync(
+                                cardOutcome.AttemptId.Value,
+                                charged,
+                                theyPaid: false,
+                                canRebuildSale: false)
+                            .ConfigureAwait(true);
+                    }
+                    else
+                    {
+                        OpenCardFixNotCharged(charged);
+                    }
+
                     return;
                 }
 
@@ -1665,8 +1699,13 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
                             lines,
                             pay)
                         .ConfigureAwait(true);
-                    StatusMessage =
-                        $"{StatusMessage} Don't charge again. Open Admin → Setup → Fix payments.";
+                    StatusMessage = PosUserMessage.CardApprovedUnsaved;
+                    await OpenCardFixAsync(
+                            paymentAttemptId.Value,
+                            charged,
+                            theyPaid: true,
+                            canRebuildSale: true)
+                        .ConfigureAwait(true);
                 }
 
                 await _audit.LogAsync(

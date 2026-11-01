@@ -264,6 +264,27 @@ public sealed class PaymentPipelineTests : IDisposable
     }
 
     [Fact]
+    public async Task PitstopRecovery_BeforeApproval_UsesPlainWordsAndDoesNotSave()
+    {
+        var begin = await _attempts.BeginAsync(new SquarePaymentAttemptBeginRequest
+        {
+            PaymentType = SquarePaymentAttemptType.PitstopSale,
+            IdempotencyKey = "recovery-too-soon",
+            BaseAmount = 10m,
+            ChargedAmount = 10m,
+        });
+
+        var recover = await _paymentRecovery.RecoverPitstopSaleAsync(begin.AttemptId);
+        Assert.False(recover.Ok);
+        Assert.Contains("Find out if they paid", recover.ErrorMessage, StringComparison.Ordinal);
+        Assert.DoesNotContain("Admin", recover.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Square", recover.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+
+        using var conn = _factory.OpenConnection();
+        Assert.Equal(0L, conn.ExecuteScalar<long>("SELECT COUNT(1) FROM PitstopSales"));
+    }
+
+    [Fact]
     public async Task PitstopEod_Reconciliation_ExcludesBar()
     {
         await _funds.CommitFundMovementAsync("tab1", "cash", 10m, null);

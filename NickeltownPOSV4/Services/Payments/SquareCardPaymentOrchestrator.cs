@@ -99,7 +99,7 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
             {
                 RequiresRecovery = begin.RequiresRecovery,
                 DeclineReason = begin.RequiresRecovery
-                    ? "This card payment needs checking. Open Admin → Setup → Fix payments before charging again."
+                    ? PosUserMessage.CardNeedsChecking
                     : "The previous payment was declined or cancelled. Start a new payment to try again.",
                 IdempotencyKey = begin.IdempotencyKey,
                 AttemptId = begin.AttemptId,
@@ -150,7 +150,7 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
             return new SquareCardPaymentOutcome
             {
                 RequiresRecovery = true,
-                DeclineReason = "This card payment needs checking. Open Admin → Setup → Fix payments before charging again.",
+                DeclineReason = PosUserMessage.CardNeedsChecking,
                 IdempotencyKey = begin.IdempotencyKey,
                 AttemptId = begin.AttemptId,
             };
@@ -185,7 +185,7 @@ public sealed class SquareCardPaymentOrchestrator : ISquareCardPaymentOrchestrat
             {
                 RequiresRecovery = uncertain,
                 DeclineReason = uncertain
-                    ? "This card payment needs checking. Open Admin → Setup → Fix payments before charging again."
+                    ? PosUserMessage.CardNeedsChecking
                     : reason,
                 IdempotencyKey = begin.IdempotencyKey,
                 AttemptId = begin.AttemptId,

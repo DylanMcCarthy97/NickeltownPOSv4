@@ -349,7 +349,7 @@ public sealed class SystemCheckViewModel : ObservableViewModel
                 unresolved == 0 ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
                 unresolved == 0
                     ? "No unfinished card payments."
-                    : "Open Admin → Setup → Fix payments. Don't charge those cards again until they are fixed."));
+                    : "Open Pitstop and tap Fix it. Don't charge those cards again until they are fixed."));
         }
         catch (Exception)
         {

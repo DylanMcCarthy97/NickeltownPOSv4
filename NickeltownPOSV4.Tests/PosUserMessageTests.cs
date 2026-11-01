@@ -60,6 +60,17 @@ public sealed class PosUserMessageTests
     }
 
     [Fact]
+    public void CardCopy_TellsStaffNotToChargeAgainWithoutAdmin()
+    {
+        Assert.Contains("Do not run the card again", PosUserMessage.CardNeedsChecking, StringComparison.Ordinal);
+        Assert.Contains("Do not charge them again", PosUserMessage.CardApprovedUnsaved, StringComparison.Ordinal);
+        Assert.DoesNotContain("Admin", PosUserMessage.CardNeedsChecking, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Admin", PosUserMessage.CardApprovedUnsaved, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Fix payments", PosUserMessage.CardNeedsChecking, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Fix payments", PosUserMessage.CardApprovedUnsaved, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void LooksTechnical_DetectsInfrastructureJargon()
     {
         Assert.True(PosUserMessage.LooksTechnical("SQLite database is locked"));

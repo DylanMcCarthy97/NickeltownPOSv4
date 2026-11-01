@@ -15,6 +15,8 @@ public static class PosUserMessage
     public const string Network = "Network error. Check your connection and try again.";
     public const string TimedOut = "Timed out. Try again.";
     public const string CardReader = "The card reader didn't finish. Try again or use another payment.";
+    public const string CardNeedsChecking = "This card payment didn't finish. Do not run the card again.";
+    public const string CardApprovedUnsaved = "The card went through, but we couldn't save the sale. Do not charge them again.";
     public const string AskManager = "Try again. If it keeps happening, tell a manager.";
 
     public static string CouldNot(string action) =>
