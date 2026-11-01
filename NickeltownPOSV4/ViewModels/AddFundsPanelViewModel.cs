@@ -353,9 +353,13 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
     {
         RefreshHeader();
         await _cardFix.OpenLeftoverForTabAsync(_session.TargetTabLegacyId).ConfigureAwait(true);
-        if (_cardFix.ShowOverlay && _cardFix.Amount > 0m && !TryParseAmount(AmountText, false, out _))
+        if (_cardFix.ShowOverlay && !TryParseAmount(AmountText, false, out _))
         {
-            AmountText = _cardFix.Amount.ToString("0.00", CultureInfo.InvariantCulture);
+            var leftoverBase = _cardFix.BaseAmount > 0m ? _cardFix.BaseAmount : _cardFix.Amount;
+            if (leftoverBase > 0m)
+            {
+                AmountText = leftoverBase.ToString("0.00", CultureInfo.InvariantCulture);
+            }
         }
     }
 

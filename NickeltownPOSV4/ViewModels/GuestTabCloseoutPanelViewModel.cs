@@ -639,7 +639,26 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
             });
     }
 
-    private Task AfterCardPaymentSavedAsync() => FinishCloseoutAsync();
+    private Task AfterCardPaymentSavedAsync()
+    {
+        if (!TabCardFixGuide.LeftoverMatchesCloseout(
+                _cardFix.Amount,
+                _cardFix.BaseAmount,
+                _amountDue,
+                _cardChargeTotal))
+        {
+            if (_session.TargetTabBalance is { } balance)
+            {
+                _session.TargetTabBalance = balance + _cardFix.BaseAmount;
+            }
+
+            _refreshBus.RequestRefresh();
+            RefreshFromSession();
+            return Task.CompletedTask;
+        }
+
+        return FinishCloseoutAsync();
+    }
 
     private async Task RetryCardAfterFixAsync()
     {

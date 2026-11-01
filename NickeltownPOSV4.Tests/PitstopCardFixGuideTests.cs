@@ -102,6 +102,7 @@ public sealed class PitstopCardFixGuideTests
     [Theory]
     [InlineData(PitstopCardFixStep.AskCheck, true)]
     [InlineData(PitstopCardFixStep.Checking, true)]
+    [InlineData(PitstopCardFixStep.Saving, true)]
     [InlineData(PitstopCardFixStep.Paid, true)]
     [InlineData(PitstopCardFixStep.Paid, false)]
     [InlineData(PitstopCardFixStep.NotCharged, false)]

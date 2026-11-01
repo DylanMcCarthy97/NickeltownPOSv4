@@ -1,3 +1,4 @@
+using System;
 using NickeltownPOSV4.Services.Pitstop;
 
 namespace NickeltownPOSV4.Services.Tabs;
@@ -52,7 +53,7 @@ public static class TabCardFixGuide
             },
             PitstopCardFixStep.Saved => new PitstopCardFixCopy
             {
-                Title = "Credit saved",
+                Title = savedNoun == "payment" ? "Payment saved" : "Credit saved",
                 Body = $"The {savedNoun} is on the tab. Do not charge them again.",
                 AmountText = money,
                 ShowOk = true,
@@ -76,4 +77,18 @@ public static class TabCardFixGuide
             },
         };
     }
+
+    public static bool LeftoverMatchesCloseout(
+        decimal leftoverCharged,
+        decimal leftoverBase,
+        decimal amountDue,
+        decimal chargeTotal)
+    {
+        return SameMoney(leftoverCharged, chargeTotal)
+            || SameMoney(leftoverBase, amountDue)
+            || SameMoney(leftoverCharged, amountDue);
+    }
+
+    private static bool SameMoney(decimal left, decimal right) =>
+        Math.Abs(decimal.Round(left, 2, MidpointRounding.AwayFromZero) - decimal.Round(right, 2, MidpointRounding.AwayFromZero)) < 0.009m;
 }

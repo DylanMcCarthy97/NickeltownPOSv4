@@ -62,6 +62,6 @@ public sealed class SquareRecoveryService
                 SquareCheckoutId = row.SquareCheckoutId, BaseAmount = row.BaseAmount,
                 SurchargeAmount = row.SurchargeAmount, ChargedAmount = row.ChargedAmount, PaymentAttemptId = row.AttemptId,
             }, cancellationToken).ConfigureAwait(false);
-        return saved.Ok ? SquareRecoveryUpdateResult.Success() : SquareRecoveryUpdateResult.Fail(saved.ErrorMessage ?? "Top-up could not be saved.");
+        return saved.Ok ? SquareRecoveryUpdateResult.Success() : SquareRecoveryUpdateResult.Fail(saved.ErrorMessage ?? "We couldn't save that credit.");
     }
 }

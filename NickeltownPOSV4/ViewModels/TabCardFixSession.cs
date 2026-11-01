@@ -22,6 +22,7 @@ public sealed class TabCardFixSession : ObservableViewModel
 
     private long _attemptId;
     private decimal _amount;
+    private decimal _baseAmount;
     private bool _canRebuild;
     private bool _canAskReader = true;
     private PitstopCardFixStep _step = PitstopCardFixStep.AskCheck;
@@ -109,12 +110,15 @@ public sealed class TabCardFixSession : ObservableViewModel
 
     public decimal Amount => _amount;
 
+    public decimal BaseAmount => _baseAmount > 0m ? _baseAmount : _amount;
+
     private bool CanRun => ShowOverlay && !_isBusy;
 
     public async Task OpenAsync(long attemptId, decimal amount, bool theyPaid, bool canRebuild)
     {
         _attemptId = attemptId;
         _amount = amount;
+        _baseAmount = amount;
         _canRebuild = canRebuild;
         var hasCheckout = false;
         if (attemptId > 0)
@@ -123,6 +127,8 @@ public sealed class TabCardFixSession : ObservableViewModel
             hasCheckout = !string.IsNullOrWhiteSpace(row?.SquareCheckoutId);
             if (row is not null)
             {
+                _amount = row.ChargedAmount > 0m ? row.ChargedAmount : amount;
+                _baseAmount = row.BaseAmount > 0m ? row.BaseAmount : _amount;
                 _canRebuild = row.HasRecoverablePayload || row.Status is "TerminalApproved" or "Approved" or "Completed" || canRebuild;
             }
         }
@@ -148,6 +154,7 @@ public sealed class TabCardFixSession : ObservableViewModel
     {
         _attemptId = 0;
         _amount = amount;
+        _baseAmount = amount;
         _canRebuild = false;
         _canAskReader = false;
         Apply(PitstopCardFixStep.NotCharged);
@@ -197,6 +204,7 @@ public sealed class TabCardFixSession : ObservableViewModel
             }
 
             _amount = row.ChargedAmount;
+            _baseAmount = row.BaseAmount > 0m ? row.BaseAmount : row.ChargedAmount;
             _canRebuild = row.Status is "TerminalApproved" or "Approved" or "Completed";
             _canAskReader = !string.IsNullOrWhiteSpace(row.SquareCheckoutId);
             var approved = _canRebuild;

@@ -30,10 +30,21 @@ public sealed class TabCardFixGuideTests
     public void Saved_UsesPlainNoun()
     {
         var copy = TabCardFixGuide.Build(PitstopCardFixStep.Saved, 10m, canRebuildCredit: true, savedNoun: "payment");
+        Assert.Equal("Credit saved", TabCardFixGuide.Build(PitstopCardFixStep.Saved, 10m, canRebuildCredit: true).Title);
+        Assert.Equal("Payment saved", copy.Title);
         Assert.Contains("payment is on the tab", copy.Body, StringComparison.Ordinal);
         Assert.DoesNotContain("Square", copy.Body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Admin", copy.Body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("PIN", copy.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void LeftoverMatchesCloseout_OnlyWhenTheAmountIsThisCloseout()
+    {
+        Assert.True(TabCardFixGuide.LeftoverMatchesCloseout(52m, 50m, amountDue: 50m, chargeTotal: 52m));
+        Assert.True(TabCardFixGuide.LeftoverMatchesCloseout(50m, 50m, amountDue: 50m, chargeTotal: 50m));
+        Assert.False(TabCardFixGuide.LeftoverMatchesCloseout(20m, 20m, amountDue: 50m, chargeTotal: 50m));
+        Assert.False(TabCardFixGuide.LeftoverMatchesCloseout(80m, 80m, amountDue: 50m, chargeTotal: 50m));
     }
 
     [Theory]
