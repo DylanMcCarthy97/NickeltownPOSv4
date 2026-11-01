@@ -528,7 +528,9 @@ public sealed class SquareRecoveryRowVm : ObservableViewModel
         OccurredAtText = row.OccurredAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", Cult);
         StatusText = row.Status switch
         {
-            "Pending" or "Unknown" or "TimedOut" => "Status needs checking in Square",
+            "Pending" or "Unknown" or "TimedOut" => string.IsNullOrWhiteSpace(row.SquareCheckoutId)
+                ? "No checkout ID saved. Confirm in the Square dashboard, then mark reconciled if there was no charge."
+                : "Status needs checking in Square",
             "TerminalApproved" => "Approved — POS record needs saving",
             _ => string.IsNullOrWhiteSpace(row.Status) ? "—" : row.Status,
         };
