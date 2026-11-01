@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0.12",
-  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.12/NickeltownPOSV4_2.0.0.12_x64.msix",
-  "releaseNotes": "The till opens faster and the tab board no longer reloads itself every half minute. Stuck cards are still fixed on the till: the reader is checked (no charge), the sale or credit is saved if they paid, or staff can try the card again or take cash.",
+  "version": "2.0.0.13",
+  "packageUri": "https://github.com/DylanMcCarthy97/NickeltownPOSv4/releases/download/v2.0.0.13/NickeltownPOSV4_2.0.0.13_x64.msix",
+  "releaseNotes": "If you cancel a card, the till goes back to the sale — no extra popup. The till now looks for updates itself and installs them on the login screen, never during a sale.",
   "mandatory": false
 }
