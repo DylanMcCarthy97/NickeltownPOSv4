@@ -44,11 +44,11 @@
                         Glyph="&#xE716;" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="User management" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Staff" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Add, edit, deactivate staff and reset PINs. PINs are used directly by the POS login screen." />
+                        Text="Add or change staff, and reset PINs used on the login screen." />
                 </StackPanel>
                 <Button
                     Grid.Column="2"
@@ -299,7 +299,7 @@
             <Button
                 Grid.Column="0"
                 Command="{Binding BackToSettingsCommand}"
-                Content="Back to settings"
+                Content="Back to Admin"
                 Style="{StaticResource SettingsSecondaryButtonStyle}" />
             <TextBlock
                 Grid.Column="1"

@@ -225,7 +225,7 @@ public sealed class PreviousPitstopDetailViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("that Pitstop"));
         }
         finally
         {
@@ -260,7 +260,7 @@ public sealed class PreviousPitstopDetailViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Reprint failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("reprint that report"));
         }
     }
 
@@ -306,7 +306,7 @@ public sealed class PreviousPitstopDetailViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Add note failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("the note"));
         }
         finally
         {

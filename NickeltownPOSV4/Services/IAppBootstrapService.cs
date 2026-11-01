@@ -84,7 +84,7 @@ public sealed class AppBootstrapService : IAppBootstrapService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Application bootstrap failed.");
-            return BootstrapResult.Fail(PosUserMessage.FromException(ex, "Startup failed. Check logs and restart."));
+            return BootstrapResult.Fail(PosUserMessage.FromException(ex, "The app couldn't finish starting. Restart the till."));
         }
     }
 }

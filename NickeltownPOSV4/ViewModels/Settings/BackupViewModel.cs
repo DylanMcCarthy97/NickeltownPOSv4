@@ -61,7 +61,7 @@ public sealed class BackupViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Backup failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, "Backup didn't finish. Try again."));
         }
         finally
         {

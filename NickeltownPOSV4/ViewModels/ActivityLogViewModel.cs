@@ -52,7 +52,7 @@ public sealed class ActivityLogViewModel : ObservableViewModel
     {
         if (!_session.CanAccessAdmin)
         {
-            StatusMessage = "Admin access required.";
+            StatusMessage = "A manager needs to open this screen.";
             _navigation.TryGoBack();
             return;
         }
@@ -80,7 +80,7 @@ public sealed class ActivityLogViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Load failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the activity log"));
         }
         finally
         {

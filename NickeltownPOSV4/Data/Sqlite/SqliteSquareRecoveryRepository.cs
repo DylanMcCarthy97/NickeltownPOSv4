@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using NickeltownPOSV4.Models.Payments;
+using NickeltownPOSV4.Services;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -128,7 +129,7 @@ public sealed class SqliteSquareRecoveryRepository : ISquareRecoveryRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(SquareRecoveryUpdateResult.Fail(ex.Message));
+            return Task.FromResult(SquareRecoveryUpdateResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("update that payment"))));
         }
     }
 
@@ -183,7 +184,7 @@ public sealed class SqliteSquareRecoveryRepository : ISquareRecoveryRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(SquareRecoveryUpdateResult.Fail(ex.Message));
+            return Task.FromResult(SquareRecoveryUpdateResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("update that payment"))));
         }
     }
 
@@ -292,7 +293,7 @@ public sealed class SqliteSquareRecoveryRepository : ISquareRecoveryRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(SquareRecoveryUpdateResult.Fail(ex.Message));
+            return Task.FromResult(SquareRecoveryUpdateResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("update that payment"))));
         }
     }
 
@@ -328,7 +329,7 @@ public sealed class SqliteSquareRecoveryRepository : ISquareRecoveryRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(SquareRecoveryUpdateResult.Fail(ex.Message));
+            return Task.FromResult(SquareRecoveryUpdateResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("update that payment"))));
         }
     }
 

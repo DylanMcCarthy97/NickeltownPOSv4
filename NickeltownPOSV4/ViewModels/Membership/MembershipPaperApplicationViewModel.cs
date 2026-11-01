@@ -352,7 +352,7 @@ public sealed class MembershipPaperApplicationViewModel : MembershipSubViewModel
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the application")));
         }
         finally
         {
@@ -387,7 +387,7 @@ public sealed class MembershipPaperApplicationViewModel : MembershipSubViewModel
         }
         catch (Exception ex)
         {
-            SetStatus($"Save failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("the application")));
         }
         finally
         {

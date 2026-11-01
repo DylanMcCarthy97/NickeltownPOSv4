@@ -132,7 +132,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                 if (row is null)
                 {
                     tx.Rollback();
-                    return Task.FromResult(TabDrinkCommitResult.Fail($"Item id {line.ItemId} is missing or inactive."));
+                    return Task.FromResult(TabDrinkCommitResult.Fail("That product isn't available anymore. Refresh the list and try again."));
                 }
 
                 var skipStockForSale = StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
@@ -268,7 +268,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabDrinkCommitResult.Fail(ex.Message));
+            return Task.FromResult(TabDrinkCommitResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("add those drinks"))));
         }
     }
 
@@ -397,7 +397,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
                 if (itemRow is null)
                 {
                     tx.Rollback();
-                    return Task.FromResult(TabDrinkCommitResult.Fail($"Item id {payload.ItemId} no longer exists; undo was cancelled."));
+                    return Task.FromResult(TabDrinkCommitResult.Fail("That product isn't there anymore, so undo was cancelled."));
                 }
 
                 if (string.IsNullOrWhiteSpace(itemLabel))
@@ -484,7 +484,7 @@ public sealed class SqliteTabDrinkSalesService : ITabEntryService
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabDrinkCommitResult.Fail(ex.Message));
+            return Task.FromResult(TabDrinkCommitResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("add those drinks"))));
         }
     }
 

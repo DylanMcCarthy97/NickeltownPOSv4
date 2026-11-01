@@ -161,7 +161,7 @@ public sealed class PitstopEodReconciliationService
 
         if (unresolvedSquare > 0)
         {
-            warnings.Add($"{unresolvedSquare} unresolved Square payment(s) need reconciliation in Square Recovery.");
+            warnings.Add($"{unresolvedSquare} card payment(s) still need fixing in Admin → Setup → Fix payments.");
         }
 
         var cardCharged = pit.CardChargedTotal;

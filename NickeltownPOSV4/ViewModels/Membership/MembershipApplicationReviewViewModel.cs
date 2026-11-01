@@ -390,7 +390,7 @@ public sealed class MembershipApplicationReviewViewModel : MembershipSubViewMode
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the application")));
         }
         finally
         {
@@ -495,7 +495,7 @@ public sealed class MembershipApplicationReviewViewModel : MembershipSubViewMode
         }
         catch (Exception ex)
         {
-            SetStatus($"Save failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("the application")));
         }
         finally
         {
@@ -523,7 +523,7 @@ public sealed class MembershipApplicationReviewViewModel : MembershipSubViewMode
         }
         catch (Exception ex)
         {
-            SetStatus($"Add note failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("the note")));
         }
         finally
         {
@@ -631,7 +631,7 @@ public sealed class MembershipApplicationReviewViewModel : MembershipSubViewMode
         }
         catch (Exception ex)
         {
-            SetStatus($"Receipt setup failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("set up the receipt")));
         }
     }
 

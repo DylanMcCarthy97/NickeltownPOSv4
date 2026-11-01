@@ -376,7 +376,7 @@ public sealed partial class StockManagementPage
         }
         catch (Exception ex)
         {
-            _vm.SetStatusMessage("Preview failed: " + ex.Message);
+            _vm.SetStatusMessage(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("preview that import")));
         }
     }
 
@@ -396,7 +396,7 @@ public sealed partial class StockManagementPage
         }
         catch (Exception ex)
         {
-            _vm.SetStatusMessage("Save failed: " + ex.Message);
+            _vm.SetStatusMessage(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("those products")));
         }
     }
 
@@ -450,7 +450,7 @@ public sealed partial class StockManagementPage
         }
         catch (Exception ex)
         {
-            _vm.SetStatusMessage("Email failed: " + ex.Message);
+            _vm.SetStatusMessage(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("email the shopping list")));
         }
     }
 

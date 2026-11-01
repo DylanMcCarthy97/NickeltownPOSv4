@@ -31,6 +31,6 @@ internal static class SquarePaymentAttemptCompletion
             now = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
         }, tx, cancellationToken: cancellationToken));
         if (changed != 1)
-            throw new InvalidOperationException("The approved Square payment could not be linked. No local changes were saved. Open Admin → Square Recovery.");
+            throw new InvalidOperationException("The card went through, but we couldn't save the sale. Open Admin → Setup → Fix payments.");
     }
 }

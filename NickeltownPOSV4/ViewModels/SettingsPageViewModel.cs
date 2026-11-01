@@ -58,6 +58,8 @@ public sealed class SettingsPageViewModel : ObservableViewModel
 
     private long _paymentRecoveryAttemptId;
 
+    private bool _showEverydayAdmin = true;
+
     public SettingsPageViewModel(
         IUserSessionService session,
         INavigationService navigation,
@@ -107,6 +109,8 @@ public sealed class SettingsPageViewModel : ObservableViewModel
         RecoverPaymentCommand = new AsyncRelayCommand(RecoverPrimaryPaymentAsync, () => _paymentRecoveryRequired);
         IgnorePaymentRecoveryCommand = new AsyncRelayCommand(IgnorePrimaryPaymentAsync, () => _paymentRecoveryRequired);
         ViewPaymentRecoveryCommand = new RelayCommand(() => NavigateAdmin(typeof(SquareRecoveryPage)));
+        ShowEverydayAdminCommand = new RelayCommand(() => ShowEverydayAdmin = true);
+        ShowSetupAdminCommand = new RelayCommand(() => ShowEverydayAdmin = false);
 
         LogoutCommand = new RelayCommand(Logout);
         ExitCommand = new RelayCommand(ExitApp);
@@ -162,6 +166,24 @@ public sealed class SettingsPageViewModel : ObservableViewModel
     public IAsyncRelayCommand IgnorePaymentRecoveryCommand { get; }
 
     public IRelayCommand ViewPaymentRecoveryCommand { get; }
+
+    public IRelayCommand ShowEverydayAdminCommand { get; }
+
+    public IRelayCommand ShowSetupAdminCommand { get; }
+
+    public bool ShowEverydayAdmin
+    {
+        get => _showEverydayAdmin;
+        private set
+        {
+            if (SetProperty(ref _showEverydayAdmin, value))
+            {
+                OnPropertyChanged(nameof(ShowSetupAdmin));
+            }
+        }
+    }
+
+    public bool ShowSetupAdmin => !_showEverydayAdmin;
 
     public bool PaymentRecoveryRequired
     {
@@ -223,10 +245,12 @@ public sealed class SettingsPageViewModel : ObservableViewModel
 
         var result = await _paymentRecovery.RecoverPitstopSaleAsync(_paymentRecoveryAttemptId).ConfigureAwait(true);
         await ShowInfoAsync(
-            result.Ok ? "Payment recovered" : "Recovery failed",
+            result.Ok ? "Payment fixed" : "Could not fix it",
             result.Ok
-                ? "The Pitstop sale was saved and stock was deducted."
-                : result.ErrorMessage ?? "Could not recover the sale.").ConfigureAwait(true);
+                ? "The sale was saved and stock was taken off."
+                : PosUserMessage.IsOperatorSafe(result.ErrorMessage)
+                    ? result.ErrorMessage!
+                    : "We couldn't save that sale. Open Fix payments and try again.").ConfigureAwait(true);
         await RefreshPaymentRecoveryAlertAsync().ConfigureAwait(true);
     }
 
@@ -240,7 +264,11 @@ public sealed class SettingsPageViewModel : ObservableViewModel
         var result = await _paymentRecovery.IgnoreAsync(_paymentRecoveryAttemptId, "Ignored from Admin dashboard").ConfigureAwait(true);
         if (!result.Ok)
         {
-            await ShowInfoAsync("Ignore failed", result.ErrorMessage ?? "Could not ignore.").ConfigureAwait(true);
+            await ShowInfoAsync(
+                "Could not skip",
+                PosUserMessage.IsOperatorSafe(result.ErrorMessage)
+                    ? result.ErrorMessage!
+                    : "We couldn't skip this payment. Try again.").ConfigureAwait(true);
             return;
         }
 
@@ -269,11 +297,11 @@ public sealed class SettingsPageViewModel : ObservableViewModel
         try
         {
             await _cashDrawer.KickAsync().ConfigureAwait(true);
-            await ShowInfoAsync("Cash drawer", "Drawer-kick pulse sent on the configured COM port.").ConfigureAwait(true);
+            await ShowInfoAsync("Cash drawer", "The drawer should be open.").ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            await ShowInfoAsync("Cash drawer error", ex.Message).ConfigureAwait(true);
+            await ShowInfoAsync("Cash drawer", PosUserMessage.FromException(ex, PosUserMessage.CouldNot("open the drawer"))).ConfigureAwait(true);
         }
     }
 

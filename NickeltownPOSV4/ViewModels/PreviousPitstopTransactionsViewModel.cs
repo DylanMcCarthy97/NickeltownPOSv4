@@ -63,7 +63,7 @@ public sealed class PreviousPitstopTransactionsViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("those sales"));
         }
     }
 }

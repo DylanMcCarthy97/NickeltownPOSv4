@@ -1306,7 +1306,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         catch (Exception ex)
         {
             _squareReconciliationResult = SquarePaymentReconciliationResult.Empty(ex.Message);
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, "We couldn't check Square totals. Try Refresh.");
         }
         finally
         {
@@ -1400,7 +1400,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("Pitstop totals"));
         }
         finally
         {
@@ -1542,7 +1542,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         catch (Exception ex)
         {
             _closeState.LastFailure = ex.Message;
-            StatusMessage = $"Close failed: {ex.Message}. You can tap Close again to retry.";
+            StatusMessage = PosUserMessage.FromException(ex, "We couldn't close Pitstop. Tap Close to try again.");
         }
         finally
         {
@@ -1593,7 +1593,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         catch (Exception ex)
         {
             _closeState.LastFailure = ex.Message;
-            StatusMessage = $"Could not save the report: {ex.Message}. Tap Close to retry.";
+            StatusMessage = PosUserMessage.FromException(ex, "We couldn't save the report. Tap Close to try again.");
             try
             {
                 await _audit.LogAsync(
@@ -1909,7 +1909,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Archive failed: {ex.Message}. Tap Close to retry — sales have not been double-counted.";
+            StatusMessage = PosUserMessage.FromException(ex, "We couldn't archive Pitstop. Tap Close to try again — sales were not counted twice.");
             try
             {
                 await _audit.LogAsync(
@@ -2077,7 +2077,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("stock"));
             return;
         }
 
@@ -2227,7 +2227,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the test report"));
         }
         finally
         {
@@ -2258,7 +2258,7 @@ public sealed class PitstopEndOfDayReportViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("merch and raffle lines"));
         }
         finally
         {

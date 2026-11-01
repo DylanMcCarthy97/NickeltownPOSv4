@@ -19,7 +19,7 @@ public sealed class SerialCashDrawerService : ISerialCashDrawerService
         if (string.IsNullOrEmpty(portName))
         {
             throw new InvalidOperationException(
-                "Cash drawer COM port is not configured. Open Settings → COM port config first.");
+                "The cash drawer is not set up. Open Admin → Setup → Cash drawer.");
         }
 
         try
@@ -40,12 +40,12 @@ public sealed class SerialCashDrawerService : ISerialCashDrawerService
         catch (UnauthorizedAccessException)
         {
             throw new InvalidOperationException(
-                $"Access denied to {portName}. Another application may have the port open.");
+                "Something else is using the cash drawer. Close other till programs and try again.");
         }
         catch (IOException)
         {
             throw new InvalidOperationException(
-                $"Cash drawer port '{portName}' is not available. Check the cable and Settings → COM port config.");
+                "The cash drawer is not connected. Check the cable, then open Admin → Setup → Cash drawer.");
         }
     }
 }

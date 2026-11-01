@@ -44,11 +44,11 @@
                         Glyph="&#xE8A5;" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Previous Pitstops" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Old Pitstops" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Archived Pitstop events (sales kept; stock not restored). Admin only." />
+                        Text="Past Pitstop days. Sales stay recorded; stock is not put back." />
                 </StackPanel>
                 <Button
                     Grid.Column="2"
@@ -170,7 +170,7 @@
             Grid.Row="4"
             HorizontalAlignment="Left"
             Command="{Binding BackCommand}"
-            Content="Back"
+            Content="Back to Admin"
             Style="{StaticResource SettingsSecondaryButtonStyle}" />
     </Grid>
 </Page>

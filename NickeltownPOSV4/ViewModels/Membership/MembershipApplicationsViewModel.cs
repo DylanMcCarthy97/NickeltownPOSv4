@@ -72,7 +72,7 @@ public sealed class MembershipApplicationsViewModel : MembershipSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("applications")));
         }
         finally
         {
@@ -127,7 +127,7 @@ public sealed class MembershipApplicationsViewModel : MembershipSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Delete failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("delete that application")));
         }
         finally
         {

@@ -58,11 +58,11 @@
                         Glyph="&#xE896;" />
                 </Border>
                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Legacy data import" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Import old data" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Import Nickeltown v2 JSON into SQLite: pick a folder, validate, backup originals, then import."
+                        Text="Bring in data from the old POS. Pick the folder, check it, then import."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Grid>
@@ -222,7 +222,7 @@
                             Content="6. Import"
                             Style="{StaticResource TabsHeaderActionButtonStyle}"
                             Command="{Binding ImportCommand}"
-                            ToolTipService.ToolTip="Writes to local SQLite. Duplicate file imports are skipped when fingerprints match." />
+                            ToolTipService.ToolTip="Saves into this till. Files already imported are skipped." />
                         <Button
                             Margin="0,6,0,0"
                             MinHeight="42"
@@ -698,7 +698,7 @@
                             FontSize="16"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource PosTextPrimaryBrush}"
-                            Text="SQLite verification"
+                            Text="What landed in the till"
                             Visibility="{Binding ImportVerification, Converter={StaticResource NullToVis}, Mode=OneWay}" />
                         <TextBlock
                             Margin="0,4,0,0"
@@ -824,7 +824,7 @@
                             Margin="0,12,0,0"
                             FontSize="14"
                             FontWeight="SemiBold"
-                            Text="Sample tabs (SQLite, up to 5)"
+                            Text="Sample tabs (up to 5)"
                             Visibility="{Binding ImportVerification, Converter={StaticResource NullToVis}, Mode=OneWay}" />
                         <ItemsControl
                             Margin="0,6,0,0"
@@ -869,7 +869,7 @@
                             Margin="0,12,0,0"
                             FontSize="14"
                             FontWeight="SemiBold"
-                            Text="Sample items (SQLite, up to 5)"
+                            Text="Sample items (up to 5)"
                             Visibility="{Binding ImportVerification, Converter={StaticResource NullToVis}, Mode=OneWay}" />
                         <ItemsControl
                             Margin="0,6,0,0"

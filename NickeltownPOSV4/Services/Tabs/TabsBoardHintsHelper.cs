@@ -6,15 +6,15 @@ namespace NickeltownPOSV4.Services.Tabs;
 
 internal static class TabsBoardHintsHelper
 {
-    public const string SqliteErrorMessage = "Could not read tabs from SQLite. Check the database and try again.";
+    public const string SqliteErrorMessage = "We couldn't load the tabs. Try again.";
 
     public static string BuildLiveTabsStatusHint(IReadOnlyList<TabCardModel> openTabs)
     {
         var n = openTabs.Count;
         var g = openTabs.Count(t => t.IsGuest);
         var prefix = g > 0
-            ? $"Live data: {n} open tab(s) from SQLite (guest tabs open under Guests)."
-            : $"Live data: {n} open tab(s) from SQLite.";
+            ? $"{n} open tab(s). Guest tabs are under Guests."
+            : $"{n} open tab(s).";
         if (n == 0)
         {
             return prefix;

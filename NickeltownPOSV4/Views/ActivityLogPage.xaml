@@ -48,7 +48,7 @@
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Who undid a purchase, changed a balance, closed a tab, or edited stock. Tabs themselves stay the same."
+                        Text="Who undid a sale, changed a balance, closed a tab, or changed stock."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
                 <Button
@@ -149,7 +149,7 @@
             Grid.Row="4"
             HorizontalAlignment="Left"
             Command="{Binding BackCommand}"
-            Content="Back"
+            Content="Back to Admin"
             Style="{StaticResource SettingsSecondaryButtonStyle}" />
     </Grid>
 </Page>

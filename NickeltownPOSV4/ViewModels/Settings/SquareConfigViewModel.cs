@@ -195,7 +195,7 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("card reader settings")));
         }
         finally
         {
@@ -223,7 +223,7 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Save failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("card reader settings")));
         }
         finally
         {
@@ -306,7 +306,7 @@ public sealed class SquareConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Import failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("import those settings")));
         }
         finally
         {

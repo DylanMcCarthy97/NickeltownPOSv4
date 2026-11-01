@@ -6,7 +6,7 @@ using NickeltownPOSV4.Views;
 
 namespace NickeltownPOSV4.ViewModels.Settings;
 
-/// <summary>Shared back-to-settings command for all settings sub-page view models.</summary>
+/// <summary>Shared back command for admin/settings sub-pages. Prefers the navigation stack, then Admin.</summary>
 public abstract class SettingsSubViewModelBase : ObservableViewModel
 {
     private readonly INavigationService _navigation;
@@ -39,7 +39,12 @@ public abstract class SettingsSubViewModelBase : ObservableViewModel
 
     private void BackToSettings()
     {
-        _navigation.Navigate(typeof(SettingsPage));
+        if (_navigation.TryGoBack())
+        {
+            return;
+        }
+
+        _navigation.Navigate(typeof(AdminHomePage));
     }
 
     /// <summary>Helper for sub-classes that need to navigate elsewhere from a tile/button.</summary>

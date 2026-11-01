@@ -38,11 +38,11 @@
                         Glyph="&#xE839;" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="COM port config" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Cash drawer" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Serial port and baud rate used by the cash drawer kick service (ESC p 0 25 250 pulse)."
+                        Text="Pick the port that opens the cash drawer. If the drawer does not open, try the next port."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Grid>
@@ -74,7 +74,7 @@
                     FontSize="13"
                     FontWeight="SemiBold"
                     Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="COM port" />
+                    Text="Drawer port" />
                 <ComboBox
                     Grid.Row="0"
                     Grid.Column="1"
@@ -97,7 +97,7 @@
                     FontSize="13"
                     FontWeight="SemiBold"
                     Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="Baud rate" />
+                    Text="Port speed" />
                 <ComboBox
                     Grid.Row="1"
                     Grid.Column="1"
@@ -143,7 +143,7 @@
             Margin="0,12,0,0"
             HorizontalAlignment="Left"
             Command="{Binding BackToSettingsCommand}"
-            Content="Back to settings"
+            Content="Back to Admin"
             Style="{StaticResource TabsHeaderActionButtonStyle}" />
     </Grid>
 </Page>

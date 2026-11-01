@@ -88,14 +88,14 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
         if (string.IsNullOrWhiteSpace(cfg.AccessToken)
             || string.IsNullOrWhiteSpace(cfg.DeviceId))
         {
-            return SquarePresentResult.Declined("Square is not configured (access token or device id missing).");
+            return SquarePresentResult.Declined("The card reader is not set up. Open Admin → Setup → Card reader.");
         }
 
         var rounded = decimal.Round(paymentRequest.TotalAmount, 2, MidpointRounding.AwayFromZero);
         var cents = (long)(rounded * 100m);
         if (cents <= 0 || cents > 99_999_999)
         {
-            return SquarePresentResult.Declined("Invalid amount for Square Terminal.");
+            return SquarePresentResult.Declined("That card amount isn't allowed. Check the total and try again.");
         }
 
         var isSandbox = string.Equals(cfg.Environment?.Trim(), "sandbox", StringComparison.OrdinalIgnoreCase);
@@ -159,23 +159,22 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
         }
         catch (SquareApiException ex)
         {
-            return SquarePresentResult.Uncertain($"Square API response could not confirm checkout creation: {ex.Message}", idempotencyKey: checkoutIdempotency);
+            return SquarePresentResult.Uncertain(PosUserMessage.CardReader, idempotencyKey: checkoutIdempotency);
         }
         catch (Exception ex)
         {
-            return SquarePresentResult.Uncertain($"Square request status is unknown: {ex.Message}", idempotencyKey: checkoutIdempotency);
+            return SquarePresentResult.Uncertain("We couldn't tell if the card reader started. Check Fix payments before charging again.", idempotencyKey: checkoutIdempotency);
         }
 
         if (createResp.Errors != null && createResp.Errors.Any())
         {
-            var msg = string.Join("; ", createResp.Errors.Select(e => $"{e.Code}: {e.Detail}"));
-            return SquarePresentResult.Declined(msg);
+            return SquarePresentResult.Declined(PosUserMessage.CardReader);
         }
 
         var checkoutId = createResp.Checkout?.Id;
         if (string.IsNullOrWhiteSpace(checkoutId))
         {
-            return SquarePresentResult.Uncertain("Square did not return a checkout id.", idempotencyKey: checkoutIdempotency);
+            return SquarePresentResult.Uncertain("The card reader didn't start. Try again or use another payment.", idempotencyKey: checkoutIdempotency);
         }
 
         try
@@ -204,8 +203,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
 
                     if (check.Errors != null && check.Errors.Any())
                     {
-                        var pollMsg = string.Join("; ", check.Errors.Select(e => $"{e.Code}: {e.Detail}"));
-                        return SquarePresentResult.Uncertain(pollMsg, checkoutId, checkoutIdempotency);
+                        return SquarePresentResult.Uncertain(PosUserMessage.CardReader, checkoutId, checkoutIdempotency);
                     }
 
                     var status = check.Checkout?.Status ?? string.Empty;
@@ -222,7 +220,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
 
                     if (string.Equals(status, "FAILED", StringComparison.OrdinalIgnoreCase))
                     {
-                        return SquarePresentResult.Declined("Square Terminal reported payment failed.");
+                        return SquarePresentResult.Declined("The card was declined or didn't finish.");
                     }
                 }
                 catch (SquareApiException)
@@ -240,7 +238,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
         }
         catch (Exception ex)
         {
-            return SquarePresentResult.Uncertain($"Square checkout status could not be confirmed: {ex.Message}", checkoutId, checkoutIdempotency);
+            return SquarePresentResult.Uncertain("We couldn't confirm the card result. Check Fix payments before charging again.", checkoutId, checkoutIdempotency);
         }
     }
 
@@ -253,7 +251,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
     {
         if (string.IsNullOrWhiteSpace(cfg.LocationId))
         {
-            throw new InvalidOperationException("Square location id is not configured.");
+            throw new InvalidOperationException("The card reader shop is not set up. Open Admin → Setup → Card reader.");
         }
 
         var orderLineItems = new List<OrderLineItem>();
@@ -390,7 +388,7 @@ public sealed class SquareSdkTerminalSession : ISquareTerminalSession, ISquareCh
         {
             "COMPLETED" => SquarePresentResult.ApprovedSim(paymentId ?? checkoutId, checkoutId, idempotencyKey),
             "CANCELED" => SquarePresentResult.Declined("Payment cancelled on Square Terminal.", cancelled: true),
-            "FAILED" => SquarePresentResult.Declined("Square Terminal reported payment failed."),
+            "FAILED" => SquarePresentResult.Declined("The card was declined or didn't finish."),
             _ => SquarePresentResult.Uncertain("Square checkout has no confirmed final status.", checkoutId, idempotencyKey),
         };
 

@@ -84,7 +84,7 @@ public sealed class PreviousPitstopItemsViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("those items"));
         }
     }
 }

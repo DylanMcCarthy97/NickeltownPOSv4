@@ -514,7 +514,7 @@ public sealed class AddFundsPanelViewModel : ObservableViewModel
 
                 if (!squareResult.Ok)
                 {
-                    StatusMessage = "Card approved, but the top-up could not be saved. Retry to save it without charging again, or open Admin → Square Recovery.";
+                    StatusMessage = "Card went through, but we couldn't save the credit. Tap again to save it without charging again, or open Admin → Setup → Fix payments.";
                     return;
                 }
 

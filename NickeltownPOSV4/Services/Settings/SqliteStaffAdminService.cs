@@ -64,7 +64,7 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
                 if (FindActiveStaffByPin(pin4, excludeId: null) is long existingMatchId)
                 {
                     throw new InvalidOperationException(
-                        $"That PIN is already in use by another active user (ID {existingMatchId}). Pick a different 4-digit PIN.");
+                        "That PIN is already in use. Pick a different 4-digit PIN.");
                 }
 
                 var (hash, salt) = PosBarPinSecurity.CreateHash(pin4);
@@ -159,7 +159,7 @@ public sealed class SqliteStaffAdminService : IStaffAdminService
         if (FindActiveStaffByPin(newPin4, excludeId: id) is long collidingId)
         {
             throw new InvalidOperationException(
-                $"That PIN is already in use by another active user (ID {collidingId}). Pick a different 4-digit PIN.");
+                "That PIN is already in use. Pick a different 4-digit PIN.");
         }
 
         var (hash, salt) = PosBarPinSecurity.CreateHash(newPin4);

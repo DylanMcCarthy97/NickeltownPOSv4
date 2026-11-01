@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Dapper;
 using DateTimeStyles = System.Globalization.DateTimeStyles;
 using NickeltownPOSV4.Models.Pitstop;
+using NickeltownPOSV4.Services;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -230,7 +231,7 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
                 if (row is null)
                 {
                     tx.Rollback();
-                    return PitstopSaleCommitResult.Fail($"Item id {line.ItemId} is missing or inactive.");
+                    return PitstopSaleCommitResult.Fail("That product isn't available anymore. Refresh the list and try again.");
                 }
 
                 var skipStockForSale = Services.Stock.StockSaleDeductionHelper.SkipsSoldItemStockDecrement(
@@ -396,7 +397,7 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
         }
         catch (Exception ex)
         {
-            return PitstopSaleCommitResult.Fail(ex.Message);
+            return PitstopSaleCommitResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the sale")));
         }
 
         return PitstopSaleCommitResult.Success(savedSalePk, savedSaleGuid);
@@ -792,7 +793,7 @@ public sealed class SqlitePitstopRetailSaleRepository : IPitstopRetailSaleReposi
         }
         catch (Exception ex)
         {
-            return Task.FromResult(PitstopVoidSaleResult.Fail(ex.Message));
+            return Task.FromResult(PitstopVoidSaleResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the sale"))));
         }
     }
 

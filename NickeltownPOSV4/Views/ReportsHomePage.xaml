@@ -26,7 +26,7 @@
         <controls:PosPageHero
             Grid.Row="0"
             IconGlyph="&#xE9F9;"
-            Subtitle="Monthly bar tabs PDFs, stock snapshots, complimentary member items, and raw CSV exports. Files save under Documents\POS Reports and open automatically."
+            Subtitle="Print or email monthly tabs, stock, and free-item reports."
             Title="Reports" />
 
         <Grid Grid.Row="1" RowSpacing="10">

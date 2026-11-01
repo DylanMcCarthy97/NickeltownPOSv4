@@ -228,7 +228,7 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ComplimentaryRecordResult.Fail(ex.Message));
+            return Task.FromResult(ComplimentaryRecordResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("record that free item"))));
         }
     }
 
@@ -355,7 +355,7 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ComplimentaryReverseResult.Fail(ex.Message));
+            return Task.FromResult(ComplimentaryReverseResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("record that free item"))));
         }
     }
 
@@ -587,7 +587,7 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ComplimentaryConfigResult.Fail(ex.Message));
+            return Task.FromResult(ComplimentaryConfigResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("record that free item"))));
         }
     }
 
@@ -626,7 +626,7 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ComplimentaryConfigResult.Fail(ex.Message));
+            return Task.FromResult(ComplimentaryConfigResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("record that free item"))));
         }
     }
 
@@ -680,7 +680,7 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ComplimentaryConfigResult.Fail(ex.Message));
+            return Task.FromResult(ComplimentaryConfigResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("record that free item"))));
         }
     }
 
@@ -736,7 +736,7 @@ public sealed class SqliteComplimentaryItemRepository : IComplimentaryItemReposi
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ComplimentaryConfigResult.Fail(ex.Message));
+            return Task.FromResult(ComplimentaryConfigResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("record that free item"))));
         }
     }
 

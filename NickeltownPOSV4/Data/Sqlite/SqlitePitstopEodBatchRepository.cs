@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using NickeltownPOSV4.Models.Pitstop;
+using NickeltownPOSV4.Services;
 
 namespace NickeltownPOSV4.Data.Sqlite;
 
@@ -246,7 +247,7 @@ public sealed class SqlitePitstopEodBatchRepository : IPitstopEodBatchRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(PitstopEodArchiveResult.Fail(ex.Message));
+            return Task.FromResult(PitstopEodArchiveResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("archive Pitstop"))));
         }
     }
 

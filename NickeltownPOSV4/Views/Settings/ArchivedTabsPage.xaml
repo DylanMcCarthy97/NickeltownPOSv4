@@ -49,7 +49,7 @@
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Closed and archived tabs across both member and guest workflows." />
+                        Text="Closed tabs you may still need to look up or restore." />
                 </StackPanel>
                 <Button
                     Grid.Column="2"
@@ -174,7 +174,7 @@
             Grid.Row="4"
             HorizontalAlignment="Left"
             Command="{Binding BackToSettingsCommand}"
-            Content="Back to settings"
+            Content="Back to Admin"
             Style="{StaticResource SettingsSecondaryButtonStyle}" />
     </Grid>
 </Page>

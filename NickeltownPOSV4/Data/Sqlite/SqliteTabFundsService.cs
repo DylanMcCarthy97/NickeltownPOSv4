@@ -188,7 +188,7 @@ public sealed class SqliteTabFundsService : ITabFundsService
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabFundsCommitResult.Fail(ex.Message));
+            return Task.FromResult(TabFundsCommitResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save that payment"))));
         }
     }
 
@@ -215,7 +215,7 @@ public sealed class SqliteTabFundsService : ITabFundsService
 
         if (string.IsNullOrWhiteSpace(square.IdempotencyKey))
         {
-            return TabFundsCommitResult.Fail("Missing idempotency key.");
+            return TabFundsCommitResult.Fail("Something interrupted the sale. Try that payment once more.");
         }
 
         var idempotencyKey = square.IdempotencyKey.Trim();
@@ -396,7 +396,7 @@ public sealed class SqliteTabFundsService : ITabFundsService
         }
         catch (Exception ex)
         {
-            return TabFundsCommitResult.Fail(ex.Message);
+            return TabFundsCommitResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save that payment")));
         }
 
         return committedFundBatchId is not null
@@ -558,7 +558,7 @@ public sealed class SqliteTabFundsService : ITabFundsService
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabFundsCommitResult.Fail(ex.Message));
+            return Task.FromResult(TabFundsCommitResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save that payment"))));
         }
     }
 

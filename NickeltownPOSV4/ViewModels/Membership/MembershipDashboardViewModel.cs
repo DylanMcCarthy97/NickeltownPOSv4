@@ -74,7 +74,7 @@ public sealed class MembershipDashboardViewModel : MembershipSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the dashboard")));
         }
         finally
         {

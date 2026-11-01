@@ -160,7 +160,7 @@ public sealed class FreeMemberItemsReportViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the free items report"));
         }
         finally
         {

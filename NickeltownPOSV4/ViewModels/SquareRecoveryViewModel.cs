@@ -106,7 +106,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
                     entityId: "SquareRecovery",
                     reason: "Staff attempted to open Square Recovery.")
                 .ConfigureAwait(true);
-            StatusMessage = "Admin/Treasurer access required.";
+            StatusMessage = "A manager needs to open this screen.";
             _navigation.TryGoBack();
             return;
         }
@@ -124,16 +124,16 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         try
         {
             IsBusy = true;
-            StatusMessage = "Loading unresolved Square payments...";
+            StatusMessage = "Loading unfinished payments...";
             var rows = await _recovery.GetOrphanAttemptsAsync().ConfigureAwait(true);
             Rows.Replace(rows.Select(r => new SquareRecoveryRowVm(r, this)));
             StatusMessage = Rows.TotalCount == 0
-                ? "No unresolved Square payments."
-                : $"{Rows.TotalCount} unresolved Square payment(s).";
+                ? "Nothing to fix."
+                : $"{Rows.TotalCount} payment(s) to check.";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Load failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("unfinished payments"));
         }
         finally
         {
@@ -153,10 +153,10 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
                 reason: result.Ok ? "Checked current checkout status in Square." : result.ErrorMessage, success: result.Ok).ConfigureAwait(true);
             await LoadAsync().ConfigureAwait(true);
             StatusMessage = result.Ok
-                ? "Square status checked. Approved top-ups can be saved below; confirmed cancellations and failures leave recovery."
-                : result.ErrorMessage ?? "Square status could not be checked.";
+                ? "Checked. If Square approved it, you can save the sale or tab credit below."
+                : PosUserMessage.OrFallback(result.ErrorMessage, "We couldn't check this card payment.");
         }
-        catch (Exception ex) { StatusMessage = "Square status check failed: " + ex.Message; }
+        catch (Exception ex) { StatusMessage = PosUserMessage.FromException(ex, "We couldn't check this card payment. Try again."); }
         finally { IsBusy = false; }
     }
 
@@ -169,9 +169,11 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
             if (!await EnsureManagerPinAsync("Save approved Square tab top-up").ConfigureAwait(true)) return;
             var result = await _squareStatus.SaveTabTopUpAsync(row.AttemptId).ConfigureAwait(true);
             await LoadAsync().ConfigureAwait(true);
-            StatusMessage = result.Ok ? "Approved top-up saved. The card was not charged again." : result.ErrorMessage ?? "Top-up could not be saved.";
+            StatusMessage = result.Ok
+                ? "Tab credit saved. The card was not charged again."
+                : PosUserMessage.OrFallback(result.ErrorMessage, PosUserMessage.CouldNotSave("the tab credit"));
         }
-        catch (Exception ex) { StatusMessage = "Top-up could not be saved: " + ex.Message; }
+        catch (Exception ex) { StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("the tab credit")); }
         finally { IsBusy = false; _moneyLock.End(); }
     }
 
@@ -187,7 +189,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         {
             if (!row.HasRecoverablePayload)
             {
-                StatusMessage = "This payment has no automatic recovery payload — link manually or mark reconciled.";
+                StatusMessage = "This one needs to be linked by hand, or marked done.";
                 return;
             }
 
@@ -199,7 +201,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         var result = await _paymentRecovery.RecoverPitstopSaleAsync(row.AttemptId).ConfigureAwait(true);
         if (!result.Ok)
         {
-            StatusMessage = result.ErrorMessage ?? "Recovery failed.";
+            StatusMessage = PosUserMessage.OrFallback(result.ErrorMessage, "We couldn't save that sale.");
             return;
         }
 
@@ -213,7 +215,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
             .ConfigureAwait(true);
 
         await LoadAsync().ConfigureAwait(true);
-        StatusMessage = $"Recovered Pitstop sale for attempt #{row.AttemptId}.";
+        StatusMessage = "Pitstop sale saved.";
         }
         finally
         {
@@ -232,12 +234,12 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         var result = await _paymentRecovery.IgnoreAsync(row.AttemptId, "Ignored from Square Recovery").ConfigureAwait(true);
         if (!result.Ok)
         {
-            StatusMessage = result.ErrorMessage ?? "Could not ignore.";
+            StatusMessage = PosUserMessage.OrFallback(result.ErrorMessage, "We couldn't skip this one.");
             return;
         }
 
         await LoadAsync().ConfigureAwait(true);
-        StatusMessage = "Recovery ignored.";
+        StatusMessage = "Skipped.";
     }
 
     internal async Task MarkManuallyReconciledAsync(SquareRecoveryRowVm row)
@@ -259,7 +261,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         var result = await _recovery.MarkManuallyReconciledAsync(row.AttemptId, note).ConfigureAwait(true);
         if (!result.Ok)
         {
-            StatusMessage = result.ErrorMessage ?? "Could not mark reconciled.";
+            StatusMessage = PosUserMessage.OrFallback(result.ErrorMessage, "We couldn't mark this done.");
             return;
         }
 
@@ -274,7 +276,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
             .ConfigureAwait(true);
 
         await LoadAsync().ConfigureAwait(true);
-        StatusMessage = "Square payment marked as manually reconciled.";
+        StatusMessage = "Marked done.";
     }
 
     internal async Task AddNoteAsync(SquareRecoveryRowVm row)
@@ -296,7 +298,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         var result = await _recovery.AddNoteAsync(row.AttemptId, note).ConfigureAwait(true);
         if (!result.Ok)
         {
-            StatusMessage = result.ErrorMessage ?? "Could not add note.";
+            StatusMessage = PosUserMessage.OrFallback(result.ErrorMessage, PosUserMessage.CouldNotSave("the note"));
             return;
         }
 
@@ -325,7 +327,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         if (string.IsNullOrWhiteSpace(saleIdText)
             || !long.TryParse(saleIdText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var saleId))
         {
-            StatusMessage = "Enter a numeric Pitstop sale Id.";
+            StatusMessage = "Enter the Pitstop sale number.";
             return;
         }
 
@@ -337,7 +339,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         var result = await _recovery.LinkPitstopSaleAsync(row.AttemptId, saleId, note).ConfigureAwait(true);
         if (!result.Ok)
         {
-            StatusMessage = result.ErrorMessage ?? "Could not link the Pitstop sale.";
+            StatusMessage = PosUserMessage.OrFallback(result.ErrorMessage, "We couldn't link that Pitstop sale.");
             return;
         }
 
@@ -352,7 +354,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
             .ConfigureAwait(true);
 
         await LoadAsync().ConfigureAwait(true);
-        StatusMessage = $"Linked attempt #{row.AttemptId} to Pitstop sale {saleId}.";
+        StatusMessage = "Linked to that Pitstop sale.";
     }
 
     internal async Task LinkTabAsync(SquareRecoveryRowVm row)
@@ -368,7 +370,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         if (string.IsNullOrWhiteSpace(paymentIdText)
             || !long.TryParse(paymentIdText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var paymentId))
         {
-            StatusMessage = "Enter a numeric Payments.Id.";
+            StatusMessage = "Enter the tab payment number.";
             return;
         }
 
@@ -380,7 +382,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
         var result = await _recovery.LinkTabPaymentAsync(row.AttemptId, paymentId, note).ConfigureAwait(true);
         if (!result.Ok)
         {
-            StatusMessage = result.ErrorMessage ?? "Could not link the tab payment.";
+            StatusMessage = PosUserMessage.OrFallback(result.ErrorMessage, "We couldn't link that tab payment.");
             return;
         }
 
@@ -395,7 +397,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
             .ConfigureAwait(true);
 
         await LoadAsync().ConfigureAwait(true);
-        StatusMessage = $"Linked attempt #{row.AttemptId} to payment {paymentId}.";
+        StatusMessage = "Linked to that tab payment.";
     }
 
     private async Task<bool> EnsureManagerPinAsync(string actionLabel)
@@ -443,7 +445,7 @@ public sealed class SquareRecoveryViewModel : ObservableViewModel
                     reason: $"Non-manager PIN used for {actionLabel}",
                     success: false)
                 .ConfigureAwait(true);
-            StatusMessage = "PIN belongs to a staff account, not Admin/Treasurer.";
+            StatusMessage = "That PIN is not a manager PIN.";
             return false;
         }
 

@@ -32,7 +32,7 @@ public sealed class MigrationWizardViewModel : ObservableViewModel
     private ImportVerificationSnapshot? _importVerification;
     private MigrationWizardStep _step = MigrationWizardStep.SelectV2Folder;
     private bool _isBusy;
-    private string _statusMessage = "Choose the folder that contains exported Nickeltown JSON to begin.";
+    private string _statusMessage = "Choose the folder from the old POS to begin.";
 
     public MigrationWizardViewModel(
         IJsonImportService jsonImport,
@@ -194,7 +194,7 @@ public sealed class MigrationWizardViewModel : ObservableViewModel
         try
         {
             IsBusy = true;
-            StatusMessage = "Detecting legacy JSON files…";
+            StatusMessage = "Looking for old POS files…";
             _detection = await _jsonImport.DetectAsync(SelectedFolder).ConfigureAwait(true);
             _previewDiagnostics = Array.Empty<MigrationFilePreviewDiagnostic>();
             OnPropertyChanged(nameof(Detection));
@@ -203,8 +203,8 @@ public sealed class MigrationWizardViewModel : ObservableViewModel
             OnPropertyChanged(nameof(DetectionSummaryText));
             Step = MigrationWizardStep.PreviewCounts;
             StatusMessage = _detection.HasAnyFiles
-                ? $"Detected {_detection.Files.Count} legacy JSON file(s)."
-                : "No supported legacy JSON files were found.";
+                ? $"Found {_detection.Files.Count} old POS file(s)."
+                : "No old POS files were found in that folder.";
             RefreshCommandStates();
         }
         finally
@@ -248,7 +248,7 @@ public sealed class MigrationWizardViewModel : ObservableViewModel
         try
         {
             IsBusy = true;
-            StatusMessage = "Validating JSON…";
+            StatusMessage = "Checking the files…";
             _validation = await _jsonImport.ValidateAsync(_detection).ConfigureAwait(true);
             OnPropertyChanged(nameof(Validation));
             OnPropertyChanged(nameof(ValidationIssues));
@@ -302,7 +302,7 @@ public sealed class MigrationWizardViewModel : ObservableViewModel
         try
         {
             IsBusy = true;
-            StatusMessage = "Importing legacy data into SQLite…";
+            StatusMessage = "Importing the old POS data…";
 
             var run = new MigrationRunContext
             {
@@ -320,7 +320,7 @@ public sealed class MigrationWizardViewModel : ObservableViewModel
             BuildSummaryCommand.NotifyCanExecuteChanged();
 
             Step = MigrationWizardStep.Summary;
-            StatusMessage = "Import finished. Review SQLite verification, summary, and migration log path.";
+            StatusMessage = "Import finished. Check the summary below.";
         }
         finally
         {

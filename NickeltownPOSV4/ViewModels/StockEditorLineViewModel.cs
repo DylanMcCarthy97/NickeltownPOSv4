@@ -186,7 +186,7 @@ public sealed class StockEditorLineViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            LineStatus = ex.Message;
+            LineStatus = PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("this product"));
         }
     }
 }
@@ -300,12 +300,12 @@ public sealed class StockEditorPanelViewModel : ObservableViewModel
 
             if (_masterLines.Count == 0)
             {
-                PanelStatus = "No active items in SQLite.";
+                PanelStatus = "No products to show.";
             }
         }
         catch (Exception ex)
         {
-            PanelStatus = $"Could not load stock: {ex.Message}";
+            PanelStatus = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("stock"));
         }
     }
 

@@ -1045,7 +1045,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Load failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("stock"));
             return false;
         }
         finally
@@ -1164,7 +1164,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change"));
         }
         finally
         {
@@ -1595,7 +1595,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change"));
             _newItemDraftId = null;
             return false;
         }
@@ -1628,7 +1628,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             }
             catch (Exception ex)
             {
-                StatusMessage = ex.Message;
+                StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change"));
             }
         }
     }
@@ -1965,7 +1965,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change"));
         }
         finally
         {
@@ -2071,7 +2071,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change"));
         }
     }
 
@@ -2137,7 +2137,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
             PulseCatalogRefresh();
             return true;
         }
-        catch (Exception ex) { StatusMessage = ex.Message; return false; }
+        catch (Exception ex) { StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change")); return false; }
         finally { IsBusy = false; }
     }
 
@@ -2177,7 +2177,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change"));
             return false;
         }
         finally
@@ -2207,7 +2207,7 @@ public sealed partial class StockManagementPageViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = ex.Message;
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("finish that stock change"));
             return false;
         }
         finally

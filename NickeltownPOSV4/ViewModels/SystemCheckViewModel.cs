@@ -130,7 +130,7 @@ public sealed class SystemCheckViewModel : ObservableViewModel
     {
         if (!_session.CanAccessTreasurer)
         {
-            StatusMessage = "Admin/Treasurer access required.";
+            StatusMessage = "A manager needs to open this screen.";
             _navigation.TryGoBack();
             return;
         }
@@ -154,7 +154,7 @@ public sealed class SystemCheckViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"System Check failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, "We couldn't check the till. Try Refresh.");
         }
         finally
         {
@@ -171,10 +171,10 @@ public sealed class SystemCheckViewModel : ObservableViewModel
         var dbExists = File.Exists(dbPath);
         var dbSizeMb = dbExists ? new FileInfo(dbPath).Length / 1024.0 / 1024.0 : 0;
         Rows.Add(new SystemCheckRowVm(
-            "Database file",
-            dbExists ? $"{dbPath} ({dbSizeMb:F2} MB)" : $"Missing: {dbPath}",
+            "Till data",
+            dbExists ? $"Found ({dbSizeMb:F2} MB)" : "Missing",
             dbExists ? SystemCheckSeverity.Ok : SystemCheckSeverity.Error,
-            dbExists ? "SQLite database is present." : "POS will not run without the database file."));
+            dbExists ? "The till data file is there." : "The till cannot run without its data file. Tell a manager."));
 
         try
         {
@@ -185,24 +185,24 @@ public sealed class SystemCheckViewModel : ObservableViewModel
                 "SELECT COUNT(1) FROM Items WHERE COALESCE(IsActive,1)!=0");
 
             Rows.Add(new SystemCheckRowVm(
-                "Active staff",
+                "Staff who can sign in",
                 staffCount.ToString(Cult),
                 staffCount > 0 ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
-                staffCount > 0 ? null : "No active Bartender rows — sign-in will fail."));
+                staffCount > 0 ? null : "Nobody can sign in. Add a staff member in Admin → Staff."));
 
             Rows.Add(new SystemCheckRowVm(
-                "Stock items",
+                "Products",
                 itemCount.ToString(Cult),
                 itemCount > 0 ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
-                itemCount > 0 ? null : "No active Items configured."));
+                itemCount > 0 ? null : "No products are set up. Open Admin → Stock."));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Rows.Add(new SystemCheckRowVm(
-                "Database connection",
-                ex.Message,
+                "Till data",
+                "Cannot read",
                 SystemCheckSeverity.Error,
-                "Could not query Bartenders/Items."));
+                "We couldn't read staff or products. Restart the till and tell a manager if it keeps happening."));
         }
 
         // 2. Backups
@@ -213,10 +213,10 @@ public sealed class SystemCheckViewModel : ObservableViewModel
             var writable = TestFolderWritable(backupFolder);
 
             Rows.Add(new SystemCheckRowVm(
-                "Backup folder writable",
+                "Can save backups",
                 writable ? "Yes" : "No",
                 writable ? SystemCheckSeverity.Ok : SystemCheckSeverity.Error,
-                backupFolder));
+                writable ? "Backup folder is ready." : "Cannot write backups. Check the backup folder."));
 
             var latest = Directory.EnumerateFiles(backupFolder, "NickeltownPOSV4_Backup_*.zip")
                 .Select(p => new FileInfo(p))
@@ -229,7 +229,7 @@ public sealed class SystemCheckViewModel : ObservableViewModel
                     "Last backup",
                     "No backup found yet.",
                     SystemCheckSeverity.Warning,
-                    "Run Backup now from Admin or trigger a Pitstop archive."));
+                    "Make a backup from Admin, or after a Pitstop close."));
             }
             else
             {
@@ -244,58 +244,58 @@ public sealed class SystemCheckViewModel : ObservableViewModel
                         : "Backup is recent."));
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Rows.Add(new SystemCheckRowVm(
                 "Backup folder",
-                ex.Message,
+                "Cannot open",
                 SystemCheckSeverity.Error,
-                "Backup directory is not accessible."));
+                "We couldn't reach the backup folder."));
         }
 
         // 3. Square config file + SQLite settings
         var squareFileExists = File.Exists(_storagePaths.SquareConfigPath);
         Rows.Add(new SystemCheckRowVm(
-            "square_config.json (Config folder)",
-            squareFileExists ? _storagePaths.SquareConfigPath : "Not found",
+            "Saved card settings file",
+            squareFileExists ? "Found" : "Not found",
             squareFileExists ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
             squareFileExists
-                ? "Legacy JSON copy on disk (runtime config is also stored in SQLite)."
-                : "Optional file copy; Square settings may still be in the database."));
+                ? "A backup copy of card settings is on disk."
+                : "Optional file. Card settings may still be saved in the till."));
 
         try
         {
             var cfg = await _squareConfig.LoadAsync().ConfigureAwait(true);
             var env = string.IsNullOrWhiteSpace(cfg.Environment) ? "(unset)" : cfg.Environment;
             Rows.Add(new SystemCheckRowVm(
-                "Square environment",
+                "Card reader mode",
                 env,
                 string.Equals(env, "production", StringComparison.OrdinalIgnoreCase)
                     ? SystemCheckSeverity.Ok
                     : SystemCheckSeverity.Warning,
                 string.Equals(env, "sandbox", StringComparison.OrdinalIgnoreCase)
-                    ? "Sandbox keys in use — card payments are not real."
+                    ? "Test mode is on — card payments are not real."
                     : null));
 
             Rows.Add(new SystemCheckRowVm(
-                "Square Location Id",
-                string.IsNullOrWhiteSpace(cfg.LocationId) ? "(missing)" : MaskSecret(cfg.LocationId),
+                "Square shop",
+                string.IsNullOrWhiteSpace(cfg.LocationId) ? "Not set" : "Set",
                 string.IsNullOrWhiteSpace(cfg.LocationId) ? SystemCheckSeverity.Error : SystemCheckSeverity.Ok,
-                string.IsNullOrWhiteSpace(cfg.LocationId) ? "Card payments cannot work without a Location Id." : null));
+                string.IsNullOrWhiteSpace(cfg.LocationId) ? "Card payments need a Square shop. Open Admin → Setup → Card reader." : null));
 
             Rows.Add(new SystemCheckRowVm(
-                "Square Device Id",
-                string.IsNullOrWhiteSpace(cfg.DeviceId) ? "(missing)" : MaskSecret(cfg.DeviceId),
+                "Card reader",
+                string.IsNullOrWhiteSpace(cfg.DeviceId) ? "Not set" : "Set",
                 string.IsNullOrWhiteSpace(cfg.DeviceId) ? SystemCheckSeverity.Error : SystemCheckSeverity.Ok,
-                string.IsNullOrWhiteSpace(cfg.DeviceId) ? "Terminal card payments cannot start without a Device Id." : null));
+                string.IsNullOrWhiteSpace(cfg.DeviceId) ? "The card reader is not set up. Open Admin → Setup → Card reader." : null));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Rows.Add(new SystemCheckRowVm(
-                "Square config",
-                ex.Message,
+                "Card reader",
+                "Cannot read",
                 SystemCheckSeverity.Error,
-                "Could not read Square config."));
+                "We couldn't read card settings. Open Admin → Setup → Card reader."));
         }
 
         // 4. Pitstop status
@@ -303,39 +303,40 @@ public sealed class SystemCheckViewModel : ObservableViewModel
         {
             var active = await _pitstopBatches.GetActivePitstopSaleCountAsync().ConfigureAwait(true);
             Rows.Add(new SystemCheckRowVm(
-                "Active Pitstop-area sales",
+                "Open Pitstop sales",
                 active.ToString(Cult),
                 active == 0 ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
                 active == 0
-                    ? "No unarchived Pitstop-area sales — last event has been archived. Tab-area sales are tracked separately and never counted here."
-                    : "There are unarchived Pitstop-area sales. Run Pitstop EOD to archive. Tab-area sales are tracked separately and not included in this count."));
+                    ? "Last Pitstop day has been closed."
+                    : "There are sales from the current Pitstop day. Close Pitstop when you are done."));
 
             var nonPitstopRows = await _pitstopBatches.GetNonPitstopSaleModeCountAsync().ConfigureAwait(true);
             Rows.Add(new SystemCheckRowVm(
-                "Pitstop sales scope",
+                "Pitstop sales look right",
                 nonPitstopRows == 0
-                    ? "Pitstop-area only"
-                    : $"{nonPitstopRows.ToString(Cult)} non-Pitstop row(s) found",
+                    ? "Yes"
+                    : $"{nonPitstopRows.ToString(Cult)} odd row(s)",
                 nonPitstopRows == 0 ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
                 nonPitstopRows == 0
-                    ? "Verified: every tagged row in PitstopSales is from the Pitstop area (SaleMode='Pitstop'). Tab-area sales live in the Tabs/TabEntries/Payments tables and are not mixed in."
-                    : "Found rows in PitstopSales whose SaleMode is set to something other than 'Pitstop'. These are not counted as Pitstop sales, but please report this — Pitstop-area and Tab-area sales should never share the same table."));
+                    ? "Pitstop sales are only Pitstop sales."
+                    : "Some sales in Pitstop look like they belong somewhere else. Tell a manager."));
 
             var batches = await _pitstopBatches.ListBatchesAsync().ConfigureAwait(true);
             var lastBatch = batches.FirstOrDefault();
             Rows.Add(new SystemCheckRowVm(
-                "Last EOD archive",
+                "Last Pitstop close",
                 lastBatch is null
-                    ? "(never)"
+                    ? "Never"
                     : $"{lastBatch.ArchivedAt.LocalDateTime:yyyy-MM-dd HH:mm} — {lastBatch.OperatorName ?? "—"}",
                 lastBatch is null ? SystemCheckSeverity.Warning : SystemCheckSeverity.Ok));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Rows.Add(new SystemCheckRowVm(
-                "Pitstop status",
-                ex.Message,
-                SystemCheckSeverity.Error));
+                "Pitstop",
+                "Cannot read",
+                SystemCheckSeverity.Error,
+                "We couldn't check Pitstop. Try Refresh."));
         }
 
         // 5. Square recovery
@@ -343,19 +344,20 @@ public sealed class SystemCheckViewModel : ObservableViewModel
         {
             var unresolved = await _recovery.GetUnresolvedCountAsync().ConfigureAwait(true);
             Rows.Add(new SystemCheckRowVm(
-                "Unresolved Square payments",
+                "Card payments to fix",
                 unresolved.ToString(Cult),
                 unresolved == 0 ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
                 unresolved == 0
-                    ? "No orphan Square payments to reconcile."
-                    : "Open Square Recovery to link or reconcile these payments."));
+                    ? "No unfinished card payments."
+                    : "Open Admin → Setup → Fix payments. Don't charge those cards again until they are fixed."));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Rows.Add(new SystemCheckRowVm(
-                "Square recovery",
-                ex.Message,
-                SystemCheckSeverity.Error));
+                "Card payments to fix",
+                "Cannot read",
+                SystemCheckSeverity.Error,
+                "We couldn't check unfinished payments."));
         }
 
         // 6. App version
@@ -379,13 +381,13 @@ public sealed class SystemCheckViewModel : ObservableViewModel
             StatusMessage = "Creating backup...";
             var zipPath = await _backupService.CreateAutomaticBackupAsync("Manual System Check").ConfigureAwait(true);
             StatusMessage = string.IsNullOrEmpty(zipPath)
-                ? "Backup failed."
-                : $"Backup created: {zipPath}";
+                ? "Backup didn't finish. Try again."
+                : "Backup saved.";
             await LoadAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Backup failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, "Backup didn't finish. Try again.");
         }
         finally
         {
@@ -398,47 +400,47 @@ public sealed class SystemCheckViewModel : ObservableViewModel
         _storagePaths.EnsureDirectories();
 
         Rows.Add(new SystemCheckRowVm(
-            "Data root (Documents)",
-            _storagePaths.RootFolder,
+            "Till folder",
+            "Documents folder",
             SystemCheckSeverity.Ok,
-            "Permanent POS data lives here — MSIX updates do not touch this folder."));
+            "Till files stay here when the app is updated."));
 
         Rows.Add(new SystemCheckRowVm(
-            "Database path",
-            _storagePaths.DatabasePath,
+            "Till data file",
+            File.Exists(_storagePaths.DatabasePath) ? "Found" : "Not created yet",
             File.Exists(_storagePaths.DatabasePath) ? SystemCheckSeverity.Ok : SystemCheckSeverity.Warning,
-            File.Exists(_storagePaths.DatabasePath) ? "Database file found." : "Database will be created on first run."));
+            File.Exists(_storagePaths.DatabasePath) ? "The till data file is there." : "A new data file will be created the first time the till runs."));
 
-        AddFolderRow("Images folder", _storagePaths.ImagesFolder);
-        AddFolderRow("Config folder", _storagePaths.ConfigFolder);
+        AddFolderRow("Pictures folder", _storagePaths.ImagesFolder);
+        AddFolderRow("Settings folder", _storagePaths.ConfigFolder);
         AddFolderRow("Backup folder", _storagePaths.BackupsFolder);
         AddFolderRow("Reports folder", _storagePaths.ReportsFolder);
-        AddFolderRow("Imports folder", _storagePaths.ImportsFolder);
+        AddFolderRow("Import folder", _storagePaths.ImportsFolder);
 
         if (_storagePaths.IsMsixPackaged)
         {
             Rows.Add(new SystemCheckRowVm(
-                "MSIX packaged app",
-                "Yes — install folder is read-only",
+                "Installed app",
+                "Yes",
                 SystemCheckSeverity.Ok,
-                $"Package install dir: {AppContext.BaseDirectory}"));
+                "This till is running the installed app."));
 
             if (_storagePaths.HasWritableDataBesideExecutable())
             {
                 Rows.Add(new SystemCheckRowVm(
-                    "Data beside install folder",
-                    "Detected — move to Documents\\NickeltownPOS",
+                    "Old data next to the app",
+                    "Found",
                     SystemCheckSeverity.Warning,
-                    "Database or config files were found next to the MSIX app. They will not survive updates reliably."));
+                    "Some till files are next to the app and may be lost on update. Move them to Documents\\NickeltownPOS."));
             }
         }
         else
         {
             Rows.Add(new SystemCheckRowVm(
-                "MSIX packaged app",
-                "No (debug / unpackaged)",
+                "Installed app",
+                "No — test copy",
                 SystemCheckSeverity.Ok,
-                "Writable data still uses Documents\\NickeltownPOS for consistency."));
+                "This is a test copy. Live tills should use the installed app."));
         }
     }
 
@@ -447,9 +449,9 @@ public sealed class SystemCheckViewModel : ObservableViewModel
         var writable = TestFolderWritable(folder);
         Rows.Add(new SystemCheckRowVm(
             label,
-            folder,
+            writable ? "Ready" : "Cannot write",
             writable ? SystemCheckSeverity.Ok : SystemCheckSeverity.Error,
-            writable ? "Exists and is writable." : "Cannot write to this folder."));
+            writable ? "This folder is ready." : "Cannot write to this folder."));
     }
 
     private static bool TestFolderWritable(string folder)
@@ -467,18 +469,4 @@ public sealed class SystemCheckViewModel : ObservableViewModel
         }
     }
 
-    private static string MaskSecret(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return string.Empty;
-        }
-
-        if (value.Length <= 4)
-        {
-            return new string('•', value.Length);
-        }
-
-        return string.Concat(new string('•', value.Length - 4), value[^4..]);
-    }
 }

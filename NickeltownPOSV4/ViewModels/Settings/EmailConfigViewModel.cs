@@ -287,7 +287,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("email settings")));
         }
         finally
         {
@@ -309,7 +309,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Save failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("email settings")));
         }
         finally
         {
@@ -333,7 +333,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Test send failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("send the test email")));
         }
         finally
         {
@@ -354,7 +354,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Shopping-list test failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("send the shopping-list test")));
         }
         finally
         {
@@ -448,7 +448,7 @@ public sealed class EmailConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Import failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("import those email settings")));
         }
         finally
         {

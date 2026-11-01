@@ -280,7 +280,7 @@ public sealed class TabHistoryPanelViewModel : ObservableViewModel
 
             if (rows.Count == 0)
             {
-                Status = $"No lines in SQLite for this tab in “{RangeSummary}”.";
+                Status = $"No lines for this tab in “{RangeSummary}”.";
                 return;
             }
 
@@ -292,7 +292,7 @@ public sealed class TabHistoryPanelViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            Status = $"Could not load history: {ex.Message}";
+            Status = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("tab history"));
         }
     }
 
@@ -411,7 +411,7 @@ public sealed class TabHistoryPanelViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            Status = $"PDF export failed: {ex.Message}";
+            Status = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("export the PDF"));
         }
         finally
         {

@@ -117,7 +117,7 @@ public sealed class SquareConfigImportService : ISquareConfigImportService
         }
         catch (Exception ex)
         {
-            return new SquareImportResult(false, filePath, $"Import failed: {ex.Message}");
+            return new SquareImportResult(false, filePath, PosUserMessage.FromException(ex, PosUserMessage.CouldNot("import those card settings")));
         }
     }
 

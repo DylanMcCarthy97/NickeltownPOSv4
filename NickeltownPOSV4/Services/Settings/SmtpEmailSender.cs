@@ -42,12 +42,12 @@ public sealed class SmtpEmailSender : IEmailSender
 
         if (string.IsNullOrWhiteSpace(config.SmtpServer))
         {
-            throw new InvalidOperationException("SMTP server is not configured.");
+            throw new InvalidOperationException("Email is not set up. Open Admin → Setup → Email.");
         }
 
         if (string.IsNullOrWhiteSpace(config.SenderEmail) || string.IsNullOrWhiteSpace(config.SenderPassword))
         {
-            throw new InvalidOperationException("Sender email and password must be configured.");
+            throw new InvalidOperationException("Sender email and password are missing. Open Admin → Setup → Email.");
         }
 
         var recipients = ResolveRecipients(config, toRecipients);

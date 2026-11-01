@@ -92,7 +92,7 @@ public sealed class EmailConfigImportService : IEmailConfigImportService
         }
         catch (Exception ex)
         {
-            return new EmailImportResult(false, filePath, $"Import failed: {ex.Message}");
+            return new EmailImportResult(false, filePath, PosUserMessage.FromException(ex, PosUserMessage.CouldNot("import those email settings")));
         }
     }
 

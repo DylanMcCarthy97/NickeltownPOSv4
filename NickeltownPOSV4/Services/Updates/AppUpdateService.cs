@@ -53,7 +53,7 @@ public sealed class AppUpdateService : IAppUpdateService
     {
         if (!AppVersionInfo.IsPackaged)
         {
-            return AppUpdateCheckResult.Skipped("Updates require the MSIX-installed app (not folder publish).");
+            return AppUpdateCheckResult.Skipped("Updates only work on the installed app, not a test copy.");
         }
 
         var cfg = await _config.LoadAsync(cancellationToken).ConfigureAwait(false);
@@ -98,7 +98,7 @@ public sealed class AppUpdateService : IAppUpdateService
     {
         if (!AppVersionInfo.IsPackaged)
         {
-            return AppUpdateInstallResult.Fail("Install updates using the MSIX package on this PC.");
+            return AppUpdateInstallResult.Fail("Install the till app first, then try updates again.");
         }
 
         if (string.IsNullOrWhiteSpace(manifest.PackageUri))
@@ -141,7 +141,7 @@ public sealed class AppUpdateService : IAppUpdateService
         {
             AppUpdateRestartHelper.CancelArmedRelaunch();
             _logger.LogError(ex, "Update install failed.");
-            return AppUpdateInstallResult.Fail("Update install failed. Check logs and try again.");
+            return AppUpdateInstallResult.Fail("The update didn't finish. Try again.");
         }
     }
 

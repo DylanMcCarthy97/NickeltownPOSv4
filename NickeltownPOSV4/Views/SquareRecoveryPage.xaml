@@ -44,11 +44,11 @@
                         Glyph="&#xE946;" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Square Recovery" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Fix payments" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Check unfinished payments and approved charges missing a POS record. Confirm the final status in Square before charging again. Admin/Treasurer only."
+                        Text="Card was charged but the sale may not have saved. Check Square first. Don't charge again until this is fixed."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
                 <Button
@@ -78,29 +78,22 @@
                                 CornerRadius="10">
                                 <StackPanel Spacing="6">
                                     <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PosTextPrimaryBrush}">
-                                        <Run Text="Requested" />
                                         <Run Text="{Binding ChargedAmountText, Mode=OneWay}" />
                                         <Run Text=" · " />
                                         <Run Text="{Binding PaymentTypeText, Mode=OneWay}" />
-                                        <Run Text=" · attempt #" />
-                                        <Run Text="{Binding AttemptId, Mode=OneWay}" />
                                     </TextBlock>
                                     <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="{Binding OccurredAtText, Mode=OneWay}" />
-                                        <Run Text=" · status " />
+                                        <Run Text=" · " />
                                         <Run Text="{Binding StatusText, Mode=OneWay}" />
-                                        <Run Text=" · recovery " />
+                                        <Run Text=" · " />
                                         <Run Text="{Binding RecoveryStatusText, Mode=OneWay}" />
-                                        <Run Text=" · operator " />
+                                        <Run Text=" · " />
                                         <Run Text="{Binding OperatorText, Mode=OneWay}" />
                                     </TextBlock>
                                     <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
-                                        <Run Text="Square id " />
+                                        <Run Text="Square " />
                                         <Run Text="{Binding SquarePaymentIdText, Mode=OneWay}" />
-                                        <Run Text=" · checkout " />
-                                        <Run Text="{Binding SquareCheckoutIdText, Mode=OneWay}" />
-                                        <Run Text=" · idempotency " />
-                                        <Run Text="{Binding IdempotencyKeyText, Mode=OneWay}" />
                                     </TextBlock>
                                     <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" TextWrapping="WrapWholeWords">
                                         <Run Text="Tab " />
@@ -127,15 +120,15 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <Button Grid.Row="2" Grid.Column="0" MinHeight="44" Command="{Binding CheckSquareCommand}"
-                                                Content="Check Square status" Style="{StaticResource SettingsSecondaryButtonStyle}" />
+                                                Content="Check card" Style="{StaticResource SettingsSecondaryButtonStyle}" />
                                         <Button Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" MinHeight="44" Command="{Binding SaveTabTopUpCommand}"
-                                                Content="Save approved tab top-up" Style="{StaticResource SettingsPrimaryButtonStyle}"
+                                                Content="Save tab credit" Style="{StaticResource SettingsPrimaryButtonStyle}"
                                                 Visibility="{Binding CanSaveTabTopUp, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                                         <Button
                                             Grid.Row="0"
                                             Grid.Column="0"
                                             Command="{Binding RecoverSaleCommand}"
-                                            Content="Recover Sale"
+                                            Content="Save sale"
                                             Style="{StaticResource SettingsPrimaryButtonStyle}" />
                                         <Button
                                             Grid.Row="0"
@@ -147,19 +140,19 @@
                                             Grid.Row="0"
                                             Grid.Column="2"
                                             Command="{Binding ReconcileCommand}"
-                                            Content="Mark reconciled"
+                                            Content="Mark done"
                                             Style="{StaticResource SettingsSecondaryButtonStyle}" />
                                         <Button
                                             Grid.Row="1"
                                             Grid.Column="0"
                                             Command="{Binding LinkPitstopCommand}"
-                                            Content="Link Pitstop sale"
+                                            Content="Link Pitstop"
                                             Style="{StaticResource SettingsSecondaryButtonStyle}" />
                                         <Button
                                             Grid.Row="1"
                                             Grid.Column="1"
                                             Command="{Binding LinkTabCommand}"
-                                            Content="Link tab payment"
+                                            Content="Link tab"
                                             Style="{StaticResource SettingsSecondaryButtonStyle}" />
                                         <Button
                                             Grid.Row="1"
@@ -179,7 +172,7 @@
                     VerticalAlignment="Center"
                     FontSize="14"
                     Foreground="{StaticResource PosTextSecondaryBrush}"
-                    Text="No unresolved Square payments."
+                    Text="Nothing to fix."
                     Visibility="{Binding Rows.IsEmpty, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
             </Grid>
         </Border>
@@ -219,7 +212,7 @@
             Grid.Row="4"
             HorizontalAlignment="Left"
             Command="{Binding BackCommand}"
-            Content="Back"
+            Content="Back to Admin"
             Style="{StaticResource SettingsSecondaryButtonStyle}" />
     </Grid>
 </Page>

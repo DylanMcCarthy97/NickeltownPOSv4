@@ -1263,7 +1263,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Could not load catalog: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the product list"));
         }
         finally
         {
@@ -1666,7 +1666,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
                             pay)
                         .ConfigureAwait(true);
                     StatusMessage =
-                        $"{StatusMessage} Payment Recovery Required — open Admin → Square Recovery.";
+                        $"{StatusMessage} Don't charge again. Open Admin → Setup → Fix payments.";
                 }
 
                 await _audit.LogAsync(
@@ -1786,7 +1786,7 @@ public sealed class PitstopRetailViewModel : ObservableViewModel, IPitstopRetail
         }
         catch (Exception ex)
         {
-            return $"(Cash drawer did not open: {ex.Message})";
+            return $"({PosUserMessage.FromException(ex, "The cash drawer did not open.")})";
         }
     }
 }

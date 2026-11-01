@@ -45,11 +45,11 @@
                         Glyph="&#xE8C5;" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Square settings" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Card reader" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Square Terminal credentials, location, device, and catalog variations." />
+                        Text="Settings for the Square card reader. Ask a manager before changing these." />
                 </StackPanel>
                 <Button
                     Grid.Column="2"
@@ -85,28 +85,28 @@
                         Text="Connection" />
 
                     <StackPanel Spacing="3">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ACCESS TOKEN" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Square password" />
                         <Button Command="{Binding EditAccessTokenCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                             <TextBlock Text="{Binding AccessTokenSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                         </Button>
                     </StackPanel>
 
                     <StackPanel Spacing="3">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="LOCATION ID" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Shop ID" />
                         <Button Command="{Binding EditLocationIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                             <TextBlock Text="{Binding LocationIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                         </Button>
                     </StackPanel>
 
                     <StackPanel Spacing="3">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="DEVICE ID" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Reader ID" />
                         <Button Command="{Binding EditDeviceIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                             <TextBlock Text="{Binding DeviceIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                         </Button>
                     </StackPanel>
 
                     <StackPanel Spacing="6" Orientation="Vertical">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="ENVIRONMENT" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Test mode" />
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <ToggleSwitch
                                 IsOn="{Binding IsSandbox, Mode=TwoWay}"
@@ -135,14 +135,14 @@
                         Text="Catalog" />
 
                     <StackPanel Spacing="3">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="BAR TAB CARD VARIATION ID" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Bar tab Square item" />
                         <Button Command="{Binding EditBarTabVariationIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                             <TextBlock Text="{Binding BarTabVariationIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                         </Button>
                     </StackPanel>
 
                     <StackPanel Spacing="3">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="GUEST TAB CARD VARIATION ID" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Guest tab Square item" />
                         <Button Command="{Binding EditGuestTabVariationIdCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                             <TextBlock Text="{Binding GuestTabVariationIdSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                         </Button>
@@ -195,7 +195,7 @@
             Grid.Row="4"
             HorizontalAlignment="Left"
             Command="{Binding BackToSettingsCommand}"
-            Content="Back to settings"
+            Content="Back to Admin"
             Style="{StaticResource SettingsSecondaryButtonStyle}" />
     </Grid>
 </Page>

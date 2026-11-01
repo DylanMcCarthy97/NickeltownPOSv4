@@ -155,7 +155,7 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Load failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the sale"));
         }
         finally
         {
@@ -265,7 +265,7 @@ public sealed class VoidPitstopSaleViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Void failed: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("void that sale"));
         }
         finally
         {

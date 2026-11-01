@@ -288,7 +288,7 @@ public sealed partial class TreasurerHomePage : Page
         }
         catch (Exception ex)
         {
-            ReportsStatusText.Text = ex.Message;
+            ReportsStatusText.Text = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("export the report"));
         }
     }
 
@@ -324,7 +324,7 @@ public sealed partial class TreasurerHomePage : Page
         }
         catch (Exception ex)
         {
-            ReportsStatusText.Text = ex.Message;
+            ReportsStatusText.Text = PosUserMessage.FromException(ex, PosUserMessage.CouldNot("import that bank file"));
         }
     }
 

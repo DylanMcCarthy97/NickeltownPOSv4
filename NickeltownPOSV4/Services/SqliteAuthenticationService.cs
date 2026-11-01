@@ -39,7 +39,7 @@ public sealed class SqliteAuthenticationService : IAuthenticationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "PIN authentication failed.");
-            return AuthenticationResult.Fail("Sign-in is unavailable right now. Check the database, then try again.");
+            return AuthenticationResult.Fail("Sign-in isn't working right now. Restart the till and try again.");
         }
     }
 

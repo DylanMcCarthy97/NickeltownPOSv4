@@ -48,11 +48,11 @@
                             Glyph="&#xE715;" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Email configuration" />
+                        <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Email" />
                         <TextBlock
                             Margin="0,2,0,0"
                             Style="{StaticResource SettingsHeroSubtitleStyle}"
-                            Text="Tap any field to edit. SMTP for monthly/stock emails, plus Saturday shopping-list delivery." />
+                            Text="Where monthly reports and the Saturday shopping list get sent." />
                     </StackPanel>
                     <Button
                         Grid.Column="2"
@@ -81,17 +81,17 @@
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource PosTextPrimaryBrush}"
-                            Text="SMTP server" />
+                            Text="Email server" />
 
                         <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="HOST" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Server address" />
                             <Button Command="{Binding EditSmtpServerCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                                 <TextBlock Text="{Binding SmtpServerSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                             </Button>
                         </StackPanel>
 
                         <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="PORT" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Port" />
                             <Button
                                 HorizontalAlignment="Left"
                                 MinWidth="180"
@@ -102,7 +102,7 @@
                         </StackPanel>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SSL / TLS" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Secure connection" />
                             <ToggleSwitch
                                 IsOn="{Binding EnableSsl, Mode=TwoWay}"
                                 OffContent="Off"
@@ -139,28 +139,28 @@
                             Text="Sender + stock/report recipients" />
 
                         <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SENDER EMAIL" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="From email" />
                             <Button Command="{Binding EditSenderEmailCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                                 <TextBlock Text="{Binding SenderEmailSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                             </Button>
                         </StackPanel>
 
                         <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SENDER PASSWORD" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Password" />
                             <Button Command="{Binding EditSenderPasswordCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                                 <TextBlock Text="{Binding SenderPasswordSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                             </Button>
                         </StackPanel>
 
                         <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="SENDER NAME" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="From name" />
                             <Button Command="{Binding EditSenderNameCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                                 <TextBlock Text="{Binding SenderNameSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                             </Button>
                         </StackPanel>
 
                         <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="STOCK / MONTHLY RECIPIENTS" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Who gets stock and monthly emails" />
                             <Button
                                 MinHeight="48"
                                 Command="{Binding EditRecipientsCommand}"
@@ -191,7 +191,7 @@
                         TextWrapping="WrapWholeWords" />
 
                     <StackPanel Spacing="3">
-                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="BAR SHOPPING-LIST RECIPIENT" />
+                        <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Who gets the shopping list" />
                         <Button Command="{Binding EditShoppingListRecipientCommand}" Style="{StaticResource SettingsTapFieldStyle}">
                             <TextBlock Text="{Binding ShoppingListRecipientSummary, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
                         </Button>
@@ -203,14 +203,14 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Spacing="6">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="AUTO-SEND SATURDAY" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="Send automatically on Saturday" />
                             <ToggleSwitch
                                 IsOn="{Binding ShoppingListSaturdayEmailEnabled, Mode=TwoWay}"
                                 OffContent="Off"
                                 OnContent="On" />
                         </StackPanel>
                         <StackPanel Grid.Column="1" Spacing="6">
-                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="IF LIST IS EMPTY" />
+                            <TextBlock Style="{StaticResource SettingsFieldLabelStyle}" Text="If the list is empty" />
                             <ToggleSwitch
                                 IsOn="{Binding ShoppingListSkipWhenEmpty, Mode=TwoWay}"
                                 OffContent="Send confirmation"
@@ -272,7 +272,7 @@
                 Grid.Row="5"
                 HorizontalAlignment="Left"
                 Command="{Binding BackToSettingsCommand}"
-                Content="Back to settings"
+                Content="Back to Admin"
                 Style="{StaticResource SettingsSecondaryButtonStyle}" />
         </Grid>
     </ScrollViewer>

@@ -44,11 +44,11 @@
                         Glyph="&#xE8B0;" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Quick Free Items" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Free items" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Choose which existing stock products appear as one-tap free member items on the Member Tabs screen. This does not create copies or change Pitstop prices."
+                        Text="Choose which products appear as one-tap free buttons on Member Tabs."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Grid>
@@ -160,7 +160,7 @@
             <Button
                 Grid.Column="0"
                 Command="{Binding BackToSettingsCommand}"
-                Content="Back to settings"
+                Content="Back to Admin"
                 Style="{StaticResource SettingsSecondaryButtonStyle}" />
             <TextBlock
                 Grid.Column="1"

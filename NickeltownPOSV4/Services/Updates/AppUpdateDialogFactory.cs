@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using NickeltownPOSV4.Services;
 using Windows.UI;
 
 namespace NickeltownPOSV4.Services.Updates;
@@ -123,11 +124,13 @@ public static class AppUpdateDialogFactory
             animateChequer: false));
 
         body.Children.Add(BuildNotesBlock(
-            string.IsNullOrWhiteSpace(errorMessage) ? "Could not install the update." : errorMessage!.Trim(),
+            string.IsNullOrWhiteSpace(errorMessage) || PosUserMessage.LooksTechnical(errorMessage)
+                ? "The update didn't finish. Try again."
+                : errorMessage!.Trim(),
             ColorOf("PosBalanceNegativeBrush", Color.FromArgb(0xFF, 0xDC, 0x26, 0x26))));
 
         body.Children.Add(BuildFootnote(
-            "Try again from Admin → Pit updates. If it keeps failing, check the update feed and network."));
+            "Try again from Admin → Setup → App updates. If it keeps failing, check the Wi-Fi and try later."));
 
         var dialog = new ContentDialog
         {

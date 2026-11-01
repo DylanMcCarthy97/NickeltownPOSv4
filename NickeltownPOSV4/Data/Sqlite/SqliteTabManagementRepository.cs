@@ -229,7 +229,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return TabMutationResult.Fail(ex.Message);
+            return TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab")));
         }
     }
 
@@ -376,7 +376,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return TabMutationResult.Fail(ex.Message);
+            return TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab")));
         }
     }
 
@@ -429,7 +429,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabMutationResult.Fail(ex.Message));
+            return Task.FromResult(TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab"))));
         }
     }
 
@@ -479,7 +479,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabMutationResult.Fail(ex.Message));
+            return Task.FromResult(TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab"))));
         }
     }
 
@@ -528,7 +528,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabMutationResult.Fail(ex.Message));
+            return Task.FromResult(TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab"))));
         }
     }
 
@@ -572,7 +572,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabMutationResult.Fail(ex.Message));
+            return Task.FromResult(TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab"))));
         }
     }
 
@@ -751,7 +751,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabMutationResult.Fail(ex.Message));
+            return Task.FromResult(TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab"))));
         }
     }
 
@@ -789,7 +789,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabMutationResult.Fail(ex.Message));
+            return Task.FromResult(TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab"))));
         }
     }
 
@@ -875,7 +875,7 @@ public sealed class SqliteTabManagementRepository : ITabManagementRepository
         }
         catch (Exception ex)
         {
-            return Task.FromResult(TabMutationResult.Fail(ex.Message));
+            return Task.FromResult(TabMutationResult.Fail(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("save the tab"))));
         }
     }
 

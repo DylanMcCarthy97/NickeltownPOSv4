@@ -196,7 +196,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("staff")));
         }
         finally
         {
@@ -376,7 +376,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Add failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("add that staff member")));
             return null;
         }
         finally
@@ -399,7 +399,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Update failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("that staff member")));
             return false;
         }
         finally
@@ -421,7 +421,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"PIN reset failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("reset that PIN")));
             return false;
         }
         finally
@@ -443,7 +443,7 @@ public sealed class UserManagementViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Deactivate failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("deactivate that staff member")));
             return false;
         }
         finally

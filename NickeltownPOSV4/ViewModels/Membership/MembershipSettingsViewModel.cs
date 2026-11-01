@@ -170,7 +170,7 @@ public sealed class MembershipSettingsViewModel : MembershipSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("membership settings")));
         }
         finally
         {
@@ -206,7 +206,7 @@ public sealed class MembershipSettingsViewModel : MembershipSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Save failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("membership settings")));
         }
         finally
         {

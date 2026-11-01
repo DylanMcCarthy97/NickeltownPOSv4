@@ -394,7 +394,7 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
 
             if (_allProducts.Count == 0)
             {
-                StatusMessage = "No priced products in SQLite. Import drinks/items or add prices, then reopen this panel.";
+                StatusMessage = "No priced products yet. Add prices in Stock, then open this again.";
             }
 
             RebuildCategoryChips();
@@ -408,7 +408,7 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Could not load catalog: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("the drink list"));
             CatalogPageItems.Clear();
         }
     }
@@ -706,7 +706,7 @@ public sealed class AddDrinksPanelViewModel : ObservableViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Could not load Shot + Mixer settings: {ex.Message}";
+            StatusMessage = PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("shot and mixer settings"));
             return;
         }
 

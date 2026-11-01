@@ -44,11 +44,11 @@
                         Glyph="&#xE9F5;" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="System Check" />
+                    <TextBlock Style="{StaticResource SettingsHeroTitleStyle}" Text="Check the till" />
                     <TextBlock
                         Margin="0,2,0,0"
                         Style="{StaticResource SettingsHeroSubtitleStyle}"
-                        Text="Database, backups, Square and reconciliation diagnostics for clubroom deployment."
+                        Text="Green is good. Red or amber means something needs a look."
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
                 <Button
@@ -134,7 +134,7 @@
             Grid.Row="3"
             HorizontalAlignment="Left"
             Command="{Binding BackCommand}"
-            Content="Back"
+            Content="Back to Admin"
             Style="{StaticResource SettingsSecondaryButtonStyle}" />
     </Grid>
 </Page>

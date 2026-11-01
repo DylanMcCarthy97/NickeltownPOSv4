@@ -93,7 +93,7 @@ public sealed class ComPortConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("drawer settings")));
         }
         finally
         {
@@ -105,7 +105,7 @@ public sealed class ComPortConfigViewModel : SettingsSubViewModelBase
     {
         if (string.IsNullOrWhiteSpace(SelectedPort))
         {
-            SetStatus("Pick a COM port before saving.");
+            SetStatus("Pick a drawer port before saving.");
             return;
         }
 
@@ -121,11 +121,11 @@ public sealed class ComPortConfigViewModel : SettingsSubViewModelBase
                 BaudRate = SelectedBaudRate,
             }).ConfigureAwait(true);
 
-            SetStatus($"Saved {SelectedPort} @ {SelectedBaudRate} baud.");
+            SetStatus($"Saved drawer port {SelectedPort}.");
         }
         catch (Exception ex)
         {
-            SetStatus($"Save failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotSave("drawer settings")));
         }
         finally
         {
@@ -148,7 +148,7 @@ public sealed class ComPortConfigViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Drawer kick failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("open the drawer")));
         }
         finally
         {

@@ -78,7 +78,7 @@ public sealed class ExportMonthlyViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Export failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("export the report")));
         }
         finally
         {
@@ -99,7 +99,7 @@ public sealed class ExportMonthlyViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Export failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("export the report")));
         }
         finally
         {
@@ -131,7 +131,7 @@ public sealed class ExportMonthlyViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Email failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("email the report")));
         }
         finally
         {
@@ -152,7 +152,7 @@ public sealed class ExportMonthlyViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Export failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("export the report")));
         }
         finally
         {
@@ -185,7 +185,7 @@ public sealed class ExportMonthlyViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Stock email failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNot("email the stock report")));
         }
         finally
         {

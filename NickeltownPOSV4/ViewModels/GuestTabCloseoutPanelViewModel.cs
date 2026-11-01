@@ -548,7 +548,7 @@ public sealed class GuestTabCloseoutPanelViewModel : ObservableViewModel
 
                 if (!squareResult.Ok)
                 {
-                    StatusMessage = "Card approved, but the payment could not be saved. Retry to save it without charging again, or open Admin → Square Recovery.";
+                    StatusMessage = "Card went through, but we couldn't save the payment. Tap again to save it without charging again, or open Admin → Setup → Fix payments.";
                     return;
                 }
 

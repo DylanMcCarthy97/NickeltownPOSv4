@@ -326,7 +326,7 @@ public sealed class JsonImportService : IJsonImportService
             issues.Add(new MigrationValidationIssue
             {
                 Severity = MigrationValidationSeverity.Warning,
-                Message = "No supported legacy JSON files were detected in the selected folder.",
+                Message = "No old POS files were found in that folder.",
                 SourceFile = detection.RootFolder,
             });
         }
@@ -336,7 +336,7 @@ public sealed class JsonImportService : IJsonImportService
             issues.Add(new MigrationValidationIssue
             {
                 Severity = MigrationValidationSeverity.Error,
-                Message = "The selected folder is missing or inaccessible.",
+                Message = "That folder is missing or we can't open it.",
                 SourceFile = detection.RootFolder,
             });
         }
@@ -364,7 +364,7 @@ public sealed class JsonImportService : IJsonImportService
                 issues.Add(new MigrationValidationIssue
                 {
                     Severity = isConfigKind ? MigrationValidationSeverity.Warning : MigrationValidationSeverity.Error,
-                    Message = $"JSON could not be parsed: {error}",
+                    Message = "This file isn't valid export data. Ask for a fresh copy from the old POS.",
                     SourceFile = file.FullPath,
                     FileKind = file.Kind,
                 });

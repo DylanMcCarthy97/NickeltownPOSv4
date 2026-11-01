@@ -15,14 +15,25 @@
         <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
 
         <Style x:Key="AdminTileButtonStyle" TargetType="Button" BasedOn="{StaticResource PosHubTileButtonStyle}">
-            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Padding" Value="12,8" />
             <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="MinHeight" Value="118" />
+            <Setter Property="MinHeight" Value="96" />
+        </Style>
+
+        <Style x:Key="AdminSectionButtonStyle" TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="UseSystemFocusVisuals" Value="False" />
         </Style>
     </Page.Resources>
 
-    <Grid Padding="{StaticResource PosPagePadding}" RowSpacing="12">
+    <Grid Padding="{StaticResource PosPagePadding}" RowSpacing="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -31,27 +42,30 @@
         <controls:PosPageHero
             Grid.Row="0"
             IconGlyph="&#xE90F;"
-            Subtitle="Backups, peripherals, users, activity, and store configuration. PDF reports are under Reports."
+            Subtitle="Everyday jobs first. Setup is on the other tab. Reports are on the bottom bar."
             Title="Admin" />
 
         <Border
             Grid.Row="1"
-            Margin="0,0,0,0"
             Padding="14,12"
             Background="#33C62828"
             BorderBrush="#FFC62828"
             BorderThickness="1"
             CornerRadius="12"
             Visibility="{Binding PaymentRecoveryRequired, Converter={StaticResource BoolToVis}, Mode=OneWay}">
-            <StackPanel Spacing="10">
+            <StackPanel Spacing="8">
                 <TextBlock
                     FontSize="17"
                     FontWeight="Bold"
                     Foreground="{StaticResource PosTextPrimaryBrush}"
-                    Text="Payment Recovery Required" />
+                    Text="A card payment didn't finish" />
+                <TextBlock
+                    FontSize="13"
+                    Foreground="{StaticResource PosTextSecondaryBrush}"
+                    Text="Don't charge this card again until this is fixed."
+                    TextWrapping="WrapWholeWords" />
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
@@ -64,21 +78,12 @@
                             Text="{Binding PaymentRecoveryAmountText, Mode=OneWay}" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Spacing="2">
-                        <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Date / time" />
+                        <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="When" />
                         <TextBlock
                             FontSize="15"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource PosTextPrimaryBrush}"
                             Text="{Binding PaymentRecoveryWhenText, Mode=OneWay}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Spacing="2">
-                        <TextBlock FontSize="11" Foreground="{StaticResource PosTextSecondaryBrush}" Text="Transaction id" />
-                        <TextBlock
-                            FontSize="13"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource PosTextPrimaryBrush}"
-                            Text="{Binding PaymentRecoveryTransactionId, Mode=OneWay}"
-                            TextWrapping="WrapWholeWords" />
                     </StackPanel>
                 </Grid>
                 <Grid ColumnSpacing="8">
@@ -90,28 +95,83 @@
                     <Button
                         Grid.Column="0"
                         Command="{Binding RecoverPaymentCommand}"
-                        Content="Recover Sale"
+                        Content="Fix it"
                         Style="{StaticResource SettingsPrimaryButtonStyle}" />
                     <Button
                         Grid.Column="1"
                         Command="{Binding IgnorePaymentRecoveryCommand}"
-                        Content="Ignore"
+                        Content="Not now"
                         Style="{StaticResource SettingsSecondaryButtonStyle}" />
                     <Button
                         Grid.Column="2"
                         Command="{Binding ViewPaymentRecoveryCommand}"
-                        Content="View Details"
+                        Content="See list"
                         Style="{StaticResource SettingsSecondaryButtonStyle}" />
                 </Grid>
             </StackPanel>
         </Border>
 
-        <!--  Admin tile grid (4 columns x 3 rows)  -->
-        <Grid
+        <Border
             Grid.Row="2"
-            Margin="0,4,0,0"
+            Padding="4"
+            Background="{StaticResource PosSurfaceBrush}"
+            BorderBrush="{StaticResource PosBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="12">
+            <Grid ColumnSpacing="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="0"
+                    Command="{Binding ShowEverydayAdminCommand}"
+                    Style="{StaticResource AdminSectionButtonStyle}">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Everyday" />
+                        <Border
+                            Height="3"
+                            Margin="0,6,0,0"
+                            MinWidth="72"
+                            Background="{StaticResource PosAccentBrush}"
+                            CornerRadius="2"
+                            Visibility="{Binding ShowEverydayAdmin, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding ShowSetupAdminCommand}"
+                    Style="{StaticResource AdminSectionButtonStyle}">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource PosTextPrimaryBrush}"
+                            Text="Setup" />
+                        <Border
+                            Height="3"
+                            Margin="0,6,0,0"
+                            MinWidth="72"
+                            Background="{StaticResource PosAccentBrush}"
+                            CornerRadius="2"
+                            Visibility="{Binding ShowSetupAdmin, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!--  Everyday: jobs staff do without extra training  -->
+        <Grid
+            Grid.Row="3"
             ColumnSpacing="10"
-            RowSpacing="10">
+            RowSpacing="10"
+            Visibility="{Binding ShowEverydayAdmin, Converter={StaticResource BoolToVis}, Mode=OneWay}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -121,6 +181,222 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="0"
+                AutomationProperties.Name="Backup"
+                Command="{Binding BackupNowCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE7B8;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Backup" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Save a copy of everything"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="1"
+                AutomationProperties.Name="Stock"
+                Command="{Binding StockManagementCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8D1;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Stock" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Products and quantities"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="2"
+                AutomationProperties.Name="Staff"
+                Command="{Binding UserManagementCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE716;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Staff" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Who can sign in and their PIN"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="3"
+                AutomationProperties.Name="Open cash drawer"
+                Command="{Binding KickCashDrawerCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8A5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Open drawer" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Open the cash drawer"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="0"
+                AutomationProperties.Name="Old tabs"
+                Command="{Binding ViewArchivedCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE7B8;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Old tabs" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Closed and archived tabs"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="1"
+                AutomationProperties.Name="Old Pitstops"
+                Command="{Binding ViewPreviousPitstopsCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE81C;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Old Pitstops" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Past Pitstop days"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="2"
+                AutomationProperties.Name="Free items"
+                Command="{Binding QuickFreeItemsCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8B0;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Free items" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Water, Pop Top and other free buttons"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="3"
+                AutomationProperties.Name="Activity"
+                Command="{Binding ActivityLogCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE81C;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Activity" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Who changed what"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!--  Setup: less common jobs, still in plain English  -->
+        <Grid
+            Grid.Row="3"
+            ColumnSpacing="10"
+            RowSpacing="10"
+            Visibility="{Binding ShowSetupAdmin, Converter={StaticResource BoolToVis}, Mode=OneWay}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -128,74 +404,74 @@
             <Button
                 Grid.Row="0"
                 Grid.Column="0"
-                AutomationProperties.Name="Backup now"
-                Command="{Binding BackupNowCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE7B8;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Backup now" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Create system backup"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="0"
-                Grid.Column="1"
-                AutomationProperties.Name="View archived"
-                Command="{Binding ViewArchivedCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE7B8;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="View archived" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Browse archived data"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="0"
-                Grid.Column="2"
-                AutomationProperties.Name="Email configuration"
+                AutomationProperties.Name="Email"
                 Command="{Binding EmailConfigCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
                 <StackPanel Spacing="6">
                     <FontIcon
                         HorizontalAlignment="Left"
-                        FontSize="26"
+                        FontSize="24"
                         Foreground="{StaticResource PosAccentBrush}"
                         Glyph="&#xE715;" />
                     <TextBlock
                         FontSize="15"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Email configuration" />
+                        Text="Email" />
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Configure email settings"
+                        Text="Where reports get sent"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="1"
+                AutomationProperties.Name="Cash drawer"
+                Command="{Binding ComPortConfigCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8C5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Cash drawer" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Which port opens the drawer"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Row="0"
+                Grid.Column="2"
+                AutomationProperties.Name="Card reader"
+                Command="{Binding SquareSettingsCommand}"
+                Style="{StaticResource AdminTileButtonStyle}">
+                <StackPanel Spacing="6">
+                    <FontIcon
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="{StaticResource PosAccentBrush}"
+                        Glyph="&#xE8C5;" />
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource PosTextPrimaryBrush}"
+                        Text="Card reader" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{StaticResource PosTextSecondaryBrush}"
+                        Text="Square card settings"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>
@@ -203,326 +479,99 @@
             <Button
                 Grid.Row="0"
                 Grid.Column="3"
-                AutomationProperties.Name="COM port config"
-                Command="{Binding ComPortConfigCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE8C5;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="COM port config" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Serial port settings"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="1"
-                Grid.Column="0"
-                AutomationProperties.Name="Kick cash drawer"
-                Command="{Binding KickCashDrawerCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE8A5;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Kick cash drawer" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Open cash drawer"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="1"
-                Grid.Column="1"
-                AutomationProperties.Name="Stock management"
-                Command="{Binding StockManagementCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE8D1;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Stock management" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Manage inventory"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="1"
-                Grid.Column="2"
-                AutomationProperties.Name="Square settings"
-                Command="{Binding SquareSettingsCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE8C5;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Square settings" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Configure Square &amp; diagnostics"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="1"
-                Grid.Column="3"
-                AutomationProperties.Name="Data import export"
-                Command="{Binding DataImportExportCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE8B5;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Data import/export" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Import or export data"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="2"
-                Grid.Column="0"
-                AutomationProperties.Name="Previous Pitstops"
-                Command="{Binding ViewPreviousPitstopsCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE81C;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Previous Pitstops" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Archived Pitstop EOD events"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="2"
-                Grid.Column="1"
-                AutomationProperties.Name="User management"
-                Command="{Binding UserManagementCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE716;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="User management" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Manage users"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="2"
-                Grid.Column="2"
-                AutomationProperties.Name="Square Recovery"
+                AutomationProperties.Name="Fix payments"
                 Command="{Binding SquareRecoveryCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
                 <StackPanel Spacing="6">
                     <FontIcon
                         HorizontalAlignment="Left"
-                        FontSize="26"
+                        FontSize="24"
                         Foreground="{StaticResource PosAccentBrush}"
                         Glyph="&#xE946;" />
                     <TextBlock
                         FontSize="15"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Square Recovery" />
+                        Text="Fix payments" />
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Reconcile orphan Square payments"
+                        Text="Card charged, sale not saved"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>
 
             <Button
-                Grid.Row="2"
-                Grid.Column="3"
-                AutomationProperties.Name="System Check"
+                Grid.Row="1"
+                Grid.Column="0"
+                AutomationProperties.Name="Check the till"
                 Command="{Binding SystemCheckCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
                 <StackPanel Spacing="6">
                     <FontIcon
                         HorizontalAlignment="Left"
-                        FontSize="26"
+                        FontSize="24"
                         Foreground="{StaticResource PosAccentBrush}"
                         Glyph="&#xE9F5;" />
                     <TextBlock
                         FontSize="15"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="System Check" />
+                        Text="Check the till" />
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="DB, backups, Square &amp; diagnostics"
+                        Text="Find what is broken"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>
 
-            <!-- MEMBERSHIP MODULE DISABLED - re-enable in ServiceCollection/App/AdminHome
             <Button
-                Grid.Row="3"
-                Grid.Column="2"
-                AutomationProperties.Name="Memberships"
-                Command="{Binding MembershipCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE716;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Memberships" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Applications, members, renewals &amp; settings"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-            -->
-
-            <Button
-                Grid.Row="3"
-                Grid.Column="0"
-                AutomationProperties.Name="Pit updates"
+                Grid.Row="1"
+                Grid.Column="1"
+                AutomationProperties.Name="App updates"
                 Command="{Binding AppUpdatesCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
                 <StackPanel Spacing="6">
                     <FontIcon
                         HorizontalAlignment="Left"
-                        FontSize="26"
+                        FontSize="24"
                         Foreground="{StaticResource PosAccentBrush}"
                         Glyph="&#xE895;" />
                     <TextBlock
                         FontSize="15"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Pit updates" />
+                        Text="App updates" />
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Check the feed, fit the new build, auto restart"
+                        Text="Get the latest version"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>
 
             <Button
-                Grid.Row="3"
-                Grid.Column="1"
-                AutomationProperties.Name="Activity Log"
-                Command="{Binding ActivityLogCommand}"
+                Grid.Row="1"
+                Grid.Column="2"
+                AutomationProperties.Name="Import old data"
+                Command="{Binding DataImportExportCommand}"
                 Style="{StaticResource AdminTileButtonStyle}">
                 <StackPanel Spacing="6">
                     <FontIcon
                         HorizontalAlignment="Left"
-                        FontSize="26"
+                        FontSize="24"
                         Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE81C;" />
+                        Glyph="&#xE8B5;" />
                     <TextBlock
                         FontSize="15"
                         FontWeight="SemiBold"
                         Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Activity Log" />
+                        Text="Import old data" />
                     <TextBlock
                         FontSize="11"
                         Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Who undid, adjusted, closed, or changed stock"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-            </Button>
-
-            <Button
-                Grid.Row="3"
-                Grid.Column="3"
-                AutomationProperties.Name="Quick Free Items"
-                Command="{Binding QuickFreeItemsCommand}"
-                Style="{StaticResource AdminTileButtonStyle}">
-                <StackPanel Spacing="6">
-                    <FontIcon
-                        HorizontalAlignment="Left"
-                        FontSize="26"
-                        Foreground="{StaticResource PosAccentBrush}"
-                        Glyph="&#xE8B0;" />
-                    <TextBlock
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource PosTextPrimaryBrush}"
-                        Text="Quick Free Items" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{StaticResource PosTextSecondaryBrush}"
-                        Text="Water, Pop Top and other complimentary buttons"
+                        Text="Bring in data from the old POS"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Button>

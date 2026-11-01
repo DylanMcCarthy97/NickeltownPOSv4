@@ -36,7 +36,7 @@ public sealed class ArchivedTabsViewModel : SettingsSubViewModelBase
         }
         catch (Exception ex)
         {
-            SetStatus($"Load failed: {ex.Message}");
+            SetStatus(PosUserMessage.FromException(ex, PosUserMessage.CouldNotLoad("old tabs")));
         }
         finally
         {
