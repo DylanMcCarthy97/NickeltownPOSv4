@@ -4,6 +4,7 @@ public enum PitstopCardFixStep
 {
     AskCheck,
     Checking,
+    Saving,
     Paid,
     NotCharged,
     Unknown,
@@ -73,6 +74,12 @@ public static class PitstopCardFixGuide
             {
                 Title = "Checking if they paid",
                 Body = "Asking the card reader. This does not charge anyone.",
+                AmountText = money,
+            },
+            PitstopCardFixStep.Saving => new PitstopCardFixCopy
+            {
+                Title = "Saving the sale",
+                Body = "The card went through. Saving it now. Do not charge them again.",
                 AmountText = money,
             },
             PitstopCardFixStep.NotCharged => new PitstopCardFixCopy
@@ -145,4 +152,7 @@ public static class PitstopCardFixGuide
 
     public static bool ShouldAutoCheck(PitstopCardFixStep step) =>
         step == PitstopCardFixStep.AskCheck;
+
+    public static bool ShouldAutoSave(PitstopCardFixStep step, bool canRebuildSale) =>
+        step == PitstopCardFixStep.Paid && canRebuildSale;
 }

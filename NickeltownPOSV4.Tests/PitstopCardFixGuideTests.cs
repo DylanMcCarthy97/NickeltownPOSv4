@@ -64,6 +64,18 @@ public sealed class PitstopCardFixGuideTests
     }
 
     [Fact]
+    public void Saving_DoesNotAskStaffToTapSave()
+    {
+        var copy = PitstopCardFixGuide.Build(PitstopCardFixStep.Saving, 8m, canRebuildSale: true);
+        Assert.Equal("Saving the sale", copy.Title);
+        Assert.Contains("Do not charge them again", copy.Body, StringComparison.Ordinal);
+        Assert.False(copy.ShowSaveSale);
+        Assert.True(PitstopCardFixGuide.ShouldAutoSave(PitstopCardFixStep.Paid, canRebuildSale: true));
+        Assert.False(PitstopCardFixGuide.ShouldAutoSave(PitstopCardFixStep.Paid, canRebuildSale: false));
+        Assert.False(PitstopCardFixGuide.ShouldAutoSave(PitstopCardFixStep.NotCharged, canRebuildSale: true));
+    }
+
+    [Fact]
     public void OpeningStep_SkipsCheckWhenThereIsNothingToAsk()
     {
         Assert.Equal(PitstopCardFixStep.AskCheck, PitstopCardFixGuide.OpeningStep(theyPaid: false, hasCheckoutId: true));

@@ -131,6 +131,10 @@ public sealed partial class PitstopRetailViewModel
         {
             ClearCart();
         }
+        else if (PitstopCardFixGuide.ShouldAutoSave(step, _cardFixCanRebuildSale))
+        {
+            await TryAutoSavePaidSaleAsync().ConfigureAwait(true);
+        }
     }
 
     internal void OpenCardFixNotCharged(decimal amount)
@@ -202,6 +206,17 @@ public sealed partial class PitstopRetailViewModel
             IsBusy = false;
             NotifyCardFixCommands();
         }
+
+        if (PitstopCardFixGuide.ShouldAutoSave(_cardFixStep, _cardFixCanRebuildSale))
+        {
+            await TryAutoSavePaidSaleAsync().ConfigureAwait(true);
+        }
+    }
+
+    private Task TryAutoSavePaidSaleAsync()
+    {
+        ApplyCardFixCopy(PitstopCardFixStep.Saving);
+        return SaveCardFixSaleAsync();
     }
 
     private async Task SaveCardFixSaleAsync()
@@ -271,7 +286,7 @@ public sealed partial class PitstopRetailViewModel
         }
 
         ApplyCardFixCopy(PitstopCardFixStep.NotCharged);
-        StatusMessage = "They weren't charged. Take cash or start a new sale.";
+        StatusMessage = "They weren't charged. Try the card again, or take cash.";
         NotifyCardFixCommands();
     }
 
