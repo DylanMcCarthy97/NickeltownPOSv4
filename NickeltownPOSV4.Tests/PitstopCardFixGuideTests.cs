@@ -40,12 +40,27 @@ public sealed class PitstopCardFixGuideTests
     }
 
     [Fact]
-    public void NotCharged_SendsThemBackToCash()
+    public void NotCharged_RetriesSameSaleNotANewOne()
     {
         var copy = PitstopCardFixGuide.Build(PitstopCardFixStep.NotCharged, 20m, canRebuildSale: false);
-        Assert.Contains("Take cash", copy.Body, StringComparison.Ordinal);
-        Assert.True(copy.ShowOk);
+        Assert.Contains("This sale is still on the till", copy.Body, StringComparison.Ordinal);
+        Assert.True(copy.ShowRetryCard);
+        Assert.True(copy.ShowTakeCash);
+        Assert.False(copy.ShowOk);
         Assert.False(copy.ShowSaveSale);
+        Assert.DoesNotContain("new sale", copy.Body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Checking_DoesNotCharge()
+    {
+        var copy = PitstopCardFixGuide.Build(PitstopCardFixStep.Checking, 9m, canRebuildSale: true);
+        Assert.Contains("does not charge", copy.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.False(copy.ShowCheck);
+        Assert.False(copy.ShowSaveSale);
+        Assert.False(copy.ShowRetryCard);
+        Assert.True(PitstopCardFixGuide.ShouldAutoCheck(PitstopCardFixStep.AskCheck));
+        Assert.False(PitstopCardFixGuide.ShouldAutoCheck(PitstopCardFixStep.Unknown));
     }
 
     [Fact]
@@ -74,6 +89,7 @@ public sealed class PitstopCardFixGuideTests
 
     [Theory]
     [InlineData(PitstopCardFixStep.AskCheck, true)]
+    [InlineData(PitstopCardFixStep.Checking, true)]
     [InlineData(PitstopCardFixStep.Paid, true)]
     [InlineData(PitstopCardFixStep.Paid, false)]
     [InlineData(PitstopCardFixStep.NotCharged, false)]
@@ -82,7 +98,7 @@ public sealed class PitstopCardFixGuideTests
     public void Copy_NeverSendsStaffToAdminOrPin(PitstopCardFixStep step, bool canRebuildSale)
     {
         var copy = PitstopCardFixGuide.Build(step, 11.25m, canRebuildSale);
-        var text = string.Join(' ', copy.Title, copy.Body, copy.CheckLabel, copy.SaveLabel, copy.NotChargedLabel, copy.OkLabel);
+        var text = string.Join(' ', copy.Title, copy.Body, copy.CheckLabel, copy.SaveLabel, copy.NotChargedLabel, copy.OkLabel, copy.RetryCardLabel, copy.TakeCashLabel);
         Assert.DoesNotContain("Admin", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("PIN", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Square", text, StringComparison.OrdinalIgnoreCase);

@@ -1219,6 +1219,20 @@
                         Style="{StaticResource PitstopPaymentCashButtonStyle}"
                         Visibility="{Binding CardFixShowNotCharged, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
                     <Button
+                        MinHeight="56"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding RetryCardFixCommand}"
+                        Content="{Binding CardFixRetryCardLabel, Mode=OneWay}"
+                        Style="{StaticResource PitstopOverlayActionButtonStyle}"
+                        Visibility="{Binding CardFixShowRetryCard, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
+                        MinHeight="52"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding TakeCashCardFixCommand}"
+                        Content="{Binding CardFixTakeCashLabel, Mode=OneWay}"
+                        Style="{StaticResource PitstopPaymentCashButtonStyle}"
+                        Visibility="{Binding CardFixShowTakeCash, Converter={StaticResource BoolToVis}, Mode=OneWay}" />
+                    <Button
                         MinHeight="52"
                         HorizontalAlignment="Stretch"
                         Command="{Binding DismissCardFixCommand}"

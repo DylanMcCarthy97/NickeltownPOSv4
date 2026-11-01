@@ -3,6 +3,7 @@ namespace NickeltownPOSV4.Services.Pitstop;
 public enum PitstopCardFixStep
 {
     AskCheck,
+    Checking,
     Paid,
     NotCharged,
     Unknown,
@@ -25,6 +26,10 @@ public sealed class PitstopCardFixCopy
 
     public bool ShowOk { get; init; }
 
+    public bool ShowRetryCard { get; init; }
+
+    public bool ShowTakeCash { get; init; }
+
     public string CheckLabel { get; init; } = "Find out if they paid";
 
     public string SaveLabel { get; init; } = "Save the sale";
@@ -32,6 +37,10 @@ public sealed class PitstopCardFixCopy
     public string NotChargedLabel { get; init; } = "They weren't charged";
 
     public string OkLabel { get; init; } = "OK — keep selling";
+
+    public string RetryCardLabel { get; init; } = "Try the card again";
+
+    public string TakeCashLabel { get; init; } = "Take cash";
 }
 
 /// <summary>
@@ -60,12 +69,19 @@ public static class PitstopCardFixGuide
                 ShowOk = !canRebuildSale,
                 OkLabel = canRebuildSale ? "OK — keep selling" : "I've written it down",
             },
+            PitstopCardFixStep.Checking => new PitstopCardFixCopy
+            {
+                Title = "Checking if they paid",
+                Body = "Asking the card reader. This does not charge anyone.",
+                AmountText = money,
+            },
             PitstopCardFixStep.NotCharged => new PitstopCardFixCopy
             {
                 Title = "They weren't charged",
-                Body = "No money was taken. Take cash, or start the card again as a new sale.",
+                Body = "No money was taken. This sale is still on the till. Try the card again, or take cash.",
                 AmountText = money,
-                ShowOk = true,
+                ShowRetryCard = true,
+                ShowTakeCash = true,
             },
             PitstopCardFixStep.Saved => new PitstopCardFixCopy
             {
@@ -126,4 +142,7 @@ public static class PitstopCardFixGuide
 
     public static bool WrittenDownClearsBanner(PitstopCardFixStep step, bool canRebuildSale) =>
         step == PitstopCardFixStep.Paid && !canRebuildSale;
+
+    public static bool ShouldAutoCheck(PitstopCardFixStep step) =>
+        step == PitstopCardFixStep.AskCheck;
 }

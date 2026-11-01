@@ -28,6 +28,10 @@ public sealed partial class PitstopRetailViewModel
 
     public IAsyncRelayCommand DismissCardFixCommand { get; private set; } = null!;
 
+    public IAsyncRelayCommand RetryCardFixCommand { get; private set; } = null!;
+
+    public IRelayCommand TakeCashCardFixCommand { get; private set; } = null!;
+
     public IAsyncRelayCommand OpenCardFixFromBannerCommand { get; private set; } = null!;
 
     public bool ShowCardFixOverlay
@@ -62,6 +66,10 @@ public sealed partial class PitstopRetailViewModel
 
     public bool CardFixShowOk => _cardFixCopy.ShowOk;
 
+    public bool CardFixShowRetryCard => _cardFixCopy.ShowRetryCard;
+
+    public bool CardFixShowTakeCash => _cardFixCopy.ShowTakeCash;
+
     public string CardFixCheckLabel => _cardFixCopy.CheckLabel;
 
     public string CardFixSaveLabel => _cardFixCopy.SaveLabel;
@@ -69,6 +77,10 @@ public sealed partial class PitstopRetailViewModel
     public string CardFixNotChargedLabel => _cardFixCopy.NotChargedLabel;
 
     public string CardFixOkLabel => _cardFixCopy.OkLabel;
+
+    public string CardFixRetryCardLabel => _cardFixCopy.RetryCardLabel;
+
+    public string CardFixTakeCashLabel => _cardFixCopy.TakeCashLabel;
 
     private bool CanRunCardFix => ShowCardFixOverlay && !IsBusy && !IsSendingSquare;
 
@@ -103,14 +115,22 @@ public sealed partial class PitstopRetailViewModel
         _cardFixCanAskReader = hasCheckoutId;
         var step = PitstopCardFixGuide.OpeningStep(theyPaid, hasCheckoutId);
 
+        ShowPaymentProgressOverlay = false;
+        ShowCardFixOverlay = true;
+        await RefreshCardFixBannerAsync().ConfigureAwait(true);
+
+        if (PitstopCardFixGuide.ShouldAutoCheck(step))
+        {
+            ApplyCardFixCopy(PitstopCardFixStep.Checking);
+            await CheckCardFixAsync().ConfigureAwait(true);
+            return;
+        }
+
         ApplyCardFixCopy(step);
         if (step == PitstopCardFixStep.Paid && !_cardFixCanRebuildSale)
         {
             ClearCart();
         }
-        ShowPaymentProgressOverlay = false;
-        ShowCardFixOverlay = true;
-        await RefreshCardFixBannerAsync().ConfigureAwait(true);
     }
 
     internal void OpenCardFixNotCharged(decimal amount)
@@ -269,6 +289,34 @@ public sealed partial class PitstopRetailViewModel
         await RefreshCardFixBannerAsync().ConfigureAwait(true);
     }
 
+    private async Task RetryCardAfterNotChargedAsync()
+    {
+        ShowCardFixOverlay = false;
+        await RefreshCardFixBannerAsync().ConfigureAwait(true);
+        if (CartLines.Count == 0)
+        {
+            StatusMessage = "Add the items again, then take payment.";
+            return;
+        }
+
+        BeginPaymentTransaction();
+        OpenCardFeePanel();
+    }
+
+    private void TakeCashAfterNotCharged()
+    {
+        ShowCardFixOverlay = false;
+        _ = RefreshCardFixBannerAsync();
+        if (CartLines.Count == 0)
+        {
+            StatusMessage = "Add the items again, then take payment.";
+            return;
+        }
+
+        BeginPaymentTransaction();
+        OpenCashSheet();
+    }
+
     private void ApplyCardFixCopy(PitstopCardFixStep step)
     {
         _cardFixStep = step;
@@ -285,10 +333,14 @@ public sealed partial class PitstopRetailViewModel
         OnPropertyChanged(nameof(CardFixShowSaveSale));
         OnPropertyChanged(nameof(CardFixShowNotCharged));
         OnPropertyChanged(nameof(CardFixShowOk));
+        OnPropertyChanged(nameof(CardFixShowRetryCard));
+        OnPropertyChanged(nameof(CardFixShowTakeCash));
         OnPropertyChanged(nameof(CardFixCheckLabel));
         OnPropertyChanged(nameof(CardFixSaveLabel));
         OnPropertyChanged(nameof(CardFixNotChargedLabel));
         OnPropertyChanged(nameof(CardFixOkLabel));
+        OnPropertyChanged(nameof(CardFixRetryCardLabel));
+        OnPropertyChanged(nameof(CardFixTakeCashLabel));
         NotifyCardFixCommands();
     }
 
@@ -298,6 +350,8 @@ public sealed partial class PitstopRetailViewModel
         SaveCardFixSaleCommand?.NotifyCanExecuteChanged();
         MarkCardNotChargedCommand?.NotifyCanExecuteChanged();
         DismissCardFixCommand?.NotifyCanExecuteChanged();
+        RetryCardFixCommand?.NotifyCanExecuteChanged();
+        TakeCashCardFixCommand?.NotifyCanExecuteChanged();
         OpenCardFixFromBannerCommand?.NotifyCanExecuteChanged();
     }
 
